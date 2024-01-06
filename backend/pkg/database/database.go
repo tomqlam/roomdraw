@@ -6,10 +6,13 @@ import (
 	"net/url"
 	"os"
 
+	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
 
 func NewDatabase() (*sql.DB, error) {
+	godotenv.Load(".env")
+
 	cloudSQLPass := os.Getenv("CLOUD_SQL_PASS")
 	cloudSQLIP := os.Getenv("CLOUD_SQL_IP")
 	encodedPass := url.QueryEscape(cloudSQLPass)
