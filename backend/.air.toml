@@ -1,0 +1,38 @@
+# .air.toml
+# Air configuration file for live reloading
+
+# Root directory. Default is `.`
+# It's the directory where Air will start running
+root = "."
+tmp_dir = "tmp"
+
+[build]
+  # Go build command. Adjust the path to your main.go file
+  cmd = "go build -o ./tmp/main ./cmd/server"
+  # Binary file yields from `cmd`.
+  bin = "./tmp/main"
+  # Exclude directories/files from watching
+  exclude_dir = ["tmp", "vendor"]
+  # Exclude files with these extensions
+  exclude_file = []
+  # Include extensions to be watched
+  include_ext = ["go", "tpl", "tmpl", "html"]
+  # Log file for build errors
+  log = "air_errors.log"
+
+[log]
+  # Show log time
+  time = true
+
+[color]
+  # Customize each part's color
+  main = "yellow"
+  watcher = "cyan"
+  build = "yellow"
+  runner = "green"
+
+[watcher]
+  # List of directories that should be watched
+  watch_dir = ["."]
+  # List of regular expressions that matches the files to ignore during watching
+  ignore = [".git/*", "tmp/*"]
