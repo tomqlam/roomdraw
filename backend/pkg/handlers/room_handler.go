@@ -12,13 +12,6 @@ import (
 	"golang.org/x/text/language"
 )
 
-// func PullRoomHandler(c *gin.Context) {
-// 	// get the room uuid from the request body
-// 	roomUUID
-// 	// get the list of user uuids from the request body
-
-// }
-
 func GetRoomsHandler(c *gin.Context) {
 	db, err := database.NewDatabase()
 	if err != nil {
@@ -188,4 +181,75 @@ func GetSimpleFormattedDorm(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dorm)
+}
+
+func UpdateRoomOccupants(c *gin.Context) {
+	// the room uuid is in the url
+	roomUUIDParam := c.Param("roomuuid")
+
+	// get the list of user ids from the request body
+	var occupants []int
+	if err := c.ShouldBindJSON(&occupants); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	db, err := database.NewDatabase()
+	if err != nil {
+		// Handle error opening the database
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to connect to database"})
+		return
+	}
+	defer db.Close()
+
+	// Start a transaction
+	tx, err := db.Begin()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to start transaction"})
+		return
+	}
+
+	// Ensure the transaction is either committed or rolled back
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+			panic(r)
+		} else if err != nil {
+			tx.Rollback()
+		} else {
+			err = tx.Commit()
+		}
+	}()
+
+	// remove the current occupants from the room
+	_, err = tx.Exec("UPDATE rooms SET occupants = $1, current_occupancy = $2 WHERE room_uuid = $3", nil, 0, roomUUIDParam)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update occupants in rooms table"})
+		return
+	}
+
+	// for each current occupant, nullify the room_uuid field in the users table
+	_, err = tx.Exec("UPDATE users SET room_uuid = $1 WHERE room_uuid = $2", nil, roomUUIDParam)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update room_uuid in users table"})
+		return
+	}
+
+	// update the occupants in the database and the current_occupancy
+	_, err = tx.Exec("UPDATE rooms SET occupants = $1, current_occupancy = $2 WHERE room_uuid = $3", occupants, len(occupants), roomUUIDParam)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update occupants in rooms table"})
+		return
+	}
+
+	// for each occupant, update the room_uuid field in the users table
+	for _, occupant := range occupants {
+		_, err = tx.Exec("UPDATE users SET room_uuid = $1 WHERE id = $2", roomUUIDParam, occupant)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update room_uuid in users table"})
+			return
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Successfully updated occupants"})
 }
