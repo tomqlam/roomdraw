@@ -20,6 +20,7 @@ func main() {
 	router.GET("/rooms/simple/:dormName", handlers.GetSimpleFormattedDorm)
 
 	router.GET("/users", handlers.GetUsers)
+	router.GET("/users/idmap", handlers.GetUsersIdMap)
 
 	router.Run(config.ServerAddress) // Start server
 }
