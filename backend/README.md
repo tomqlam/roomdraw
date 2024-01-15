@@ -16,9 +16,14 @@ To run the RoomDraw backend, follow these steps:
 
 2. Navigate to the directory where you have the backend code.
 
-3. Run the following command:
-
+3. Run the following commands:
+    Build the Docker image from the Dockerfile in the current directory and tag the image as `roomdraw-backend`.
     ```bash
+    docker build -t roomdraw-backend .
+    ```
+
+    Run the following command to start the Docker container:
+    ```
     docker run -it -p 8080:8080 -v $(pwd):/app roomdraw-backend
     ```
 
