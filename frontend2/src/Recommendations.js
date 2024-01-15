@@ -1,6 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useContext} from 'react';
+import { MyContext } from './MyContext';
+import BumpModal from './BumpModal';
 
 const Recommendations = () => {
+    const {currPage, setCurrPage} = useContext(MyContext);
+    const {isModalOpen, setIsModalOpen} = useContext(MyContext);
+
     const dorms = ["Atwood", "East", "Drinkward", "Linde", "North", "South", "Sontag", "West", "Case"]
     const roomTypes = ["Single", "Double", "Triple", "Quad"];
     const [selectedDorms, setSelectedDorms] = useState([
@@ -81,10 +86,18 @@ const Recommendations = () => {
           setSelectedValues([...selectedValues, value]);
         }
       };
+
+      const handleOnClickRecommendationHandler = (e) => {
+        // setCurrPage('Home');
+        setIsModalOpen(true);
+        console.log(e);
+
+      }
     
       return (
         <div>
-          <div >
+          {isModalOpen && <BumpModal />}
+          <div style={{ display: 'flex', gap: '1rem', flexDirection: 'row' }}>
             <h3>Dorms:</h3>
             {dorms.map((dormName, index) => (
               <div key={index}>
@@ -94,12 +107,12 @@ const Recommendations = () => {
                     checked={selectedDorms.includes(dormName)}
                     onChange={() => handleCheckboxChange(dormName, selectedDorms, setSelectedDorms)}
                   />
-                  {dormName}
+                  <span style={{ marginLeft: '0.5rem' }}>{dormName}</span>
                 </label>
               </div>
             ))}
           </div>
-          <div>
+          <div style={{ display: 'flex', gap: '1rem', flexDirection: 'row' }}>
             <h3>Room Types:</h3>
             {roomTypes.map((roomType, index) => (
           <div key={index}>
@@ -109,7 +122,8 @@ const Recommendations = () => {
                 checked={selectedRoomTypes.includes(roomType)}
                 onChange={() => handleCheckboxChange(roomType, selectedRoomTypes, setSelectedRoomTypes)}
               />
-              {roomType}
+              <span style={{ marginLeft: '0.5rem' }}>{roomType}</span>
+              
             </label>
           </div>
         ))}
@@ -122,7 +136,7 @@ const Recommendations = () => {
                   (selectedRoomTypes.length === 0 || selectedRoomTypes.includes(recommendation.roomType))
               )
               .map((recommendation, index) => (
-                <div className="card" key={index}>
+                <div className="card" key={index} onClick={handleOnClickRecommendationHandler}>
                   <div className="card-content">
                     <div className="content">
                       <h3>{recommendation.dormName}</h3>

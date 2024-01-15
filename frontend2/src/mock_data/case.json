@@ -1,0 +1,1530 @@
+{
+    "dormName": "Case",
+    "description": "This is a description of Case.",
+    "floors": [
+        {
+            "floorNumber": 1,
+            "suites": [
+                {
+                    "rooms": [
+                        {
+                            "roomNumber": "253",
+                            "maxOccupancy": 2,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 0,
+                            "occupant2": 0,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        },
+                        {
+                            "roomNumber": "255",
+                            "maxOccupancy": 2,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 0,
+                            "occupant2": 0,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        },
+                        {
+                            "roomNumber": "248",
+                            "maxOccupancy": 1,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 0,
+                            "occupant2": 0,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        },
+                        {
+                            "roomNumber": "251",
+                            "maxOccupancy": 1,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 0,
+                            "occupant2": 0,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        },
+                        {
+                            "roomNumber": "249",
+                            "maxOccupancy": 1,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 0,
+                            "occupant2": 0,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        },
+                        {
+                            "roomNumber": "252",
+                            "maxOccupancy": 2,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 24,
+                            "occupant2": 362,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        },
+                        {
+                            "roomNumber": "250",
+                            "maxOccupancy": 1,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 289,
+                            "occupant2": 0,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        },
+                        {
+                            "roomNumber": "254",
+                            "maxOccupancy": 2,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 330,
+                            "occupant2": 145,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        }
+                    ],
+                    "suiteDesign": ""
+                },
+                {
+                    "rooms": [
+                        {
+                            "roomNumber": "205",
+                            "maxOccupancy": 1,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 0,
+                            "occupant2": 0,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        },
+                        {
+                            "roomNumber": "202",
+                            "maxOccupancy": 2,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 0,
+                            "occupant2": 0,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        },
+                        {
+                            "roomNumber": "201",
+                            "maxOccupancy": 2,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 0,
+                            "occupant2": 0,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        },
+                        {
+                            "roomNumber": "203",
+                            "maxOccupancy": 2,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 0,
+                            "occupant2": 0,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        },
+                        {
+                            "roomNumber": "206",
+                            "maxOccupancy": 1,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 0,
+                            "occupant2": 0,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        },
+                        {
+                            "roomNumber": "207",
+                            "maxOccupancy": 1,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 189,
+                            "occupant2": 0,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        },
+                        {
+                            "roomNumber": "204",
+                            "maxOccupancy": 2,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 163,
+                            "occupant2": 311,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        },
+                        {
+                            "roomNumber": "208",
+                            "maxOccupancy": 1,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 100,
+                            "occupant2": 0,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        }
+                    ],
+                    "suiteDesign": ""
+                },
+                {
+                    "rooms": [
+                        {
+                            "roomNumber": "220",
+                            "maxOccupancy": 1,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 0,
+                            "occupant2": 0,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        },
+                        {
+                            "roomNumber": "218",
+                            "maxOccupancy": 1,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 0,
+                            "occupant2": 0,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        },
+                        {
+                            "roomNumber": "222",
+                            "maxOccupancy": 2,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 0,
+                            "occupant2": 0,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        },
+                        {
+                            "roomNumber": "219",
+                            "maxOccupancy": 1,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 0,
+                            "occupant2": 0,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        },
+                        {
+                            "roomNumber": "223",
+                            "maxOccupancy": 2,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 0,
+                            "occupant2": 0,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        },
+                        {
+                            "roomNumber": "225",
+                            "maxOccupancy": 2,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 0,
+                            "occupant2": 0,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        },
+                        {
+                            "roomNumber": "224",
+                            "maxOccupancy": 2,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 281,
+                            "occupant2": 341,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        },
+                        {
+                            "roomNumber": "221",
+                            "maxOccupancy": 1,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 48,
+                            "occupant2": 0,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        }
+                    ],
+                    "suiteDesign": ""
+                },
+                {
+                    "rooms": [
+                        {
+                            "roomNumber": "Q2C",
+                            "maxOccupancy": 4,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 0,
+                            "occupant2": 0,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        }
+                    ],
+                    "suiteDesign": ""
+                },
+                {
+                    "rooms": [
+                        {
+                            "roomNumber": "Q2D",
+                            "maxOccupancy": 4,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 0,
+                            "occupant2": 0,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        }
+                    ],
+                    "suiteDesign": ""
+                },
+                {
+                    "rooms": [
+                        {
+                            "roomNumber": "246",
+                            "maxOccupancy": 1,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 0,
+                            "occupant2": 0,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        },
+                        {
+                            "roomNumber": "241",
+                            "maxOccupancy": 2,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 0,
+                            "occupant2": 0,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        },
+                        {
+                            "roomNumber": "242",
+                            "maxOccupancy": 2,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 0,
+                            "occupant2": 0,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        },
+                        {
+                            "roomNumber": "247",
+                            "maxOccupancy": 1,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 0,
+                            "occupant2": 0,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        },
+                        {
+                            "roomNumber": "244",
+                            "maxOccupancy": 1,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 0,
+                            "occupant2": 0,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        },
+                        {
+                            "roomNumber": "243",
+                            "maxOccupancy": 2,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 120,
+                            "occupant2": 71,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        },
+                        {
+                            "roomNumber": "245",
+                            "maxOccupancy": 1,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 359,
+                            "occupant2": 0,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        },
+                        {
+                            "roomNumber": "240",
+                            "maxOccupancy": 2,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 141,
+                            "occupant2": 387,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        }
+                    ],
+                    "suiteDesign": ""
+                },
+                {
+                    "rooms": [
+                        {
+                            "roomNumber": "Q2B",
+                            "maxOccupancy": 4,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 0,
+                            "occupant2": 0,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        }
+                    ],
+                    "suiteDesign": ""
+                }
+            ]
+        },
+        {
+            "floorNumber": 0,
+            "suites": [
+                {
+                    "rooms": [
+                        {
+                            "roomNumber": "108",
+                            "maxOccupancy": 1,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 0,
+                            "occupant2": 0,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        },
+                        {
+                            "roomNumber": "104",
+                            "maxOccupancy": 2,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 0,
+                            "occupant2": 0,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        },
+                        {
+                            "roomNumber": "105",
+                            "maxOccupancy": 1,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 0,
+                            "occupant2": 0,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        },
+                        {
+                            "roomNumber": "106",
+                            "maxOccupancy": 1,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 0,
+                            "occupant2": 0,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        },
+                        {
+                            "roomNumber": "103",
+                            "maxOccupancy": 2,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 0,
+                            "occupant2": 0,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        },
+                        {
+                            "roomNumber": "101",
+                            "maxOccupancy": 2,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 75,
+                            "occupant2": 18,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        },
+                        {
+                            "roomNumber": "102",
+                            "maxOccupancy": 2,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 338,
+                            "occupant2": 354,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        },
+                        {
+                            "roomNumber": "107",
+                            "maxOccupancy": 1,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 45,
+                            "occupant2": 0,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        }
+                    ],
+                    "suiteDesign": ""
+                },
+                {
+                    "rooms": [
+                        {
+                            "roomNumber": "118",
+                            "maxOccupancy": 1,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 0,
+                            "occupant2": 0,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        },
+                        {
+                            "roomNumber": "121",
+                            "maxOccupancy": 1,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 0,
+                            "occupant2": 0,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        },
+                        {
+                            "roomNumber": "120",
+                            "maxOccupancy": 1,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 0,
+                            "occupant2": 0,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        },
+                        {
+                            "roomNumber": "123",
+                            "maxOccupancy": 2,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 0,
+                            "occupant2": 0,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        },
+                        {
+                            "roomNumber": "119",
+                            "maxOccupancy": 1,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 0,
+                            "occupant2": 0,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        },
+                        {
+                            "roomNumber": "122",
+                            "maxOccupancy": 2,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 0,
+                            "occupant2": 0,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        },
+                        {
+                            "roomNumber": "124",
+                            "maxOccupancy": 2,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 240,
+                            "occupant2": 53,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        },
+                        {
+                            "roomNumber": "125",
+                            "maxOccupancy": 2,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 59,
+                            "occupant2": 151,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        }
+                    ],
+                    "suiteDesign": ""
+                },
+                {
+                    "rooms": [
+                        {
+                            "roomNumber": "Q1D",
+                            "maxOccupancy": 4,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 0,
+                            "occupant2": 0,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        }
+                    ],
+                    "suiteDesign": ""
+                },
+                {
+                    "rooms": [
+                        {
+                            "roomNumber": "146",
+                            "maxOccupancy": 1,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 0,
+                            "occupant2": 0,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        },
+                        {
+                            "roomNumber": "147",
+                            "maxOccupancy": 1,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 0,
+                            "occupant2": 0,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        },
+                        {
+                            "roomNumber": "145",
+                            "maxOccupancy": 1,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 0,
+                            "occupant2": 0,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        },
+                        {
+                            "roomNumber": "141",
+                            "maxOccupancy": 2,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 0,
+                            "occupant2": 0,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        },
+                        {
+                            "roomNumber": "142",
+                            "maxOccupancy": 2,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 0,
+                            "occupant2": 0,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        },
+                        {
+                            "roomNumber": "144",
+                            "maxOccupancy": 1,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 0,
+                            "occupant2": 0,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        },
+                        {
+                            "roomNumber": "140",
+                            "maxOccupancy": 2,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 0,
+                            "occupant2": 0,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        },
+                        {
+                            "roomNumber": "143",
+                            "maxOccupancy": 2,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 174,
+                            "occupant2": 307,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        }
+                    ],
+                    "suiteDesign": ""
+                },
+                {
+                    "rooms": [
+                        {
+                            "roomNumber": "154",
+                            "maxOccupancy": 2,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 0,
+                            "occupant2": 0,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        },
+                        {
+                            "roomNumber": "153",
+                            "maxOccupancy": 2,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 0,
+                            "occupant2": 0,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        },
+                        {
+                            "roomNumber": "148",
+                            "maxOccupancy": 1,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 0,
+                            "occupant2": 0,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        },
+                        {
+                            "roomNumber": "155",
+                            "maxOccupancy": 2,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 0,
+                            "occupant2": 0,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        },
+                        {
+                            "roomNumber": "150",
+                            "maxOccupancy": 1,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 0,
+                            "occupant2": 0,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        },
+                        {
+                            "roomNumber": "149",
+                            "maxOccupancy": 1,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 372,
+                            "occupant2": 0,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        },
+                        {
+                            "roomNumber": "152",
+                            "maxOccupancy": 2,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 226,
+                            "occupant2": 357,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        },
+                        {
+                            "roomNumber": "151",
+                            "maxOccupancy": 1,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 56,
+                            "occupant2": 0,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        }
+                    ],
+                    "suiteDesign": ""
+                },
+                {
+                    "rooms": [
+                        {
+                            "roomNumber": "Q1B",
+                            "maxOccupancy": 3,
+                            "pullPriority": {
+                                "valid": false,
+                                "isPreplaced": false,
+                                "hasInDorm": false,
+                                "drawNumber": 0,
+                                "year": 0,
+                                "pullType": 0,
+                                "inherited": {
+                                    "hasInDorm": false,
+                                    "drawNumber": 0,
+                                    "year": 0
+                                }
+                            },
+                            "occupant1": 0,
+                            "occupant2": 0,
+                            "occupant3": 0,
+                            "occupant4": 0
+                        }
+                    ],
+                    "suiteDesign": ""
+                }
+            ]
+        }
+    ]
+}

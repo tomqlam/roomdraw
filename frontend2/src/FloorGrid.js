@@ -1,29 +1,49 @@
 import logo from './logo.svg';
 import React from 'react';
-import { useState } from 'react';
+import { useState, useContext } from 'react';
+import { MyContext } from './MyContext';
 import 'bulma/css/bulma.min.css';
+import BumpModal from './BumpModal';
 
-function FloorGrid({cellColors, gridData, dropdownOptions, updateGridData}) {
+function FloorGrid({ cellColors, gridData, updateGridData }) {
   // Define your data structure with columns
+  const { isModalOpen, setIsModalOpen } = useContext(MyContext);
+  const { selectedItem, setSelectedItem } = useContext(MyContext);
+  const { selectedOccupants, setSelectedOccupants } = useContext(MyContext);
+  const { onlyShowBumpableRooms, setOnlyShowBumpableRooms } = useContext(MyContext);
+  const { userMap } = useContext(MyContext);
+  const { getNameById } = useContext(MyContext);
+  const { selectedRoomObject, setSelectedRoomObject } = useContext(MyContext);
+  const { pullMethod, setPullMethod } = useContext(MyContext);
 
 
+  function getOccupantsByRoomNumber(roomNumber) {
+    // Iterate over each suite
+    for (let suite of gridData.suites) {
+      // Find the room with the given room number within the current suite
+      console.log("FIRST ITERATION");
+      console.log(suite);
+      const room = suite.rooms.find(r => r.roomNumber.toString() === roomNumber.toString());
 
-  const [isOpen, setIsOpen] = useState(false);
-  const [selectedItem, setSelectedItem] = useState(null);
-  const [dropdownValues, setDropdownValues] = useState(['', '', '']);
-  const [pullMethod, setPullMethod] = useState('');
-  const [showModalError, setShowModalError] = useState(false);
-  
+      // If the room exists, return the list of occupants
+      if (room) {
+        setSelectedRoomObject(room);
+        return [room.occupant1.toString(), room.occupant2.toString(), room.occupant3.toString(), room.occupant4.toString()];
+      }
+    }
+    console.log("did not find the occupants");
 
-
-  
+    // If the room does not exist in any suite, return an empty array
+    return ['', '', '', ''];
+  }
 
   const gridContainerStyle = {
     display: 'grid',
-    gridTemplateColumns: 'auto auto auto auto auto', // Adjust the number of 'auto' as needed
+    gridTemplateColumns: 'auto auto auto auto auto auto auto', // Adjust the number of 'auto' as needed
     gap: '5px',
     maxWidth: '800px', // Set the maximum width of the grid container
     margin: '0 auto', // Center the grid container horizontally
+
   };
 
   const gridItemStyle = {
@@ -32,6 +52,9 @@ function FloorGrid({cellColors, gridData, dropdownOptions, updateGridData}) {
     padding: '2px',
     backgroundColor: cellColors.occupants, // Set the background color of the cells
     textAlign: 'center',
+    fontSize: '15px', // Set the font size of the cells
+    color: '#000000',
+
   };
   const roomNumberStyle = {
     ...gridItemStyle,
@@ -43,97 +66,45 @@ function FloorGrid({cellColors, gridData, dropdownOptions, updateGridData}) {
   };
   const handleCellClick = (roomNumber) => {
     setSelectedItem(roomNumber);
-    setIsOpen(true);
-  };
-  const handlePullMethodChange = (e) => {
-    setPullMethod(e.target.value);
-  };
-  const closeModal = () => {
-    setShowModalError(false);
-    setIsOpen(false);
-  };
-  const handleDropdownChange = (index, value) => {
-    console.log(index);
-    const updatedDropdownValues = [...dropdownValues];
-    console.log(dropdownValues);
-    updatedDropdownValues[index] = value;
-    console.log(updatedDropdownValues);
-    setDropdownValues(updatedDropdownValues);
+    setSelectedOccupants(getOccupantsByRoomNumber(roomNumber));
+    console.log(selectedOccupants);
+    console.log('lol');
+    setPullMethod("");
+    setIsModalOpen(true);
   };
 
-  const handleSubmit = (e) => {
-    // Handle form submission logic here
-    e.preventDefault();
-    if (canIBump(pullMethod, selectedItem.notes)) {
-        // valid bump
-        const newRoomData = { roomNumber: selectedItem, notes: pullMethod, occupant1: dropdownValues[1], occupant2: dropdownValues[2], occupant3: dropdownValues[3] };
-        console.log(newRoomData);
-        updateGridData(newRoomData);
-        console.log('Form submitted');
-        setIsOpen(false);
-    } else {
-        // can't bump, show error 
-        setShowModalError(true);
+  function getPullMethodByRoomNumber(roomNumber) {
+    // TODO FINISH 
+    // Iterate over each suite
+    for (let suite of gridData.suites) {
+      // Find the room with the given room number within the current suite
+      const room = suite.rooms.find(r => r.roomNumber.toString() === roomNumber.toString());
+
+      // If the room exists, return the list of occupants
+      if (room) {
+        if (room.pullPriority.isPreplaced) {
+          return "Preplaced";
+        }
+        if (room.pullPriority.hasInDorm) {
+          return `In-Dorm ${room.pullPriority.year} ${room.pullPriority.drawNumber}`;
+        }
+        return `${room.pullPriority.year} ${room.pullPriority.drawNumber}`;
+
+      }
     }
 
-    // // check that this is a valid pull method 
+    // If the room does not exist in any suite, return an empty array
+    return 'n/a';
+  }
 
 
-    
-  };
-
-//   const isUnbumpable = (notes) => {
-//     if (notes == 'Preplaced') {
-//       return true;
-//     }
-//     return false;
-//   }
-
-  const canIBump = (mine, yours) => {
-    return true; // TODO
-
-    // we can't bump preplaced, mentors, or proctors, or their pulls
-    const forbiddenKeywords = ['preplaced', 'mentor', 'proctor']
-    const containsForbiddenKeyword = (drawNumber) => {
-        return forbiddenKeywords.some(keyword => drawNumber.toLowerCase().includes(keyword));
-    };
-    if (containsForbiddenKeyword(yours)) {
-    return false;
-    }
-
-    // we can't bump people with in-dorm to that dorm or their pulls
-    // take into account that the dorm to which they in dorm for matters
-
-    // we can't bump people older than us
-    const seniorityOrder = ['sophomore', 'junior', 'senior'];
-
-  
-    const getSeniorityIndex = (drawNumber) => {
-      const seniorityMatch = drawNumber.match(/sophomore|junior|senior/i);
-      return seniorityMatch ? seniorityOrder.indexOf(seniorityMatch[0].toLowerCase()) : -1;
-    };
-  
-    const mySeniorityIndex = getSeniorityIndex(mine);
-    const yourSeniorityIndex = getSeniorityIndex(yours);
-  
-    if (mySeniorityIndex === -1 || yourSeniorityIndex === -1) {
-      return false; // Invalid draw numbers, don't have a date 
-    }
-  
-    if (mySeniorityIndex === yourSeniorityIndex) {
-      return Math.random() < 0.5; // Flip a coin for tie
-    }
-  
-    return mySeniorityIndex > yourSeniorityIndex;
-  };
-    console.log(gridData);
 
   return (
     <div style={gridContainerStyle}>
-        {/* <div style={gridItemStyle}><strong></strong></div>
+      {/* <div style={gridItemStyle}><strong></strong></div>
 
         {/* begin filler code that does nothing*/}
-        {/* <div style={gridItemStyle}><strong>{}</strong></div>
+      {/* <div style={gridItemStyle}><strong>{}</strong></div>
         <div style={gridItemStyle}><strong>{}</strong></div>
         <div style={gridItemStyle}><strong>{}</strong></div>
         <div style={gridItemStyle}><strong>{}</strong></div> */}
@@ -142,12 +113,64 @@ function FloorGrid({cellColors, gridData, dropdownOptions, updateGridData}) {
 
 
       <div style={roomNumberStyle}><strong>Room Number</strong></div>
-      <div style={pullMethodStyle}><strong>Pull Method</strong></div>
-      <div style={gridItemStyle}><strong>Occupant 1</strong></div>
-      <div style={gridItemStyle}><strong>Occupant 2</strong></div>
-      <div style={gridItemStyle}><strong>Occupant 3</strong></div>
+      <div style={roomNumberStyle}><strong>Pull Method</strong></div>
+      <div style={roomNumberStyle}><strong>Suite</strong></div>
+      <div style={roomNumberStyle}><strong>Occupant 1</strong></div>
+      <div style={roomNumberStyle}><strong>Occupant 2</strong></div>
+      <div style={roomNumberStyle}><strong>Occupant 3</strong></div>
+      <div style={roomNumberStyle}><strong>Occupant 4</strong></div>
 
-      {gridData.map((item, index) => (
+      {gridData.suites.map((suite, suiteIndex) => (
+        suite.rooms.map((room, roomIndex) => (
+          <React.Fragment key={roomIndex}>
+            <div
+              style={{
+                ...roomNumberStyle,
+                backgroundColor: suiteIndex % 2 === 0
+                  ? cellColors.evenSuite // color for even suiteIndex
+                  : cellColors.oddSuite // color for odd suiteIndex
+              }}
+              onClick={() => handleCellClick(room.roomNumber)}
+            >
+              {room.roomNumber}
+            </div>
+            <div style={{
+              ...pullMethodStyle, backgroundColor: suiteIndex % 2 === 0
+                ? cellColors.evenSuite // color for even suiteIndex
+                : cellColors.oddSuite
+            }} onClick={() => handleCellClick(room.roomNumber)}>{getPullMethodByRoomNumber(room.roomNumber)}</div>
+            {
+              roomIndex === 0
+              && <div style={{
+                ...pullMethodStyle, gridRow: `span ${suite.rooms.length}`, backgroundColor: suiteIndex % 2 === 0
+                  ? cellColors.evenSuite // color for even suiteIndex
+                  : cellColors.oddSuite
+              }} >Insert suite name</div>
+
+            }
+            <div style={{...gridItemStyle, backgroundColor: suiteIndex % 2 === 0 ? cellColors.evenSuite : cellColors.oddSuite}} onClick={() => handleCellClick(room.roomNumber)}>{getNameById(room.occupant1)}</div>
+            <div style={{
+              ...gridItemStyle,
+              backgroundColor: room.maxOccupancy >= 2 ? (suiteIndex % 2 === 0 ? cellColors.evenSuite : cellColors.oddSuite) : cellColors.unbumpableRoom // Change the colors as per your requirement
+            }} onClick={() => handleCellClick(room.roomNumber)}>{getNameById(room.occupant2)}</div>
+            <div style={{
+              ...gridItemStyle,
+              backgroundColor: room.maxOccupancy >= 3 ? (suiteIndex % 2 === 0 ? cellColors.evenSuite : cellColors.oddSuite) : cellColors.unbumpableRoom // Change the colors as per your requirement
+            }} onClick={() => handleCellClick(room.roomNumber)}>{getNameById(room.occupant3)}</div>
+            {<div style={{
+              ...gridItemStyle,
+              backgroundColor: room.maxOccupancy >= 4 ? (suiteIndex % 2 === 0 ? cellColors.evenSuite : cellColors.oddSuite) : cellColors.unbumpableRoom // Change the colors as per your requirement
+            }} onClick={() => handleCellClick(room.roomNumber)}>{getNameById(room.occupant4)}</div>}
+
+          </React.Fragment>
+        ))
+      ))}
+
+
+
+
+
+      {/* {gridData.map((item, index) => (
         <React.Fragment key={index}>
           <div style={roomNumberStyle} onClick={() => handleCellClick(item.roomNumber)}>{item.roomNumber}</div>
           <div style={pullMethodStyle} onClick={() => handleCellClick(item.roomNumber)}>{item.notes}</div>
@@ -155,60 +178,10 @@ function FloorGrid({cellColors, gridData, dropdownOptions, updateGridData}) {
           <div style={gridItemStyle} onClick={() => handleCellClick(item.roomNumber)}>{item.occupant2}</div>
           <div style={gridItemStyle} onClick={() => handleCellClick(item.roomNumber)}>{item.occupant3}</div>
         </React.Fragment>
-      ))}
-      {isOpen && (
-        <div className="modal is-active">
-          <div className="modal-background"></div>
-          <div className="modal-card">
-            <header className="modal-card-head">
-              <p className="modal-card-title">Edit Room {selectedItem}</p>
-              <button className="delete" aria-label="close" onClick={closeModal}></button>
-            </header>
-            <section className="modal-card-body">
-                
-            <div className="field">
-                <label className="label" htmlFor="PullMethod">Pulling method: (ex: in dorm 11, in dorm 11 pull, sophomore 12)</label>
-                <div className="control">
-                  <input
-                    id="PullMethod"
-                    className="input"
-                    type="text"
-                    value={pullMethod}
-                    onChange={handlePullMethodChange}
-                  />
-                </div>
-              </div>
-              {[1, 2, 3].map((index) => (
-                <div className="field" key={index}>
-                  <label className="label" htmlFor={`dropdown${index-1}`}>{`Occupant ${index}:`}</label>
-                  <div className="control">
-                    <div className="select">
-                    <select value={dropdownValues[index]} onChange={(e) => handleDropdownChange(index, e.target.value)}>
-
-                        <option value="">Select an option</option>
-                        {dropdownOptions.map((option, optionIndex) => (
-                          <option key={optionIndex} value={option}>{option}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              ))}
-              
-              {/* Add your modal content here */}
-              {showModalError && (<p class="help is-danger">Oops-maybe double check your request?</p>)}
-
-            </section>
-            <footer className="modal-card-foot">
-                
-            <button className="button is-primary" onClick={handleSubmit}>Let's go!</button>
-
-            </footer>
-          </div>
-        </div>
-      )}
+      ))} */}
+      {isModalOpen && <BumpModal updateGridData={updateGridData} />}
     </div>
-    
+
   );
 }
 
