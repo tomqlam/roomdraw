@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 	"roomdraw/backend/pkg/database"
@@ -8,6 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )
@@ -90,7 +92,6 @@ func GetSimpleFormattedDorm(c *gin.Context) {
 	for rows.Next() {
 		var d models.RoomRaw
 		if err := rows.Scan(&d.RoomUUID, &d.Dorm, &d.DormName, &d.RoomID, &d.SuiteUUID, &d.MaxOccupancy, &d.CurrentOccupancy, &d.Occupants, &d.PullPriority); err != nil {
-			// Handle scan error
 			log.Println(err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Database scan failed on rooms"})
 			return
@@ -100,8 +101,6 @@ func GetSimpleFormattedDorm(c *gin.Context) {
 
 	rows, err = db.Query("SELECT suite_uuid, dorm, dorm_name, floor, room_count, rooms, alternative_pull, suite_design FROM suites WHERE UPPER(dorm_name) = UPPER($1)", dormNameParam)
 	if err != nil {
-		// Handle query error
-		// print the error to the console
 		log.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database query failed on suites"})
 		return
@@ -111,7 +110,6 @@ func GetSimpleFormattedDorm(c *gin.Context) {
 	for rows.Next() {
 		var s models.SuiteRaw
 		if err := rows.Scan(&s.SuiteUUID, &s.Dorm, &s.DormName, &s.Floor, &s.RoomCount, &s.Rooms, &s.AlternativePull, &s.SuiteDesign); err != nil {
-			// Handle scan error
 			log.Println(err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Database scan failed on suites"})
 			return
@@ -187,12 +185,14 @@ func UpdateRoomOccupants(c *gin.Context) {
 	// the room uuid is in the url
 	roomUUIDParam := c.Param("roomuuid")
 
-	// get the list of user ids from the request body
-	var occupants []int
-	if err := c.ShouldBindJSON(&occupants); err != nil {
+	var request models.OccupantUpdateRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
+		log.Printf("JSON unmarshal error: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
+	occupants := request.ProposedOccupants
 
 	db, err := database.NewDatabase()
 	if err != nil {
@@ -221,10 +221,40 @@ func UpdateRoomOccupants(c *gin.Context) {
 		}
 	}()
 
+	var roomInfo models.RoomRaw
+	err = tx.QueryRow("SELECT room_uuid, dorm, dorm_name, room_id, suite_uuid, max_occupancy, current_occupancy, occupants, pull_priority FROM rooms WHERE room_uuid = $1", roomUUIDParam).Scan(&roomInfo.RoomUUID, &roomInfo.Dorm, &roomInfo.DormName, &roomInfo.RoomID, &roomInfo.SuiteUUID, &roomInfo.MaxOccupancy, &roomInfo.CurrentOccupancy, &roomInfo.Occupants, &roomInfo.PullPriority)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to query room info from rooms table"})
+		return
+	}
+
+	// log room uuid
+	log.Println(roomInfo.RoomUUID)
+
+	// check that the proposed occupants are not more than the max occupancy
+	if len(occupants) > roomInfo.MaxOccupancy {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Proposed occupants exceeds max occupancy"})
+		return
+	}
+
+	// check that all of the proposed occupants are not already in a room
+	for _, occupant := range occupants {
+		var roomUUID uuid.UUID
+		err = tx.QueryRow("SELECT room_uuid FROM users WHERE id = $1", occupant).Scan(&roomUUID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to query room_uuid from users table"})
+			return
+		}
+		if roomUUID != uuid.Nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "One or more of the proposed occupants is already in a room"})
+			return
+		}
+	}
+
 	// remove the current occupants from the room
 	_, err = tx.Exec("UPDATE rooms SET occupants = $1, current_occupancy = $2 WHERE room_uuid = $3", nil, 0, roomUUIDParam)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update occupants in rooms table"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update current occupants in rooms table"})
 		return
 	}
 
@@ -236,9 +266,10 @@ func UpdateRoomOccupants(c *gin.Context) {
 	}
 
 	// update the occupants in the database and the current_occupancy
-	_, err = tx.Exec("UPDATE rooms SET occupants = $1, current_occupancy = $2 WHERE room_uuid = $3", occupants, len(occupants), roomUUIDParam)
+	_, err = tx.Exec("UPDATE rooms SET occupants = $1, current_occupancy = $2 WHERE room_uuid = $3", pq.Array(occupants), len(occupants), roomUUIDParam)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update occupants in rooms table"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update proposed occupants in rooms table"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -249,6 +280,137 @@ func UpdateRoomOccupants(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update room_uuid in users table"})
 			return
 		}
+	}
+
+	// calculate the new pull priority by sorting the occupants by draw number and getting the first one
+	var newPullPriority models.PullPriority
+
+	switch request.PullType {
+	case 1: // self pull
+		if len(occupants) > 0 {
+			var occupantsInfo []models.UserRaw
+			rows, err := tx.Query("SELECT id, draw_number, year, in_dorm FROM users WHERE id = ANY($1)", pq.Array(occupants))
+			if err != nil {
+				// Handle query error
+				// print the error to the console
+				log.Println(err)
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Database query failed on users for pull priority"})
+				return
+			}
+			for rows.Next() {
+				var u models.UserRaw
+				if err := rows.Scan(&u.Id, &u.DrawNumber, &u.Year, &u.InDorm); err != nil {
+					// Handle scan error
+					log.Println(err)
+					c.JSON(http.StatusInternalServerError, gin.H{"error": "Database scan failed on users for pull priority"})
+					return
+				}
+				occupantsInfo = append(occupantsInfo, u)
+			}
+
+			sortedOccupants := sortUsersByPriority(occupantsInfo, roomInfo.Dorm)
+
+			newPullPriority = generateUserPriority(sortedOccupants[0], roomInfo.Dorm)
+
+			newPullPriority.Valid = true
+			newPullPriority.PullType = 1
+
+			newPullPriorityJSON, err := json.Marshal(newPullPriority)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to marshal new pull priority"})
+				return
+			}
+
+			_, err = tx.Exec("UPDATE rooms SET pull_priority = $1 WHERE room_uuid = $2", newPullPriorityJSON, roomUUIDParam)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update pull priority in rooms table"})
+				return
+			}
+		} else {
+			emptyPriority := generateEmptyPriority()
+			emptyPriorityJSON, err := json.Marshal(emptyPriority)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to marshal empty pull priority"})
+				return
+			}
+
+			_, err = tx.Exec("UPDATE rooms SET pull_priority = $1 WHERE room_uuid = $2", emptyPriorityJSON, roomUUIDParam)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update empty pull priority in rooms table"})
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+		}
+	case 2: // normal pull
+		if len(occupants) > 0 {
+			pullLeaderRoomUUID := request.PullLeaderRoom
+			var occupantsInfo []models.UserRaw
+			rows, err := tx.Query("SELECT id, draw_number, year, in_dorm FROM users WHERE id = ANY($1)", pq.Array(occupants))
+			if err != nil {
+				// Handle query error
+				// print the error to the console
+				log.Println(err)
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Database query failed on users for pull priority"})
+				return
+			}
+			for rows.Next() {
+				var u models.UserRaw
+				if err := rows.Scan(&u.Id, &u.DrawNumber, &u.Year, &u.InDorm); err != nil {
+					// Handle scan error
+					log.Println(err)
+					c.JSON(http.StatusInternalServerError, gin.H{"error": "Database scan failed on users for pull priority"})
+					return
+				}
+				occupantsInfo = append(occupantsInfo, u)
+			}
+
+			var pullLeaderPriority models.PullPriority
+			// get the pull leader's priority
+			err = tx.QueryRow("SELECT pull_priority FROM rooms WHERE room_uuid = $1", pullLeaderRoomUUID).Scan(&pullLeaderPriority)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to query pull leader's priority from rooms table"})
+				return
+			}
+
+			sortedOccupants := sortUsersByPriority(occupantsInfo, roomInfo.Dorm)
+
+			newPullPriority = generateUserPriority(sortedOccupants[0], roomInfo.Dorm)
+
+			newPullPriority.Valid = true
+			newPullPriority.PullType = 1
+
+			newPullPriority.Inherited.DrawNumber = pullLeaderPriority.DrawNumber
+			newPullPriority.Inherited.HasInDorm = pullLeaderPriority.HasInDorm
+			newPullPriority.Inherited.Year = pullLeaderPriority.Year
+
+			newPullPriorityJSON, err := json.Marshal(newPullPriority)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to marshal new pull priority"})
+				return
+			}
+
+			_, err = tx.Exec("UPDATE rooms SET pull_priority = $1 WHERE room_uuid = $2", newPullPriorityJSON, roomUUIDParam)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update pull priority in rooms table"})
+				return
+			}
+
+			// create new suite group
+			var suiteGroupUUID uuid.UUID
+			err = tx.QueryRow("INSERT INTO suite_groups (sgroup_uuid, sgroup_size, sgroup_name, sgroup_suite, sgroup_priority, rooms, disbanded) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING sgroup_uuid", uuid.New(), 2, "Suite Group", roomInfo.SuiteUUID, newPullPriorityJSON, pq.Array([]uuid.UUID{roomInfo.RoomUUID}), false).Scan(&suiteGroupUUID)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to insert new suite group into suite_groups table"})
+				return
+			}
+		} else {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Normal pull requires at least one occupant"})
+		}
+	case 3: // lock pull
+		break
+	case 4: // alternative pull
+		break
+	default:
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid pull type"})
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Successfully updated occupants"})

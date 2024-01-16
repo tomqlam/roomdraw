@@ -193,3 +193,9 @@ type InheritedPullPriority struct {
 	DrawNumber int  `json:"drawNumber"`
 	Year       int  `json:"year"` // 1 = freshman, 2 = sophomore, 3 = junior, 4 = senior
 }
+
+type OccupantUpdateRequest struct {
+	ProposedOccupants []int     `json:"proposedOccupants"`
+	PullType          int       `json:"pullType"` // 0 = undefined, 1 = self, 2 = normal pull, 3 = lock pull, 4 = alternative pull
+	PullLeaderRoom    uuid.UUID `json:"pullLeaderRoom"`
+}

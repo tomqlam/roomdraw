@@ -73,6 +73,20 @@ func sortUsersByPriority(users []models.UserRaw, dormId int) []models.UserRaw {
 	return append(append(left, pivot), right...)
 }
 
+func generateEmptyPriority() models.PullPriority {
+	return models.PullPriority{
+		IsPreplaced: false,
+		HasInDorm:   false,
+		DrawNumber:  0,
+		Year:        0,
+		Inherited: models.InheritedPullPriority{
+			HasInDorm:  false,
+			DrawNumber: 0,
+			Year:       0,
+		},
+	}
+}
+
 func generateUserPriority(user models.UserRaw, dormId int) models.PullPriority {
 	if user.Preplaced {
 		return models.PullPriority{
