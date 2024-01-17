@@ -9,7 +9,19 @@ CREATE TABLE SuiteGroups (
     sgroup_size int NOT NULL,
     sgroup_name varchar NOT NULL,
     sgroup_suite uuid NOT NULL,
-    pull_priority json NOT NULL,
+    pull_priority jsonb NOT NULL DEFAULT '{
+        "valid": false,
+        "isPreplaced": false,
+        "hasInDorm": false,
+        "drawNumber": 0,
+        "year": 0,
+        "pullType": 0,
+        "inherited": {
+            "hasInDorm": false,
+            "drawNumber": 0,
+            "year": 0
+        }
+    }'::jsonb,
     disbanded boolean NOT NULL DEFAULT false,
     rgroups uuid array,
     PRIMARY KEY (sgroup_uuid),
