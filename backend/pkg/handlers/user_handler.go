@@ -84,3 +84,35 @@ func GetUsersIdMap(c *gin.Context) {
 
 	c.JSON(http.StatusOK, userMap)
 }
+
+func GetUser(c *gin.Context) {
+	// Get the user id from the URL
+	userid := c.Param("userid")
+
+	db, err := database.NewDatabase()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to connect to database"})
+		return
+	}
+	defer db.Close()
+
+	rows, err := db.Query("SELECT id, year, first_name, last_name, draw_number, preplaced, in_dorm, sgroup_uuid, participated, room_uuid FROM users WHERE id=$1", userid)
+	if err != nil {
+		log.Println(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database query failed"})
+		return
+	}
+	defer rows.Close()
+
+	var user models.UserRaw
+	for rows.Next() {
+		if err := rows.Scan(&user.Id, &user.Year, &user.FirstName, &user.LastName, &user.DrawNumber, &user.Preplaced, &user.InDorm, &user.SGroupUUID, &user.Participated, &user.RoomUUID); err != nil {
+			// Handle scan error
+			log.Println(err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Database scan failed"})
+			return
+		}
+	}
+
+	c.JSON(http.StatusOK, user)
+}

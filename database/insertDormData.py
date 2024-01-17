@@ -31,7 +31,7 @@ engine = create_engine(CONNSTR)
 # 7 = Case
 # 8 = Drinkward
 # 9 = Linde
-# 10 = Garett House
+# 10 = Garrett House
 
 # All East suites have two rooms, floor just adds 50 to the room number
 def create_normal_inner_suite(starting_room_number_without_floor: int, order: List[int], floor: int, room_offset: int, dorm: int, alternative: bool, connection: object):

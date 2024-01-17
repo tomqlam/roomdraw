@@ -23,7 +23,7 @@ To run the RoomDraw backend, follow these steps:
     ```
 
     Run the following command to start the Docker container:
-    ```
+    ```bash
     docker run -it -p 8080:8080 -v $(pwd):/app roomdraw-backend
     ```
 

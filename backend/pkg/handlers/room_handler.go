@@ -135,7 +135,9 @@ func GetSimpleFormattedDorm(c *gin.Context) {
 			RoomNumber:   r.RoomID,
 			PullPriority: r.PullPriority,
 			MaxOccupancy: r.MaxOccupancy,
+			RoomUUID:     r.RoomUUID,
 		}
+
 		if len(r.Occupants) >= 1 {
 			room.Occupant1 = r.Occupants[0]
 		}
@@ -158,7 +160,9 @@ func GetSimpleFormattedDorm(c *gin.Context) {
 		suiteUUIDString := s.SuiteUUID.String()
 		floor := suiteUUIDToFloorMap[s.SuiteUUID]
 		suite := models.SuiteSimple{
-			Rooms: suiteToRoomMap[suiteUUIDString],
+			Rooms:       suiteToRoomMap[suiteUUIDString],
+			SuiteDesign: s.SuiteDesign,
+			SuiteUUID:   s.SuiteUUID,
 		}
 
 		floorMap[floor] = append(floorMap[floor], suite)

@@ -121,12 +121,14 @@ type FloorSimple struct {
 type SuiteSimple struct {
 	Rooms       []RoomSimple `json:"rooms"`
 	SuiteDesign string       `json:"suiteDesign"`
+	SuiteUUID   uuid.UUID    `json:"suiteUUID"`
 }
 
 type RoomSimple struct {
 	RoomNumber   string       `json:"roomNumber"`
 	MaxOccupancy int          `json:"maxOccupancy"`
 	PullPriority PullPriority `json:"pullPriority"`
+	RoomUUID     uuid.UUID    `json:"roomUUID"`
 	Occupant1    int          `json:"occupant1"`
 	Occupant2    int          `json:"occupant2"`
 	Occupant3    int          `json:"occupant3"`

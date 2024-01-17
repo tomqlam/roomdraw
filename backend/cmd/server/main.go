@@ -28,6 +28,7 @@ func main() {
 
 	router.GET("/users", handlers.GetUsers)
 	router.GET("/users/idmap", handlers.GetUsersIdMap)
+	router.GET("/users/:userid", handlers.GetUser)
 
 	router.Run(config.ServerAddress) // Start server
 }
