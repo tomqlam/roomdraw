@@ -24,6 +24,7 @@ CREATE TABLE Rooms (
             "year": 0
         }
     }'::jsonb,
+    sgroup_uuid uuid,
     PRIMARY KEY (room_uuid),
     FOREIGN KEY (suite_uuid) REFERENCES Suites(suite_uuid)
 );

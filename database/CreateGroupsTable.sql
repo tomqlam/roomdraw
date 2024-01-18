@@ -23,7 +23,7 @@ CREATE TABLE SuiteGroups (
         }
     }'::jsonb,
     disbanded boolean NOT NULL DEFAULT false,
-    rgroups uuid array,
+    rooms uuid array,
     PRIMARY KEY (sgroup_uuid),
     FOREIGN KEY (sgroup_suite) REFERENCES Suites(suite_uuid)
 );

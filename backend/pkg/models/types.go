@@ -94,6 +94,7 @@ type RoomRaw struct {
 	CurrentOccupancy int          `db:"current_occupancy"`
 	Occupants        IntArray     `db:"occupants"`
 	PullPriority     PullPriority `db:"pull_priority"`
+	SGroupUUID       uuid.UUID    `db:"sgroup_uuid"`
 }
 
 type SuiteRaw struct {
@@ -141,7 +142,7 @@ type UserRaw struct {
 	FirstName    string    `db:"first_name"`
 	LastName     string    `db:"last_name"`
 	Email        string    `db:"email"`
-	DrawNumber   int       `db:"draw_number"`
+	DrawNumber   float64   `db:"draw_number"`
 	Preplaced    bool      `db:"preplaced"`
 	InDorm       int       `db:"in_dorm"`
 	SGroupUUID   uuid.UUID `db:"sgroup_uuid"`
@@ -184,16 +185,16 @@ type PullPriority struct {
 	Valid       bool                  `json:"valid"`
 	IsPreplaced bool                  `json:"isPreplaced"`
 	HasInDorm   bool                  `json:"hasInDorm"`
-	DrawNumber  int                   `json:"drawNumber"`
+	DrawNumber  float64               `json:"drawNumber"`
 	Year        int                   `json:"year"`     // 0 = undefined, 1 = freshman, 2 = sophomore, 3 = junior, 4 = senior
 	PullType    int                   `json:"pullType"` // 0 = undefined, 1 = self, 2 = normal pull, 3 = lock pull, 4 = alternative pull
 	Inherited   InheritedPullPriority `json:"inherited"`
 }
 
 type InheritedPullPriority struct {
-	HasInDorm  bool `json:"hasInDorm"`
-	DrawNumber int  `json:"drawNumber"`
-	Year       int  `json:"year"` // 1 = freshman, 2 = sophomore, 3 = junior, 4 = senior
+	HasInDorm  bool    `json:"hasInDorm"`
+	DrawNumber float64 `json:"drawNumber"`
+	Year       int     `json:"year"` // 1 = freshman, 2 = sophomore, 3 = junior, 4 = senior
 }
 
 type OccupantUpdateRequest struct {

@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 	"roomdraw/backend/pkg/database"
@@ -24,7 +26,7 @@ func GetRoomsHandler(c *gin.Context) {
 	defer db.Close()
 
 	// Example SQL query
-	rows, err := db.Query("SELECT * FROM rooms")
+	rows, err := db.Query("SELECT room_uuid, dorm, dorm_name, room_id, suite_uuid, max_occupancy, current_occupancy, occupants, pull_priority, sgroup_uuid FROM rooms")
 	if err != nil {
 		// Handle query error
 		// print the error to the console
@@ -37,7 +39,7 @@ func GetRoomsHandler(c *gin.Context) {
 	var rooms []models.RoomRaw
 	for rows.Next() {
 		var d models.RoomRaw
-		if err := rows.Scan(&d.RoomUUID, &d.Dorm, &d.DormName, &d.RoomID, &d.SuiteUUID, &d.MaxOccupancy, &d.CurrentOccupancy, &d.Occupants, &d.PullPriority); err != nil {
+		if err := rows.Scan(&d.RoomUUID, &d.Dorm, &d.DormName, &d.RoomID, &d.SuiteUUID, &d.MaxOccupancy, &d.CurrentOccupancy, &d.Occupants, &d.PullPriority, &d.SGroupUUID); err != nil {
 			// Handle scan error
 			log.Println(err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Database scan failed"})
@@ -196,7 +198,7 @@ func UpdateRoomOccupants(c *gin.Context) {
 		return
 	}
 
-	occupants := request.ProposedOccupants
+	proposedOccupants := request.ProposedOccupants
 
 	db, err := database.NewDatabase()
 	if err != nil {
@@ -225,24 +227,34 @@ func UpdateRoomOccupants(c *gin.Context) {
 		}
 	}()
 
-	var roomInfo models.RoomRaw
-	err = tx.QueryRow("SELECT room_uuid, dorm, dorm_name, room_id, suite_uuid, max_occupancy, current_occupancy, occupants, pull_priority FROM rooms WHERE room_uuid = $1", roomUUIDParam).Scan(&roomInfo.RoomUUID, &roomInfo.Dorm, &roomInfo.DormName, &roomInfo.RoomID, &roomInfo.SuiteUUID, &roomInfo.MaxOccupancy, &roomInfo.CurrentOccupancy, &roomInfo.Occupants, &roomInfo.PullPriority)
+	var currentRoomInfo models.RoomRaw
+	err = tx.QueryRow("SELECT room_uuid, dorm, dorm_name, room_id, suite_uuid, max_occupancy, current_occupancy, occupants, pull_priority FROM rooms WHERE room_uuid = $1", roomUUIDParam).Scan(
+		&currentRoomInfo.RoomUUID,
+		&currentRoomInfo.Dorm,
+		&currentRoomInfo.DormName,
+		&currentRoomInfo.RoomID,
+		&currentRoomInfo.SuiteUUID,
+		&currentRoomInfo.MaxOccupancy,
+		&currentRoomInfo.CurrentOccupancy,
+		&currentRoomInfo.Occupants,
+		&currentRoomInfo.PullPriority,
+	)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to query room info from rooms table"})
 		return
 	}
 
 	// log room uuid
-	log.Println(roomInfo.RoomUUID)
+	log.Println(currentRoomInfo.RoomUUID)
 
 	// check that the proposed occupants are not more than the max occupancy
-	if len(occupants) > roomInfo.MaxOccupancy {
+	if len(proposedOccupants) > currentRoomInfo.MaxOccupancy {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Proposed occupants exceeds max occupancy"})
 		return
 	}
 
 	// check that all of the proposed occupants are not already in a room
-	for _, occupant := range occupants {
+	for _, occupant := range proposedOccupants {
 		var roomUUID uuid.UUID
 		err = tx.QueryRow("SELECT room_uuid FROM users WHERE id = $1", occupant).Scan(&roomUUID)
 		if err != nil {
@@ -251,6 +263,147 @@ func UpdateRoomOccupants(c *gin.Context) {
 		}
 		if roomUUID != uuid.Nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "One or more of the proposed occupants is already in a room"})
+			return
+		}
+	}
+
+	var proposedPullPriority models.PullPriority
+	var pullLeaderPriority models.PullPriority
+	var pullLeaderSuiteGroupUUID uuid.UUID
+	log.Println(request.PullType)
+	switch request.PullType {
+	case 1: // self pull
+		if len(proposedOccupants) > 0 {
+			log.Println("Self pull")
+			var occupantsInfo []models.UserRaw
+			rows, err := tx.Query("SELECT id, draw_number, year, in_dorm FROM users WHERE id = ANY($1)", pq.Array(proposedOccupants))
+			if err != nil {
+				// Handle query error
+				// print the error to the console
+				log.Println(err)
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Database query failed on users for pull priority"})
+				return
+			}
+			for rows.Next() {
+				var u models.UserRaw
+				if err := rows.Scan(&u.Id, &u.DrawNumber, &u.Year, &u.InDorm); err != nil {
+					// Handle scan error
+					log.Println(err)
+					c.JSON(http.StatusInternalServerError, gin.H{"error": "Database scan failed on users for pull priority"})
+					return
+				}
+				occupantsInfo = append(occupantsInfo, u)
+			}
+
+			sortedOccupants := sortUsersByPriority(occupantsInfo, currentRoomInfo.Dorm)
+
+			proposedPullPriority = generateUserPriority(sortedOccupants[0], currentRoomInfo.Dorm)
+
+			proposedPullPriority.Valid = true
+			proposedPullPriority.PullType = 1
+		} else {
+			err = clearRoom(currentRoomInfo.RoomUUID, tx)
+			if err != nil {
+				log.Println(err)
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to clear room"})
+			}
+			return
+		}
+	case 2: // normal pull
+		if len(proposedOccupants) > 0 {
+			pullLeaderRoomUUID := request.PullLeaderRoom
+			var occupantsInfo []models.UserRaw
+			rows, err := tx.Query("SELECT id, draw_number, year, in_dorm FROM users WHERE id = ANY($1)", pq.Array(proposedOccupants))
+			if err != nil {
+				log.Println(err)
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Database query failed on users for pull priority"})
+				return
+			}
+
+			for rows.Next() {
+				var u models.UserRaw
+				if err := rows.Scan(&u.Id, &u.DrawNumber, &u.Year, &u.InDorm); err != nil {
+					log.Println(err)
+					c.JSON(http.StatusInternalServerError, gin.H{"error": "Database scan failed on users for pull priority"})
+					return
+				}
+				occupantsInfo = append(occupantsInfo, u)
+			}
+
+			var suiteUUID = currentRoomInfo.SuiteUUID
+			var leaderSuiteUUID uuid.UUID
+
+			// get the pull leader's priority
+			err = tx.QueryRow("SELECT pull_priority, sgroup_uuid, suite_uuid FROM rooms WHERE room_uuid = $1", pullLeaderRoomUUID).Scan(&pullLeaderPriority, &pullLeaderSuiteGroupUUID, &leaderSuiteUUID)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to query pull leader's priority from rooms table"})
+				return
+			}
+
+			if leaderSuiteUUID != suiteUUID {
+				// error because the pull leader is not in the same suite
+				c.JSON(http.StatusBadRequest, gin.H{"error": "Pull leader is not in the same suite"})
+				return
+			}
+
+			if pullLeaderSuiteGroupUUID != uuid.Nil {
+				// inherit the suite group's priority
+				// for now throw an error because this is not implemented
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Pull leader is already in a suite group (TODO: implement this case)"})
+				return
+			}
+
+			sortedOccupants := sortUsersByPriority(occupantsInfo, currentRoomInfo.Dorm)
+
+			proposedPullPriority = generateUserPriority(sortedOccupants[0], currentRoomInfo.Dorm)
+
+			log.Println(proposedPullPriority)
+			log.Println(pullLeaderPriority)
+
+			if !comparePullPriority(pullLeaderPriority, proposedPullPriority) {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "Pull leader does not have higher priority than proposed occupants"})
+				return
+			}
+
+			proposedPullPriority.Valid = true
+			proposedPullPriority.PullType = 2
+
+			proposedPullPriority.Inherited.DrawNumber = pullLeaderPriority.DrawNumber
+			proposedPullPriority.Inherited.HasInDorm = pullLeaderPriority.HasInDorm
+			proposedPullPriority.Inherited.Year = pullLeaderPriority.Year
+		} else {
+			// error because normal pull requires at least one occupant
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Normal pull requires at least one occupant"})
+			err = errors.New("normal pull requires at least one occupant")
+			return
+		}
+	case 3: // lock pull
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Lock pull not implemented"})
+		return
+	case 4: // alternative pull
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Alternative pull not implemented"})
+		return
+	default:
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid pull type"})
+		return
+	}
+
+	log.Println(proposedPullPriority)
+	log.Print(currentRoomInfo.PullPriority)
+
+	if !comparePullPriority(proposedPullPriority, currentRoomInfo.PullPriority) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Proposed occupants do not have higher priority than current occupants"})
+		return
+	}
+
+	log.Println(proposedOccupants)
+
+	// disband the suite group if there is one
+	if currentRoomInfo.SGroupUUID != uuid.Nil {
+		_, err := disbandSuiteGroup(currentRoomInfo.SGroupUUID, tx)
+		if err != nil {
+			// use err in the response
+			c.JSON(http.StatusInternalServerError, err.Error())
 			return
 		}
 	}
@@ -270,7 +423,7 @@ func UpdateRoomOccupants(c *gin.Context) {
 	}
 
 	// update the occupants in the database and the current_occupancy
-	_, err = tx.Exec("UPDATE rooms SET occupants = $1, current_occupancy = $2 WHERE room_uuid = $3", pq.Array(occupants), len(occupants), roomUUIDParam)
+	_, err = tx.Exec("UPDATE rooms SET occupants = $1, current_occupancy = $2 WHERE room_uuid = $3", pq.Array(proposedOccupants), len(proposedOccupants), roomUUIDParam)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update proposed occupants in rooms table"})
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -278,155 +431,143 @@ func UpdateRoomOccupants(c *gin.Context) {
 	}
 
 	// for each occupant, update the room_uuid field in the users table
-	for _, occupant := range occupants {
-		_, err = tx.Exec("UPDATE users SET room_uuid = $1 WHERE id = $2", roomUUIDParam, occupant)
+	for _, proposedOccupant := range proposedOccupants {
+		_, err = tx.Exec("UPDATE users SET room_uuid = $1 WHERE id = $2", roomUUIDParam, proposedOccupant)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update room_uuid in users table"})
 			return
 		}
 	}
 
-	// calculate the new pull priority by sorting the occupants by draw number and getting the first one
-	var newPullPriority models.PullPriority
+	// update the pull_priority field in the rooms table
+	proposedPullPriorityJSON, err := json.Marshal(proposedPullPriority)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to marshal proposed pull priority"})
+		return
+	}
 
-	switch request.PullType {
-	case 1: // self pull
-		if len(occupants) > 0 {
-			var occupantsInfo []models.UserRaw
-			rows, err := tx.Query("SELECT id, draw_number, year, in_dorm FROM users WHERE id = ANY($1)", pq.Array(occupants))
-			if err != nil {
-				// Handle query error
-				// print the error to the console
-				log.Println(err)
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Database query failed on users for pull priority"})
-				return
-			}
-			for rows.Next() {
-				var u models.UserRaw
-				if err := rows.Scan(&u.Id, &u.DrawNumber, &u.Year, &u.InDorm); err != nil {
-					// Handle scan error
-					log.Println(err)
-					c.JSON(http.StatusInternalServerError, gin.H{"error": "Database scan failed on users for pull priority"})
-					return
-				}
-				occupantsInfo = append(occupantsInfo, u)
-			}
+	_, err = tx.Exec("UPDATE rooms SET pull_priority = $1 WHERE room_uuid = $2", proposedPullPriorityJSON, roomUUIDParam)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update pull_priority in rooms table"})
+		return
+	}
 
-			sortedOccupants := sortUsersByPriority(occupantsInfo, roomInfo.Dorm)
-
-			newPullPriority = generateUserPriority(sortedOccupants[0], roomInfo.Dorm)
-
-			newPullPriority.Valid = true
-			newPullPriority.PullType = 1
-
-			newPullPriorityJSON, err := json.Marshal(newPullPriority)
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to marshal new pull priority"})
-				return
-			}
-
-			_, err = tx.Exec("UPDATE rooms SET pull_priority = $1 WHERE room_uuid = $2", newPullPriorityJSON, roomUUIDParam)
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update pull priority in rooms table"})
-				return
-			}
-		} else {
-			emptyPriority := generateEmptyPriority()
-			emptyPriorityJSON, err := json.Marshal(emptyPriority)
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to marshal empty pull priority"})
-				return
-			}
-
-			_, err = tx.Exec("UPDATE rooms SET pull_priority = $1 WHERE room_uuid = $2", emptyPriorityJSON, roomUUIDParam)
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update empty pull priority in rooms table"})
-				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-				return
-			}
-		}
-	case 2: // normal pull
-		if len(occupants) > 0 {
-			pullLeaderRoomUUID := request.PullLeaderRoom
-			var occupantsInfo []models.UserRaw
-			rows, err := tx.Query("SELECT id, draw_number, year, in_dorm FROM users WHERE id = ANY($1)", pq.Array(occupants))
-			if err != nil {
-				// Handle query error
-				// print the error to the console
-				log.Println(err)
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Database query failed on users for pull priority"})
-				return
-			}
-			for rows.Next() {
-				var u models.UserRaw
-				if err := rows.Scan(&u.Id, &u.DrawNumber, &u.Year, &u.InDorm); err != nil {
-					// Handle scan error
-					log.Println(err)
-					c.JSON(http.StatusInternalServerError, gin.H{"error": "Database scan failed on users for pull priority"})
-					return
-				}
-				occupantsInfo = append(occupantsInfo, u)
-			}
-
-			var pullLeaderPriority models.PullPriority
-			// get the pull leader's priority
-			err = tx.QueryRow("SELECT pull_priority FROM rooms WHERE room_uuid = $1", pullLeaderRoomUUID).Scan(&pullLeaderPriority)
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to query pull leader's priority from rooms table"})
-				return
-			}
-
+	if request.PullType == 2 {
+		if pullLeaderSuiteGroupUUID == uuid.Nil {
+			log.Println("Pull leader is not in a suite group")
+			// create new suite group with the pull leader's priority
 			pullLeaderPriorityJSON, err := json.Marshal(pullLeaderPriority)
 			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to marshal pull leader's priority"})
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to marshal pull leader's pull priority"})
 				return
 			}
-
-			sortedOccupants := sortUsersByPriority(occupantsInfo, roomInfo.Dorm)
-
-			newPullPriority = generateUserPriority(sortedOccupants[0], roomInfo.Dorm)
-
-			newPullPriority.Valid = true
-			newPullPriority.PullType = 1
-
-			newPullPriority.Inherited.DrawNumber = pullLeaderPriority.DrawNumber
-			newPullPriority.Inherited.HasInDorm = pullLeaderPriority.HasInDorm
-			newPullPriority.Inherited.Year = pullLeaderPriority.Year
-
-			newPullPriorityJSON, err := json.Marshal(newPullPriority)
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to marshal new pull priority"})
-				return
-			}
-
-			_, err = tx.Exec("UPDATE rooms SET pull_priority = $1 WHERE room_uuid = $2", newPullPriorityJSON, roomUUIDParam)
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update pull priority in rooms table"})
-				return
-			}
-
-			// create new suite group
-			// don't need to generate new UUID, because it will be generated by the database
-			// priority is the pull leader's priority
 			var suiteGroupUUID uuid.UUID
-			err = tx.QueryRow("INSERT INTO suite_groups (sgroup_size, sgroup_name, sgroup_suite, sgroup_priority, rooms, disbanded) VALUES ($1, $2, $3, $4, $5, $6) RETURNING sgroup_uuid", len(occupants), "Suite Group", roomInfo.SuiteUUID, pullLeaderPriorityJSON, pq.Array([]uuid.UUID{roomInfo.RoomUUID, pullLeaderRoomUUID}), false).Scan(&suiteGroupUUID)
+			err = tx.QueryRow("INSERT INTO suitegroups (sgroup_size, sgroup_name, sgroup_suite, pull_priority, rooms, disbanded) VALUES ($1, $2, $3, $4, $5, $6) RETURNING sgroup_uuid",
+				2,
+				"Suite Group",
+				currentRoomInfo.SuiteUUID,
+				pullLeaderPriorityJSON,
+				pq.Array(models.UUIDArray{currentRoomInfo.RoomUUID, request.PullLeaderRoom}),
+				false,
+			).Scan(&suiteGroupUUID)
 			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to insert new suite group into suite_groups table"})
+				log.Println(err)
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to insert new suite group into suitegroups table"})
 				return
 			}
 
-			// update the suite_uuid field in the rooms table for both rooms
+			// update the sgroup_uuid field in the rooms table for both rooms
+			_, err = tx.Exec("UPDATE rooms SET sgroup_uuid = $1 WHERE room_uuid = $2 OR room_uuid = $3", suiteGroupUUID, roomUUIDParam, request.PullLeaderRoom)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update suite_uuid in rooms table"})
+				return
+			}
 
+			// update the sgroup_uuid field in the users table for all occupants of both rooms
+			_, err = tx.Exec("UPDATE users SET sgroup_uuid = $1 WHERE room_uuid = $2 OR room_uuid = $3", suiteGroupUUID, roomUUIDParam, request.PullLeaderRoom)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update sgroup_uuid in users table"})
+				return
+			}
 		} else {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Normal pull requires at least one occupant"})
+			// TODO: create new suite group with the pull leader's priority
+			// for now throw an error because this is not implemented
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Pull leader is already in a suite group (TODO: implement this case)"})
+			return
 		}
-	case 3: // lock pull
-		break
-	case 4: // alternative pull
-		break
-	default:
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid pull type"})
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Successfully updated occupants"})
+}
+
+func clearRoom(roomUUID uuid.UUID, tx *sql.Tx) error {
+	// get the suite group uuid
+	var suiteGroupUUID uuid.UUID
+	err := tx.QueryRow("SELECT sgroup_uuid FROM rooms WHERE room_uuid = $1", roomUUID).Scan(&suiteGroupUUID)
+	if err != nil {
+		return err
+	}
+	// if the room is in a suite group, disband the suite group
+	log.Println("Clearing suite group with uuid " + suiteGroupUUID.String())
+	if suiteGroupUUID != uuid.Nil {
+		_, err := disbandSuiteGroup(suiteGroupUUID, tx)
+		if err != nil {
+			return err
+		}
+	}
+
+	var defaultPullPriority models.PullPriority = generateEmptyPriority()
+	defaultPullPriorityJSON, err := json.Marshal(defaultPullPriority)
+
+	if err != nil {
+		return err
+	}
+
+	// clear the room by setting the occupants to nil and the current_occupancy to 0
+	_, err = tx.Exec("UPDATE rooms SET occupants = $1, current_occupancy = $2, pull_priority = $3 WHERE room_uuid = $4", nil, 0, defaultPullPriorityJSON, roomUUID)
+	if err != nil {
+		return err
+	}
+
+	// for each occupant, set the room_uuid field in the users table to nil
+	_, err = tx.Exec("UPDATE users SET room_uuid = $1 WHERE room_uuid = $2", nil, roomUUID)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// given a suite group uuid, disband the suite group and return the room uuids of the rooms in the suite group
+func disbandSuiteGroup(sgroupUUID uuid.UUID, tx *sql.Tx) (models.UUIDArray, error) {
+	// get the rooms in the suite group
+	var roomsInSuiteGroup models.UUIDArray
+
+	err := tx.QueryRow("SELECT rooms FROM suitegroups WHERE sgroup_uuid = $1", sgroupUUID).Scan(&roomsInSuiteGroup)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = tx.Exec("UPDATE rooms SET pull_priority = jsonb_set(pull_priority, '{inherited}', '{\"hasInDorm\": false, \"drawNumber\": 0, \"year\": 0}'::jsonb) WHERE sgroup_uuid = $1", sgroupUUID)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = tx.Exec("UPDATE rooms SET sgroup_uuid = $1 WHERE sgroup_uuid = $2", nil, sgroupUUID)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = tx.Exec("UPDATE users SET sgroup_uuid = $1 WHERE sgroup_uuid = $2", nil, sgroupUUID)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = tx.Exec("DELETE FROM suitegroups WHERE sgroup_uuid = $1", sgroupUUID)
+	if err != nil {
+		return nil, err
+	}
+
+	log.Println("Disbanded suite group with uuid " + sgroupUUID.String())
+	return roomsInSuiteGroup, nil
 }

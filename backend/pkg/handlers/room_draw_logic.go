@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"roomdraw/backend/pkg/models"
 )
 
@@ -75,6 +76,7 @@ func sortUsersByPriority(users []models.UserRaw, dormId int) []models.UserRaw {
 
 func generateEmptyPriority() models.PullPriority {
 	return models.PullPriority{
+		Valid:       false,
 		IsPreplaced: false,
 		HasInDorm:   false,
 		DrawNumber:  0,
@@ -116,5 +118,60 @@ func generateUserPriority(user models.UserRaw, dormId int) models.PullPriority {
 			DrawNumber:  user.DrawNumber,
 			Year:        yearNumber,
 		}
+	}
+}
+
+// returns if the first priority is higher than the second
+func comparePullPriority(priority1 models.PullPriority, priority2 models.PullPriority) bool {
+	if !priority1.Valid {
+		return false
+	}
+
+	if !priority2.Valid {
+		return true
+	}
+
+	if priority1.IsPreplaced && !priority2.IsPreplaced {
+		return true
+	} else if !priority1.IsPreplaced && priority2.IsPreplaced {
+		return false
+	} else if priority1.IsPreplaced && priority2.IsPreplaced {
+		return false
+	}
+
+	// check inherited to see if either has inherited priority
+	p1EffectiveDrawNumber := priority1.DrawNumber
+	p1EffectiveYear := priority1.Year
+
+	p2EffectiveDrawNumber := priority2.DrawNumber
+	p2EffectiveYear := priority2.Year
+
+	if priority1.PullType == 2 {
+		p1EffectiveDrawNumber = priority1.Inherited.DrawNumber
+		p1EffectiveYear = priority1.Inherited.Year
+	} else if priority2.PullType == 2 {
+		p2EffectiveDrawNumber = priority2.Inherited.DrawNumber
+		p2EffectiveYear = priority2.Inherited.Year
+	}
+
+	log.Println("p1EffectiveDrawNumber", p1EffectiveDrawNumber)
+	log.Println("p1EffectiveYear", p1EffectiveYear)
+	log.Println("p2EffectiveDrawNumber", p2EffectiveDrawNumber)
+	log.Println("p2EffectiveYear", p2EffectiveYear)
+
+	if priority1.Inherited.HasInDorm && p1EffectiveYear == 4 {
+		p1EffectiveYear = 5
+	}
+
+	if priority2.Inherited.HasInDorm && p2EffectiveYear == 4 {
+		p2EffectiveYear = 5
+	}
+
+	if p1EffectiveYear > p2EffectiveYear {
+		return true
+	} else if p1EffectiveYear < p2EffectiveYear {
+		return false
+	} else {
+		return p1EffectiveDrawNumber < p2EffectiveDrawNumber
 	}
 }
