@@ -6,29 +6,46 @@ import (
 	"roomdraw/backend/pkg/middleware"
 	"sync"
 
+	"time"
+
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
 	router := gin.Default()
 
-	// Initialize the request queue and mutex
+	// Configure CORS middleware options
+	corsConfig := cors.Config{
+		AllowOrigins:     []string{"http://localhost:3000"},
+		AllowMethods:     []string{"PUT", "PATCH", "GET", "POST", "DELETE"},
+		AllowHeaders:     []string{"Origin", "Authorization", "Content-Type"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		AllowOriginFunc: func(origin string) bool {
+			return origin == "http://localhost:3000"
+		},
+		MaxAge: 12 * time.Hour,
+	}
+
+	// Initialize the RWMutex and request queue
+	rwMutex := &sync.RWMutex{}
 	requestQueue := make(chan *gin.Context)
-	dbMutex := &sync.Mutex{}
 
-	// Start the request processor goroutine
-	go middleware.RequestProcessor(requestQueue, dbMutex)
+	// Start the request processor goroutine for write requests
+	go middleware.RequestProcessor(requestQueue)
 
-	// Add the QueueMiddleware to the Gin engine
-	router.Use(middleware.QueueMiddleware(requestQueue))
+	// Apply the middleware globally
+	router.Use(middleware.QueueMiddleware(rwMutex))
+	router.Use(cors.New(corsConfig))
 
-	router.GET("/rooms", handlers.GetRoomsHandler)
-	router.GET("/rooms/simple/:dormName", handlers.GetSimpleFormattedDorm)
-	router.PATCH("/rooms/:roomuuid", handlers.UpdateRoomOccupants)
+	// Define your routes
+	router.GET("/rooms", handlers.GetRoomsHandler)                         // Read
+	router.GET("/rooms/simple/:dormName", handlers.GetSimpleFormattedDorm) // Read
+	router.PATCH("/rooms/:roomuuid", handlers.UpdateRoomOccupants)         // Write
+	router.GET("/users", handlers.GetUsers)                                // Read
+	router.GET("/users/idmap", handlers.GetUsersIdMap)                     // Read
 
-	router.GET("/users", handlers.GetUsers)
-	router.GET("/users/idmap", handlers.GetUsersIdMap)
-	router.GET("/users/:userid", handlers.GetUser)
-
-	router.Run(config.ServerAddress) // Start server
+	// Start the server
+	router.Run(config.ServerAddress)
 }

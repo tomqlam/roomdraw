@@ -60,7 +60,6 @@ func GetSimpleFormattedDorm(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to connect to database"})
 		return
 	}
-	defer db.Close()
 
 	// Start a transaction
 	tx, err := db.Begin()
@@ -79,6 +78,7 @@ func GetSimpleFormattedDorm(c *gin.Context) {
 		} else {
 			err = tx.Commit()
 		}
+		db.Close()
 	}()
 
 	rows, err := db.Query("SELECT room_uuid, dorm, dorm_name, room_id, suite_uuid, max_occupancy, current_occupancy, occupants, pull_priority FROM rooms WHERE UPPER(dorm_name) = UPPER($1)", dormNameParam)
@@ -206,7 +206,6 @@ func UpdateRoomOccupants(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to connect to database"})
 		return
 	}
-	defer db.Close()
 
 	// Start a transaction
 	tx, err := db.Begin()
@@ -225,6 +224,7 @@ func UpdateRoomOccupants(c *gin.Context) {
 		} else {
 			err = tx.Commit()
 		}
+		db.Close()
 	}()
 
 	var currentRoomInfo models.RoomRaw
@@ -310,7 +310,12 @@ func UpdateRoomOccupants(c *gin.Context) {
 			return
 		}
 	case 2: // normal pull
-		if len(proposedOccupants) > 0 {
+		if currentRoomInfo.MaxOccupancy > 1 {
+			// error because normal pull is not allowed for rooms with max occupancy > 1
+			c.JSON(http.StatusBadRequest, gin.H{"error": "You may only initiate a normal pull for singles"})
+			err = errors.New("normal pull is not allowed for rooms with max occupancy > 1")
+			return
+		} else if currentRoomInfo.MaxOccupancy == 1 {
 			pullLeaderRoomUUID := request.PullLeaderRoom
 			var occupantsInfo []models.UserRaw
 			rows, err := tx.Query("SELECT id, draw_number, year, in_dorm FROM users WHERE id = ANY($1)", pq.Array(proposedOccupants))
@@ -332,9 +337,10 @@ func UpdateRoomOccupants(c *gin.Context) {
 
 			var suiteUUID = currentRoomInfo.SuiteUUID
 			var leaderSuiteUUID uuid.UUID
+			var pullLeaderCurrentOccupancy int
 
 			// get the pull leader's priority
-			err = tx.QueryRow("SELECT pull_priority, sgroup_uuid, suite_uuid FROM rooms WHERE room_uuid = $1", pullLeaderRoomUUID).Scan(&pullLeaderPriority, &pullLeaderSuiteGroupUUID, &leaderSuiteUUID)
+			err = tx.QueryRow("SELECT pull_priority, sgroup_uuid, suite_uuid, current_occupancy FROM rooms WHERE room_uuid = $1", pullLeaderRoomUUID).Scan(&pullLeaderPriority, &pullLeaderSuiteGroupUUID, &leaderSuiteUUID, &pullLeaderCurrentOccupancy)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to query pull leader's priority from rooms table"})
 				return
@@ -343,6 +349,14 @@ func UpdateRoomOccupants(c *gin.Context) {
 			if leaderSuiteUUID != suiteUUID {
 				// error because the pull leader is not in the same suite
 				c.JSON(http.StatusBadRequest, gin.H{"error": "Pull leader is not in the same suite"})
+				// err = errors.New("pull leader is not in the same suite")
+				return
+			}
+
+			if pullLeaderCurrentOccupancy != 1 {
+				// error because the pull leader is not in a single
+				c.JSON(http.StatusBadRequest, gin.H{"error": "You can only initiate a normal pull with a single"})
+				// err = errors.New("pull leader is not in a single")
 				return
 			}
 
@@ -350,6 +364,7 @@ func UpdateRoomOccupants(c *gin.Context) {
 				// inherit the suite group's priority
 				// for now throw an error because this is not implemented
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Pull leader is already in a suite group (TODO: implement this case)"})
+				// err = errors.New("pull leader is already in a suite group (TODO: implement this case)")
 				return
 			}
 
@@ -384,7 +399,7 @@ func UpdateRoomOccupants(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Alternative pull not implemented"})
 		return
 	default:
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid pull type"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid pull type: " + string(rune(request.PullType))})
 		return
 	}
 
