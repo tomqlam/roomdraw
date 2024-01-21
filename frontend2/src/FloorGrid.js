@@ -5,16 +5,22 @@ import { MyContext } from './MyContext';
 import 'bulma/css/bulma.min.css';
 import BumpModal from './BumpModal';
 
-function FloorGrid({ cellColors, gridData, updateGridData }) {
+function FloorGrid({ gridData }) {
   // Define your data structure with columns
-  const { isModalOpen, setIsModalOpen } = useContext(MyContext);
-  const { selectedItem, setSelectedItem } = useContext(MyContext);
-  const { selectedOccupants, setSelectedOccupants } = useContext(MyContext);
-  const { onlyShowBumpableRooms, setOnlyShowBumpableRooms } = useContext(MyContext);
-  const { userMap } = useContext(MyContext);
-  const { getNameById } = useContext(MyContext);
-  const { selectedRoomObject, setSelectedRoomObject } = useContext(MyContext);
-  const { pullMethod, setPullMethod } = useContext(MyContext);
+  const {
+    setIsModalOpen,
+    setSelectedItem,
+    selectedOccupants,
+    setSelectedOccupants,
+    getNameById,
+    setSelectedRoomObject,
+    setPullMethod,
+    cellColors,
+    selectedID,
+    setSelectedID,
+    onlyShowUnbumpableRooms,
+    userMap
+  } = useContext(MyContext);
 
 
   function getOccupantsByRoomNumber(roomNumber) {
@@ -56,6 +62,36 @@ function FloorGrid({ cellColors, gridData, updateGridData }) {
     color: '#000000',
 
   };
+
+  function darken(color, factor) {
+    const f = parseInt(factor, 10) || 0;
+    const RGB = color.substring(1).match(/.{2}/g);
+    const newColor = RGB.map((c) => {
+      const hex = Math.max(0, Math.min(255, parseInt(c, 16) - f)).toString(16);
+      return hex.length === 1 ? `0${hex}` : hex;
+    });
+    return `#${newColor.join('')}`;
+  }
+  
+  const getGridItemStyle = (occupancy, maxOccupancy, suiteIndex, pullPriority) => {
+    if (occupancy < maxOccupancy){
+      return {
+        ...gridItemStyle,
+        backgroundColor: cellColors.unbumpableRoom
+      };
+    }
+    let backgroundColor = (suiteIndex % 2 === 0 ? cellColors.evenSuite : cellColors.oddSuite);
+    
+    if (!checkBumpable(pullPriority) && onlyShowUnbumpableRooms) {
+      backgroundColor = darken(backgroundColor, 100); // darken the color by 10%
+    }
+  
+    return {
+      ...gridItemStyle,
+      backgroundColor
+    };
+  };
+
   const roomNumberStyle = {
     ...gridItemStyle,
     backgroundColor: cellColors.roomNumber, // Change the color to your desired color
@@ -65,12 +101,13 @@ function FloorGrid({ cellColors, gridData, updateGridData }) {
     backgroundColor: cellColors.pullMethod, // Change the color to your desired color
   };
   const handleCellClick = (roomNumber) => {
+    setIsModalOpen(true);
     setSelectedItem(roomNumber);
     setSelectedOccupants(getOccupantsByRoomNumber(roomNumber));
     console.log(selectedOccupants);
     console.log('lol');
     setPullMethod("");
-    setIsModalOpen(true);
+
   };
 
   function getPullMethodByRoomNumber(roomNumber) {
@@ -86,15 +123,33 @@ function FloorGrid({ cellColors, gridData, updateGridData }) {
           return "Preplaced";
         }
         if (room.pullPriority.hasInDorm) {
-          return `In-Dorm ${room.pullPriority.year} ${room.pullPriority.drawNumber}`;
+          return `In-Dorm ${room.pullPriority.drawNumber}`;
         }
-        return `${room.pullPriority.year} ${room.pullPriority.drawNumber}`;
+        const yearMapping = ["", "", "Sophomore", "Junior", "Senior"];
+        return `${yearMapping[room.pullPriority.year]} ${room.pullPriority.drawNumber !== 0 ? room.pullPriority.drawNumber : ''}`;
 
       }
     }
 
     // If the room does not exist in any suite, return an empty array
     return 'n/a';
+  }
+
+  const checkBumpable = (pullPriority) => {
+    if (!pullPriority.valid)  {
+      return true;
+    }
+    if (pullPriority.isPreplaced) {
+      return false;
+    }
+    if (pullPriority.hasInDorm) {
+      if (!userMap[selectedID].InDorm) {
+        return false;
+      }
+    }
+    // just compare the numbers
+    return userMap[selectedID].DrawNumber <= pullPriority.drawNumber;
+
   }
 
 
@@ -121,24 +176,16 @@ function FloorGrid({ cellColors, gridData, updateGridData }) {
       <div style={roomNumberStyle}><strong>Occupant 4</strong></div>
 
       {gridData.suites.map((suite, suiteIndex) => (
-        suite.rooms.map((room, roomIndex) => (
+        suite.rooms.sort((a, b) => Number(a.roomNumber) - Number(b.roomNumber))  // Sort the rooms by room number
+        .map((room, roomIndex) => (
           <React.Fragment key={roomIndex}>
             <div
-              style={{
-                ...roomNumberStyle,
-                backgroundColor: suiteIndex % 2 === 0
-                  ? cellColors.evenSuite // color for even suiteIndex
-                  : cellColors.oddSuite // color for odd suiteIndex
-              }}
+              style={getGridItemStyle(room.maxOccupancy, 1, suiteIndex, room.pullPriority)}
               onClick={() => handleCellClick(room.roomNumber)}
             >
               {room.roomNumber}
             </div>
-            <div style={{
-              ...pullMethodStyle, backgroundColor: suiteIndex % 2 === 0
-                ? cellColors.evenSuite // color for even suiteIndex
-                : cellColors.oddSuite
-            }} onClick={() => handleCellClick(room.roomNumber)}>{getPullMethodByRoomNumber(room.roomNumber)}</div>
+            <div style={getGridItemStyle(room.maxOccupancy, 1, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{getPullMethodByRoomNumber(room.roomNumber)}</div>
             {
               roomIndex === 0
               && <div style={{
@@ -148,19 +195,10 @@ function FloorGrid({ cellColors, gridData, updateGridData }) {
               }} >Insert suite name</div>
 
             }
-            <div style={{...gridItemStyle, backgroundColor: suiteIndex % 2 === 0 ? cellColors.evenSuite : cellColors.oddSuite}} onClick={() => handleCellClick(room.roomNumber)}>{getNameById(room.occupant1)}</div>
-            <div style={{
-              ...gridItemStyle,
-              backgroundColor: room.maxOccupancy >= 2 ? (suiteIndex % 2 === 0 ? cellColors.evenSuite : cellColors.oddSuite) : cellColors.unbumpableRoom // Change the colors as per your requirement
-            }} onClick={() => handleCellClick(room.roomNumber)}>{getNameById(room.occupant2)}</div>
-            <div style={{
-              ...gridItemStyle,
-              backgroundColor: room.maxOccupancy >= 3 ? (suiteIndex % 2 === 0 ? cellColors.evenSuite : cellColors.oddSuite) : cellColors.unbumpableRoom // Change the colors as per your requirement
-            }} onClick={() => handleCellClick(room.roomNumber)}>{getNameById(room.occupant3)}</div>
-            {<div style={{
-              ...gridItemStyle,
-              backgroundColor: room.maxOccupancy >= 4 ? (suiteIndex % 2 === 0 ? cellColors.evenSuite : cellColors.oddSuite) : cellColors.unbumpableRoom // Change the colors as per your requirement
-            }} onClick={() => handleCellClick(room.roomNumber)}>{getNameById(room.occupant4)}</div>}
+            <div style={getGridItemStyle(room.maxOccupancy, 1, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{getNameById(room.occupant1)}</div>
+            <div style={getGridItemStyle(room.maxOccupancy, 2, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{getNameById(room.occupant2)}</div>
+            <div style={getGridItemStyle(room.maxOccupancy, 3, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{getNameById(room.occupant3)}</div>
+            <div style={getGridItemStyle(room.maxOccupancy, 4, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{getNameById(room.occupant4)}</div>
 
           </React.Fragment>
         ))
@@ -179,7 +217,6 @@ function FloorGrid({ cellColors, gridData, updateGridData }) {
           <div style={gridItemStyle} onClick={() => handleCellClick(item.roomNumber)}>{item.occupant3}</div>
         </React.Fragment>
       ))} */}
-      {isModalOpen && <BumpModal updateGridData={updateGridData} />}
     </div>
 
   );

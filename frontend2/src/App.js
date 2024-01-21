@@ -7,35 +7,39 @@ import Recommendations from './Recommendations';
 import { MyContext } from './MyContext';
 
 function App() {
-  const { currPage, setCurrPage } = useContext(MyContext);
-  const { gridData, setGridData } = useContext(MyContext);
-  const {userMap, setUserMap} = useContext(MyContext);
-  const {dormMapping} = useContext(MyContext);
-  const { onlyShowBumpableRooms, setOnlyShowBumpableRooms } = useContext(MyContext);
+  const {
+    currPage,
+    setCurrPage,
+    gridData,
+    setGridData,
+    userMap,
+    isModalOpen,
+    // setUserMap,
+    dormMapping,
+    onlyShowBumpableRooms,
+    setOnlyShowBumpableRooms,
+    getNameById,
+    // cellColors
+    selectedID,
+    setSelectedID,
+    rooms,
+  } = useContext(MyContext);
+
   const [showNotification, setShowNotification] = useState(false);
-  const { getNameById } = useContext(MyContext);
+
 
 
   const handleDeleteClick = () => {
     setShowNotification(false);
   };
 
-  const cellColors = {
-    unbumpableRoom: "black",
-    roomNumber: "#ffd6ff",
-    occupants: "#ffc8dd",
-    pullMethod: "#ffbbf2",
-    evenSuite: "#ffc8dd",
-    oddSuite: "#ffbbf2",
 
-  }
   // const tabs = ["Atwood", "East", "Drinkward", "Linde", "North", "South", "Sontag", "West", "Case"]
   // const { drawNumbers } = useContext(MyContext);
 
 
 
 
-  const [selectedID, setSelectedID] = useState(8);
   const [activeTab, setActiveTab] = useState('Atwood');
 
   const handleNameChange = (event) => {
@@ -67,6 +71,11 @@ function App() {
 
   function getDrawNumberAndYear(id) {
     // Find the drawNumber object with the given full name
+    if (!userMap) {
+      return "Loading...";
+    }
+
+    // console.log(userMap[id]);
     if (userMap[id].InDorm !== 0) {
       // has in dorm
       return `${userMap[id].Year.charAt(0).toUpperCase() + userMap[id].Year.slice(1)} ${userMap[id].DrawNumber} ${dormMapping[userMap[id].InDorm]}`;
@@ -82,8 +91,36 @@ function App() {
   const getRoom = (name) => {
     // given a name, get the room and dorm that they are in 
     // handle case with no room yet
-    return "[TODO Placeholder for " + name + "'s room number]";
+    if (!rooms) {
+      return "";
+    }
+    if (rooms) {
+      for (let room of rooms) {
+        console.log(room.Occupants);
+        console.log(selectedID);
+
+        if (room.Occupants && room.Occupants.includes(selectedID)) {
+          return `You are in ${room.DormName} ${room.RoomID}`;
+        }
+      }
+      return "You are not in a room yet.";
+    }
+
   }
+  // fetch('/users/idmap')
+  //         .then(res => {
+  //             console.log(res);
+  //             console.log("just printed");
+  //             return res.json();  // Parse the response data as JSON
+  //         })
+  //         .then(data => {
+  //             console.log(data);
+  //             console.log("success");
+  //             setUserMap(data);
+  //         })
+  //         .catch(err => {
+  //             console.log(err);
+  //         })
 
 
 
@@ -149,6 +186,7 @@ function App() {
           </div>
         </div>
       </nav>
+      {isModalOpen && <BumpModal />}
       {showNotification && (<div class="notification is-primary m-2">
         <button onClick={handleDeleteClick} class="delete "></button>
         Your room status has been updated. Please check that everything is still the way you'd like it to be!
@@ -157,43 +195,55 @@ function App() {
         <div style={{ textAlign: 'center' }}>
 
           <h1 className="title">Welcome back, <strong>{getNameById(selectedID)}</strong>. <br /> </h1>
-          <h2 className="subtitle">You are <strong>{getDrawNumberAndYear(selectedID)}</strong>. You are currently in <strong>{getRoom(selectedID)}</strong>. <br />Click on any room you'd like to change!</h2>
+          <h2 className="subtitle">You are <strong>{getDrawNumberAndYear(selectedID)}</strong>. {getRoom(selectedID)} <br />Click on any room you'd like to change!</h2>
 
           <div style={{ display: 'flex', justifyContent: 'center' }}>
             <select className="select" onChange={handleNameChange}>
               <option value="">This isn't me</option>
-              {Object.keys(userMap).map((key, index) => (
-                <option key={index} value={key}>
-                  {userMap[key].FirstName} {userMap[key].LastName} 
-                </option>
-              ))}
+              {userMap && Object.keys(userMap)
+                .sort((a, b) => {
+                  const nameA = `${userMap[a].FirstName} ${userMap[a].LastName}`.toUpperCase();
+                  const nameB = `${userMap[b].FirstName} ${userMap[b].LastName}`.toUpperCase();
+                  if (nameA < nameB) {
+                    return -1;
+                  }
+                  if (nameA > nameB) {
+                    return 1;
+                  }
+                  return 0;
+                })
+                .map((key, index) => (
+                  <option key={index} value={key}>
+                    {userMap[key].FirstName} {userMap[key].LastName}
+                  </option>
+                ))}
             </select>
           </div>
-          
+
         </div>
 
       </section>
 
       {currPage == "Home" && <section class="section">
-      <label className="checkbox" style={{ display: 'flex', alignItems: 'center' }}>
-  <input
-    type="checkbox"
-    checked={onlyShowBumpableRooms}
-    onChange={() => setOnlyShowBumpableRooms(!onlyShowBumpableRooms)}
-  />
-  <span style={{ marginLeft: '0.5rem' }}>Only show bumpable rooms</span>
-</label>
-        
+        <label className="checkbox" style={{ display: 'flex', alignItems: 'center' }}>
+          <input
+            type="checkbox"
+            checked={onlyShowBumpableRooms}
+            onChange={() => setOnlyShowBumpableRooms(!onlyShowBumpableRooms)}
+          />
+          <span style={{ marginLeft: '0.5rem' }}>Darken rooms I can't pull</span>
+        </label>
+
         <div className="tabs is-centered">
           <ul>
-            
+
             {gridData.map((dorm) => (
               <li
                 key={dorm.dormName}
                 className={activeTab === dorm.dormName ? 'is-active' : ''}
                 onClick={() => handleTabClick(dorm.dormName)}
               >
-                
+
                 <a>{dorm.dormName}</a>
               </li>
             ))}
@@ -202,21 +252,21 @@ function App() {
 
         {/* Left column is room draw, right side is tips */}
         <div class="columns">
-          
+
           <div class="column">
             {gridData.map((dorm) => (
 
               <div key={dorm.dormName} className={activeTab === dorm.dormName ? '' : 'is-hidden'}>
 
-                {dorm.floors.filter((floor) => floor.floorNumber % 2 === 0).map((floor, floorIndex) => (
-                  <div style={{ paddingBottom: 20 }} className="container" key={floorIndex}>
-
-                    <h2 class="subtitle has-text-centered">Floor {floor.floorNumber + 1}</h2>
-                    <ul>
-                      <FloorGrid cellColors={cellColors} gridData={floor} updateGridData={updateGridData} />
-                    </ul>
-                  </div>
-                ))}
+                {dorm.floors
+                  .filter((floor) => floor.floorNumber % 2 === 0)
+                  .sort((a, b) => Number(a.floorNumber) - Number(b.floorNumber))  // Convert to numbers before comparing
+                  .map((floor, floorIndex) => (
+                    <div style={{ paddingBottom: 20 }} className="container" key={floorIndex}>
+                      <h2 class="subtitle has-text-centered">Floor {floor.floorNumber + 1}</h2>
+                      <FloorGrid gridData={floor} />
+                    </div>
+                  ))}
               </div>
             ))}
           </div>
@@ -225,15 +275,15 @@ function App() {
 
               <div key={dorm.dormName} className={activeTab === dorm.dormName ? '' : 'is-hidden'}>
 
-                {dorm.floors.filter((floor) => floor.floorNumber % 2 !== 0).map((floor, floorIndex) => (
-                  <div style={{ paddingBottom: 20 }} className="container" key={floorIndex}>
-
-                    <h2 class="subtitle has-text-centered">Floor {floor.floorNumber + 1}</h2>
-                    <ul>
-                      <FloorGrid cellColors={cellColors} gridData={floor} updateGridData={updateGridData} />
-                    </ul>
-                  </div>
-                ))}
+                {dorm.floors
+                  .filter((floor) => floor.floorNumber % 2 !== 0)
+                  .sort((a, b) => Number(a.floorNumber) - Number(b.floorNumber))  // Convert to numbers before comparing
+                  .map((floor, floorIndex) => (
+                    <div style={{ paddingBottom: 20 }} className="container" key={floorIndex}>
+                      <h2 class="subtitle has-text-centered">Floor {floor.floorNumber + 1}</h2>
+                      <FloorGrid gridData={floor} />
+                    </div>
+                  ))}
               </div>
             ))}
           </div>

@@ -1,4 +1,4 @@
-import React, { createContext, useState } from 'react';
+import React, { createContext, useState, useEffect } from 'react';
 import usersJson from './mock_data/users.json';
 import usersMap from './mock_data/users_map.json';
 import atwoodJson from './mock_data/atwood.json';
@@ -17,16 +17,79 @@ export const MyContext = createContext();
 export const MyContextProvider = ({ children }) => {
     const [currPage, setCurrPage] = useState('Home');
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [rooms, setRooms] = useState([]);
     //const [closeModalAction, setCloseModalAction] = useState(console.log("Hello"));
     const [selectedItem, setSelectedItem] = useState(null);
     const [selectedOccupants, setSelectedOccupants] = useState(['', '', '', '']);
     const [pullMethod, setPullMethod] = useState('');
     const [showModalError, setShowModalError] = useState(false);
     const [onlyShowBumpableRooms, setOnlyShowBumpableRooms] = useState(false);
-    const [gridData, setGridData] = useState([atwoodJson, eastJson, drinkwardJson, lindeJson, northJson, southJson, sontagJson, westJson, caseJson]);
+    const [gridData, setGridData] = useState([]);
     const [users, setUsers] = useState(usersJson);
-    const [userMap, setUserMap] = useState(usersMap);
+    const [userMap, setUserMap] = useState(null);
     const [selectedRoomObject, setSelectedRoomObject] = useState(null);
+    const [refreshKey, setRefreshKey] = useState(0);
+    const [pullError, setPullError] = useState("There was an unknown error. Please try again.");
+    const [selectedID, setSelectedID] = useState(8);
+
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            fetch('/users/idmap')
+                .then(res => {
+                    return res.json();  // Parse the response data as JSON
+                })
+                .then(data => {
+
+                    setUserMap(data);
+                })
+                .catch(err => {
+                    console.log(err);
+                })
+            // getting the main page floor grid data
+            fetchRoomsForDorms(["Atwood", "East", "Drinkward", "Linde", "North", "South", "Sontag", "West", "Case"]);
+            // getting the room data for uuid mapping
+            fetchRoomsWithUUIDs();
+        }, 1000);  // Delay of 1 second
+    
+        // Clean up function
+        return () => clearTimeout(timer);
+    }, [refreshKey]);
+
+    function fetchRoomsWithUUIDs() {
+        fetch('/rooms')
+            .then(res => {
+                return res.json();  // Parse the response data as JSON
+            })
+            .then(data => {
+                setRooms(data);
+            })
+            .catch(err => {
+                console.log(err);
+            })
+        }
+
+    function fetchRoomsForDorms(dorms) {
+        const promises = dorms.map(dorm => {
+            return fetch(`/rooms/simple/${dorm}`)
+                .then(res => res.json())  // Parse the response data as JSON
+                .catch(err => {
+                    console.error(`Error fetching rooms for ${dorm}:`, err);
+                });
+        });
+    
+        Promise.all(promises)
+            .then(dataArray => {
+                console.log(dataArray);  // Array of data from all fetch operations
+                setGridData(dataArray);
+                console.log(gridData);
+                // Do something with dataArray here
+            })
+            .catch(err => {
+                console.error("Error in Promise.all:", err);
+            });
+    }
+
 
     // const [gridData, setGridData] = useState([
     //     {
@@ -86,24 +149,6 @@ export const MyContextProvider = ({ children }) => {
     //         ]
     //     },
     // ])
-    const drawNumbers = [
-        { name: 'Kai Rajesh', drawNumber: 'Senior 2 East' },
-        { name: 'Andres Rivas', drawNumber: 'Senior 3 Atwood' },
-        { name: 'Mehek Mehra', drawNumber: 'Senior 4 Atwood' },
-        { name: 'Julia Du', drawNumber: 'Senior 5 South' },
-        { name: 'James Nicholson', drawNumber: 'Senior 6 East' },
-        { name: 'Sophie Bekerman', drawNumber: 'Senior 7 Linde' },
-        { name: 'Amy Liu', drawNumber: 'Senior 8 Atwood' },
-        { name: 'Becca Verghese', drawNumber: 'Senior 9 Drinkward' },
-        { name: 'Luke Stemple', drawNumber: 'Senior 10 East' },
-        { name: 'Elijah Adamson', drawNumber: 'Senior 11 Linde' },
-        { name: 'Toby Anderson', drawNumber: 'Senior 12 Sontag' },
-        { name: 'Helen Chen', drawNumber: 'Senior 13 Atwood' },
-        { name: 'Kevin Box', drawNumber: 'Senior 14 North' },
-        { name: 'Tanvi Krishnan', drawNumber: 'Senior 15 Sontag' },
-        { name: 'Eli Pregerson', drawNumber: 'Senior 16 Linde' },
-        { name: 'Kaeshav Danesh', drawNumber: 'Senior 17 Sontag' },
-      ];
       const dormMapping = {
         "1": "East",
         "2": "North",
@@ -116,12 +161,21 @@ export const MyContextProvider = ({ children }) => {
         "9": "Linde",
         "10": "Garrett House"
     };
+    const cellColors = {
+        unbumpableRoom: "black",
+        roomNumber: "#ffd6ff",
+        occupants: "#ffc8dd",
+        pullMethod: "#ffbbf2",
+        evenSuite: "#ffc8dd",
+        oddSuite: "#ffbbf2",
+    
+      };
 
     //   const [data, setData] = useState('Initial data');
     //   const [count, setCount] = useState(0);
     //   const [isLoggedIn, setIsLoggedIn] = useState(false);
     const getNameById = (id) => {  
-        if (id) {
+        if (id && userMap) {
             id = id.toString();
             if (userMap[id] === undefined) {
                 return 'Empty';
@@ -134,6 +188,8 @@ export const MyContextProvider = ({ children }) => {
 
     const sharedData = {
         currPage,
+        refreshKey,
+        setRefreshKey,
         setCurrPage,
         isModalOpen,
         setIsModalOpen,
@@ -147,7 +203,6 @@ export const MyContextProvider = ({ children }) => {
         setPullMethod,
         showModalError,
         setShowModalError,
-        drawNumbers,
         onlyShowBumpableRooms,
         setOnlyShowBumpableRooms,   
         userMap,
@@ -155,6 +210,12 @@ export const MyContextProvider = ({ children }) => {
         getNameById,
         selectedRoomObject,
         setSelectedRoomObject,
+        cellColors,
+        rooms,
+        pullError,
+        setPullError,
+        selectedID,
+        setSelectedID,
         // data,
         // setData,
         // count,

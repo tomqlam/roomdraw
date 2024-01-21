@@ -3,7 +3,6 @@ import { MyContext } from './MyContext';
 import BumpModal from './BumpModal';
 
 const Recommendations = () => {
-    const {currPage, setCurrPage} = useContext(MyContext);
     const {isModalOpen, setIsModalOpen} = useContext(MyContext);
 
     const dorms = ["Atwood", "East", "Drinkward", "Linde", "North", "South", "Sontag", "West", "Case"]
