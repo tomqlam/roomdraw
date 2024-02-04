@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import 'bulma/css/bulma.min.css';
 import BumpModal from './BumpModal';
 import { useState, useContext } from 'react';
@@ -24,6 +24,31 @@ function App() {
   } = useContext(MyContext);
 
   const [showNotification, setShowNotification] = useState(false);
+  const [myRoom, setMyRoom] = useState("Bruh");
+
+
+  useEffect(() => {
+    if (!rooms) {
+      return "";
+    }
+    if (rooms) {
+      for (let room of rooms) {
+        // console.log(`Comparing ${room.Occupants} with ${selectedID}`);
+
+        if (room.Occupants && room.Occupants.includes(Number(selectedID))) {
+        // console.log(`Comparing ${room.Occupants} with ${selectedID}`);
+
+        
+        setMyRoom(`You are in ${room.DormName} ${room.RoomID}.`);
+        return;
+        }
+      }
+      setMyRoom("You are not in a room yet.");
+
+      
+    }
+  }, [selectedID, rooms]);
+
 
 
 
@@ -86,23 +111,7 @@ function App() {
   //   return foundItem ? foundItem.drawNumber : null;
   // }
 
-  const getRoom = (name) => {
-    // given a name, get the room and dorm that they are in 
-    // handle case with no room yet
-    if (!rooms) {
-      return "";
-    }
-    if (rooms) {
-      for (let room of rooms) {
-
-        if (room.Occupants && room.Occupants.includes(selectedID)) {
-          return `You are in ${room.DormName} ${room.RoomID}.`;
-        }
-      }
-      return "You are not in a room yet.";
-    }
-
-  }
+  
   // fetch('/users/idmap')
   //         .then(res => {
   //             console.log(res);
@@ -191,7 +200,7 @@ function App() {
         <div style={{ textAlign: 'center' }}>
 
           <h1 className="title">Welcome back, <strong>{getNameById(selectedID)}</strong>. <br /> </h1>
-          <h2 className="subtitle">You are <strong>{getDrawNumberAndYear(selectedID)}</strong>. {getRoom(selectedID)} <br />Click on any room you'd like to change!</h2>
+          <h2 className="subtitle">You are <strong>{getDrawNumberAndYear(selectedID)}</strong>. {myRoom} <br />Click on any room you'd like to change!</h2>
 
           <div style={{ display: 'flex', justifyContent: 'center' }}>
             <select className="select" onChange={handleNameChange}>
