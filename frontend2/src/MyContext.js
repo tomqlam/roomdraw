@@ -21,7 +21,7 @@ export const MyContextProvider = ({ children }) => {
     //const [closeModalAction, setCloseModalAction] = useState(console.log("Hello"));
     const [selectedItem, setSelectedItem] = useState(null);
     const [selectedOccupants, setSelectedOccupants] = useState(['', '', '', '']);
-    const [pullMethod, setPullMethod] = useState('');
+    const [pullMethod, setPullMethod] = useState('Select a pull method');
     const [showModalError, setShowModalError] = useState(false);
     const [onlyShowBumpableRooms, setOnlyShowBumpableRooms] = useState(false);
     const [gridData, setGridData] = useState([]);
@@ -50,7 +50,7 @@ export const MyContextProvider = ({ children }) => {
             fetchRoomsForDorms(["Atwood", "East", "Drinkward", "Linde", "North", "South", "Sontag", "West", "Case"]);
             // getting the room data for uuid mapping
             fetchRoomsWithUUIDs();
-        }, 1000);  // Delay of 1 second
+        }, 500);  // Delay of 1 second
     
         // Clean up function
         return () => clearTimeout(timer);

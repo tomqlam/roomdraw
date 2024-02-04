@@ -14,12 +14,10 @@ function App() {
     setGridData,
     userMap,
     isModalOpen,
-    // setUserMap,
     dormMapping,
     onlyShowBumpableRooms,
     setOnlyShowBumpableRooms,
     getNameById,
-    // cellColors
     selectedID,
     setSelectedID,
     rooms,
@@ -96,11 +94,9 @@ function App() {
     }
     if (rooms) {
       for (let room of rooms) {
-        console.log(room.Occupants);
-        console.log(selectedID);
 
         if (room.Occupants && room.Occupants.includes(selectedID)) {
-          return `You are in ${room.DormName} ${room.RoomID}`;
+          return `You are in ${room.DormName} ${room.RoomID}.`;
         }
       }
       return "You are not in a room yet.";

@@ -22,7 +22,9 @@ function BumpModal() {
     setPullError,
     // setSelectedRoomObject
   } = useContext(MyContext);
+
   const handlePullMethodChange = (e) => {
+    console.log(pullMethod);
     setPullMethod(e.target.value);
   };
   const closeModal = () => {
@@ -90,16 +92,19 @@ function BumpModal() {
           resolve(false);  // Resolve the Promise with false
         } else {
           console.log("empty ? room");
+          console.log("setting refresh key");
+          setRefreshKey(refreshKey+1);
           resolve(true);  // Resolve the Promise with true
         }
       })
       .catch((error) => {
         console.log("hello");
         console.error(error.error);
+        console.log("setting refresh key");
+        setRefreshKey(refreshKey+1);
         resolve(true);  // Resolve the Promise with false
       });
-      console.log("setting refresh key");
-      setRefreshKey(refreshKey+1);
+      
     });
   }
 
@@ -126,11 +131,17 @@ function BumpModal() {
 
                     <option value="">Select an occupant</option>
 
-                    {userMap && Object.keys(userMap).map((key, index) => (
-                      <option key={index} value={key}>
-                        {userMap[key].FirstName} {userMap[key].LastName}
-                      </option>
-                    ))}
+                    {userMap && Object.keys(userMap)
+  .sort((a, b) => {
+    const nameA = `${userMap[a].FirstName} ${userMap[a].LastName}`;
+    const nameB = `${userMap[b].FirstName} ${userMap[b].LastName}`;
+    return nameA.localeCompare(nameB);
+  })
+  .map((key, index) => (
+    <option key={index} value={key}>
+      {userMap[key].FirstName} {userMap[key].LastName}
+    </option>
+))}
 
                   </select>
                 </div>
@@ -143,11 +154,11 @@ function BumpModal() {
           ))}
           <label className="label" >How did you pull this room?</label>
           <div className="select">
-            <select>
-              <option value="">Select a pull method</option>
-              <option value="">Pulled themselves</option>
+            <select value={pullMethod} onChange={handlePullMethodChange}>
+              <option value="Select a pull method">Select a pull method</option>
+              <option value="Pulled themselves">Pulled themselves</option>
               <option value="">Pulled by [todo insert name]</option>
-              <option value="">Lock Pull</option>
+              <option value="Lock Pull">Lock Pull</option>
             </select>
           </div>
 

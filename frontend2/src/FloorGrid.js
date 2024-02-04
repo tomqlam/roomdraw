@@ -18,7 +18,7 @@ function FloorGrid({ gridData }) {
     cellColors,
     selectedID,
     setSelectedID,
-    onlyShowUnbumpableRooms,
+    onlyShowBumpableRooms,
     userMap
   } = useContext(MyContext);
 
@@ -82,7 +82,7 @@ function FloorGrid({ gridData }) {
     }
     let backgroundColor = (suiteIndex % 2 === 0 ? cellColors.evenSuite : cellColors.oddSuite);
     
-    if (!checkBumpable(pullPriority) && onlyShowUnbumpableRooms) {
+    if (!checkBumpable(pullPriority) && onlyShowBumpableRooms) {
       backgroundColor = darken(backgroundColor, 100); // darken the color by 10%
     }
   
@@ -106,7 +106,7 @@ function FloorGrid({ gridData }) {
     setSelectedOccupants(getOccupantsByRoomNumber(roomNumber));
     console.log(selectedOccupants);
     console.log('lol');
-    setPullMethod("");
+    setPullMethod("Select a pull method");
 
   };
 
@@ -118,16 +118,27 @@ function FloorGrid({ gridData }) {
       const room = suite.rooms.find(r => r.roomNumber.toString() === roomNumber.toString());
 
       // If the room exists, return the list of occupants
-      if (room) {
-        if (room.pullPriority.isPreplaced) {
-          return "Preplaced";
-        }
-        if (room.pullPriority.hasInDorm) {
-          return `In-Dorm ${room.pullPriority.drawNumber}`;
-        }
-        const yearMapping = ["", "", "Sophomore", "Junior", "Senior"];
-        return `${yearMapping[room.pullPriority.year]} ${room.pullPriority.drawNumber !== 0 ? room.pullPriority.drawNumber : ''}`;
+      
 
+      if (room) {
+        var pullPriority = room.pullPriority;
+        var finalString = "";
+        if (pullPriority.pullType === 2){
+          pullPriority = pullPriority.inherited;
+        }
+        if (pullPriority.isPreplaced) {
+          finalString += "Preplaced";
+        }
+        if (pullPriority.hasInDorm) {
+          finalString += `In-Dorm ${pullPriority.drawNumber}`;
+          
+        } else {
+          const yearMapping = ["", "", "Sophomore", "Junior", "Senior"];
+        finalString += `${yearMapping[pullPriority.year]} ${pullPriority.drawNumber !== 0 ? pullPriority.drawNumber : ''}`;
+
+        }
+        
+        return finalString += `${room.pullPriority.pullType === 2 ? " Pull" : ''}`;
       }
     }
 
