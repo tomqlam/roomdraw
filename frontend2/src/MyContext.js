@@ -28,6 +28,7 @@ export const MyContextProvider = ({ children }) => {
     const [users, setUsers] = useState(usersJson);
     const [userMap, setUserMap] = useState(null);
     const [selectedRoomObject, setSelectedRoomObject] = useState(null);
+    const [selectedSuiteObject, setSelectedSuiteObject] = useState(null);
     const [refreshKey, setRefreshKey] = useState(0);
     const [pullError, setPullError] = useState("There was an unknown error. Please try again.");
     const [selectedID, setSelectedID] = useState(8);
@@ -216,6 +217,8 @@ export const MyContextProvider = ({ children }) => {
         setPullError,
         selectedID,
         setSelectedID,
+        selectedSuiteObject,
+        setSelectedSuiteObject,
         // data,
         // setData,
         // count,

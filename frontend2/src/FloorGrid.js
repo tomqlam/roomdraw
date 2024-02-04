@@ -12,6 +12,7 @@ function FloorGrid({ gridData }) {
     setSelectedItem,
     selectedOccupants,
     setSelectedOccupants,
+    setSelectedSuiteObject,
     getNameById,
     setSelectedRoomObject,
     setPullMethod,
@@ -34,6 +35,7 @@ function FloorGrid({ gridData }) {
       // If the room exists, return the list of occupants
       if (room) {
         setSelectedRoomObject(room);
+        setSelectedSuiteObject(suite);
         return [room.occupant1.toString(), room.occupant2.toString(), room.occupant3.toString(), room.occupant4.toString()];
       }
     }
