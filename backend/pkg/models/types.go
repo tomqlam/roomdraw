@@ -192,6 +192,7 @@ type PullPriority struct {
 }
 
 type InheritedPullPriority struct {
+	Valid      bool    `json:"valid"`
 	HasInDorm  bool    `json:"hasInDorm"`
 	DrawNumber float64 `json:"drawNumber"`
 	Year       int     `json:"year"` // 1 = freshman, 2 = sophomore, 3 = junior, 4 = senior

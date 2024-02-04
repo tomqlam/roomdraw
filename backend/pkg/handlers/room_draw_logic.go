@@ -123,6 +123,9 @@ func generateUserPriority(user models.UserRaw, dormId int) models.PullPriority {
 
 // returns if the first priority is higher than the second
 func comparePullPriority(priority1 models.PullPriority, priority2 models.PullPriority) bool {
+	log.Println("priority1", priority1)
+	log.Println("priority2", priority2)
+
 	if !priority1.Valid {
 		return false
 	}
@@ -146,10 +149,10 @@ func comparePullPriority(priority1 models.PullPriority, priority2 models.PullPri
 	p2EffectiveDrawNumber := priority2.DrawNumber
 	p2EffectiveYear := priority2.Year
 
-	if priority1.PullType == 2 {
+	if priority1.Inherited.Valid {
 		p1EffectiveDrawNumber = priority1.Inherited.DrawNumber
 		p1EffectiveYear = priority1.Inherited.Year
-	} else if priority2.PullType == 2 {
+	} else if priority2.Inherited.Valid {
 		p2EffectiveDrawNumber = priority2.Inherited.DrawNumber
 		p2EffectiveYear = priority2.Inherited.Year
 	}

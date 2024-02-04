@@ -82,7 +82,7 @@ def create_normal_inner_dorm_floor_list(single_list: List[int]) -> List[dict]:
     floor_list = []
 
     # create wings:
-    for i in range(1, 15, 2):
+    for i in range(1, 15, 4):
         if i in single_list:
             floor_list.append({
                 "order": [1, 1],
@@ -94,6 +94,21 @@ def create_normal_inner_dorm_floor_list(single_list: List[int]) -> List[dict]:
             floor_list.append({
                 "order": [2, 2],
                 "starting_room_number_without_floor": i,
+                "alternative": True,
+                "offset": 2
+            })
+            
+        if i+1 in single_list:
+            floor_list.append({
+                "order": [1, 1],
+                "starting_room_number_without_floor": i+1,
+                "alternative": False,
+                "offset": 2
+            })
+        else:
+            floor_list.append({
+                "order": [2, 2],
+                "starting_room_number_without_floor": i+1,
                 "alternative": True,
                 "offset": 2
             })
@@ -187,7 +202,7 @@ def create_atwood_suite(starting_room_number_without_floor: int, order: List[int
         # get the room number
         room_number = actual_starting
         # insert the room into the rooms table
-        query = f"INSERT INTO Rooms (dorm, dorm_name, room_id, suite_uuid, max_occupancy, current_occupancy, lock_pulled) VALUES (5, 'Atwood', '{room_number}', '{suite_uuid}', {room_type}, 0, false) RETURNING room_uuid;"
+        query = f"INSERT INTO Rooms (dorm, dorm_name, room_id, suite_uuid, max_occupancy, current_occupancy) VALUES (5, 'Atwood', '{room_number}', '{suite_uuid}', {room_type}, 0) RETURNING room_uuid;"
         room_uuids.append(connection.execute(text(query)).fetchone()[0])
         # connection.commit()
         actual_starting += 2

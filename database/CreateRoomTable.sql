@@ -19,6 +19,7 @@ CREATE TABLE Rooms (
         "year": 0,
         "pullType": 0,
         "inherited": {
+            "valid": false,
             "hasInDorm": false,
             "drawNumber": 0,
             "year": 0

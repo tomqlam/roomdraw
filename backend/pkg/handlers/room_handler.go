@@ -253,6 +253,8 @@ func UpdateRoomOccupants(c *gin.Context) {
 		return
 	}
 
+	occupantsAlreadyInRoom := []int{} // list of occupants already in the room
+
 	// check that all of the proposed occupants are not already in a room
 	for _, occupant := range proposedOccupants {
 		var roomUUID uuid.UUID
@@ -261,10 +263,16 @@ func UpdateRoomOccupants(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to query room_uuid from users table"})
 			return
 		}
+
 		if roomUUID != uuid.Nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "One or more of the proposed occupants is already in a room"})
-			return
+			occupantsAlreadyInRoom = append(occupantsAlreadyInRoom, occupant)
 		}
+	}
+
+	if len(occupantsAlreadyInRoom) > 0 {
+		err = errors.New("one or more of the proposed occupants is already in a room")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "One or more of the proposed occupants is already in a room", "occupants": occupantsAlreadyInRoom})
+		return
 	}
 
 	var proposedPullPriority models.PullPriority
@@ -310,10 +318,27 @@ func UpdateRoomOccupants(c *gin.Context) {
 			return
 		}
 	case 2: // normal pull
+		if len(proposedOccupants) == 0 {
+			// error because normal pull requires at least one occupant
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Normal pull requires at least one occupant"})
+			err = errors.New("normal pull requires at least one occupant")
+			tx.Rollback()
+			return
+		}
+
+		if currentRoomInfo.RoomUUID == request.PullLeaderRoom {
+			// error because the pull leader is already in the room
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Pull leader is already in the room"})
+			err = errors.New("pull leader is already in the room")
+			tx.Rollback()
+			return
+		}
+
 		if currentRoomInfo.MaxOccupancy > 1 {
 			// error because normal pull is not allowed for rooms with max occupancy > 1
 			c.JSON(http.StatusBadRequest, gin.H{"error": "You may only initiate a normal pull for singles"})
 			err = errors.New("normal pull is not allowed for rooms with max occupancy > 1")
+			tx.Rollback()
 			return
 		} else if currentRoomInfo.MaxOccupancy == 1 {
 			pullLeaderRoomUUID := request.PullLeaderRoom
@@ -322,6 +347,7 @@ func UpdateRoomOccupants(c *gin.Context) {
 			if err != nil {
 				log.Println(err)
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Database query failed on users for pull priority"})
+				tx.Rollback()
 				return
 			}
 
@@ -330,6 +356,7 @@ func UpdateRoomOccupants(c *gin.Context) {
 				if err := rows.Scan(&u.Id, &u.DrawNumber, &u.Year, &u.InDorm); err != nil {
 					log.Println(err)
 					c.JSON(http.StatusInternalServerError, gin.H{"error": "Database scan failed on users for pull priority"})
+					tx.Rollback()
 					return
 				}
 				occupantsInfo = append(occupantsInfo, u)
@@ -343,20 +370,21 @@ func UpdateRoomOccupants(c *gin.Context) {
 			err = tx.QueryRow("SELECT pull_priority, sgroup_uuid, suite_uuid, current_occupancy FROM rooms WHERE room_uuid = $1", pullLeaderRoomUUID).Scan(&pullLeaderPriority, &pullLeaderSuiteGroupUUID, &leaderSuiteUUID, &pullLeaderCurrentOccupancy)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to query pull leader's priority from rooms table"})
+				tx.Rollback()
 				return
 			}
 
 			if leaderSuiteUUID != suiteUUID {
 				// error because the pull leader is not in the same suite
 				c.JSON(http.StatusBadRequest, gin.H{"error": "Pull leader is not in the same suite"})
-				// err = errors.New("pull leader is not in the same suite")
+				tx.Rollback()
 				return
 			}
 
 			if pullLeaderCurrentOccupancy != 1 {
 				// error because the pull leader is not in a single
 				c.JSON(http.StatusBadRequest, gin.H{"error": "You can only initiate a normal pull with a single"})
-				// err = errors.New("pull leader is not in a single")
+				tx.Rollback()
 				return
 			}
 
@@ -364,33 +392,29 @@ func UpdateRoomOccupants(c *gin.Context) {
 				// inherit the suite group's priority
 				// for now throw an error because this is not implemented
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Pull leader is already in a suite group (TODO: implement this case)"})
-				// err = errors.New("pull leader is already in a suite group (TODO: implement this case)")
+				tx.Rollback()
 				return
 			}
 
 			sortedOccupants := sortUsersByPriority(occupantsInfo, currentRoomInfo.Dorm)
 
 			proposedPullPriority = generateUserPriority(sortedOccupants[0], currentRoomInfo.Dorm)
+			proposedPullPriority.Valid = true
+			proposedPullPriority.PullType = 2
 
 			log.Println(proposedPullPriority)
 			log.Println(pullLeaderPriority)
 
 			if !comparePullPriority(pullLeaderPriority, proposedPullPriority) {
 				c.JSON(http.StatusBadRequest, gin.H{"error": "Pull leader does not have higher priority than proposed occupants"})
+				tx.Rollback()
 				return
 			}
 
-			proposedPullPriority.Valid = true
-			proposedPullPriority.PullType = 2
-
+			proposedPullPriority.Inherited.Valid = true
 			proposedPullPriority.Inherited.DrawNumber = pullLeaderPriority.DrawNumber
 			proposedPullPriority.Inherited.HasInDorm = pullLeaderPriority.HasInDorm
 			proposedPullPriority.Inherited.Year = pullLeaderPriority.Year
-		} else {
-			// error because normal pull requires at least one occupant
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Normal pull requires at least one occupant"})
-			err = errors.New("normal pull requires at least one occupant")
-			return
 		}
 	case 3: // lock pull
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Lock pull not implemented"})
@@ -563,7 +587,7 @@ func disbandSuiteGroup(sgroupUUID uuid.UUID, tx *sql.Tx) (models.UUIDArray, erro
 		return nil, err
 	}
 
-	_, err = tx.Exec("UPDATE rooms SET pull_priority = jsonb_set(pull_priority, '{inherited}', '{\"hasInDorm\": false, \"drawNumber\": 0, \"year\": 0}'::jsonb) WHERE sgroup_uuid = $1", sgroupUUID)
+	_, err = tx.Exec("UPDATE rooms SET pull_priority = jsonb_set(jsonb_set(pull_priority, '{inherited}', '{\"hasInDorm\": false, \"drawNumber\": 0, \"year\": 0}'::jsonb), '{pullType}', '1'::jsonb) WHERE sgroup_uuid = $1", sgroupUUID)
 	if err != nil {
 		return nil, err
 	}
