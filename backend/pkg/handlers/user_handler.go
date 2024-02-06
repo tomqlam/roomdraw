@@ -10,16 +10,8 @@ import (
 )
 
 func GetUsers(c *gin.Context) {
-	db, err := database.NewDatabase()
-	if err != nil {
-		// Handle error opening the database
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to connect to database"})
-		return
-	}
-	defer db.Close()
-
 	// Example SQL query
-	rows, err := db.Query("SELECT id, year, first_name, last_name, draw_number, preplaced, in_dorm, sgroup_uuid, participated, room_uuid FROM users")
+	rows, err := database.DB.Query("SELECT id, year, first_name, last_name, draw_number, preplaced, in_dorm, sgroup_uuid, participated, room_uuid FROM users")
 	if err != nil {
 		// Handle query error
 		// print the error to the console
@@ -45,16 +37,8 @@ func GetUsers(c *gin.Context) {
 }
 
 func GetUsersIdMap(c *gin.Context) {
-	db, err := database.NewDatabase()
-	if err != nil {
-		// Handle error opening the database
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to connect to database"})
-		return
-	}
-	defer db.Close()
-
 	// Example SQL query
-	rows, err := db.Query("SELECT id, year, first_name, last_name, draw_number, preplaced, in_dorm, sgroup_uuid, participated, room_uuid FROM users")
+	rows, err := database.DB.Query("SELECT id, year, first_name, last_name, draw_number, preplaced, in_dorm, sgroup_uuid, participated, room_uuid FROM users")
 	if err != nil {
 		// Handle query error
 		// print the error to the console
@@ -89,14 +73,7 @@ func GetUser(c *gin.Context) {
 	// Get the user id from the URL
 	userid := c.Param("userid")
 
-	db, err := database.NewDatabase()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to connect to database"})
-		return
-	}
-	defer db.Close()
-
-	rows, err := db.Query("SELECT id, year, first_name, last_name, draw_number, preplaced, in_dorm, sgroup_uuid, participated, room_uuid FROM users WHERE id=$1", userid)
+	rows, err := database.DB.Query("SELECT id, year, first_name, last_name, draw_number, preplaced, in_dorm, sgroup_uuid, participated, room_uuid FROM users WHERE id=$1", userid)
 	if err != nil {
 		log.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database query failed"})

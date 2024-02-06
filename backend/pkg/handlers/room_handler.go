@@ -17,16 +17,8 @@ import (
 )
 
 func GetRoomsHandler(c *gin.Context) {
-	db, err := database.NewDatabase()
-	if err != nil {
-		// Handle error opening the database
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to connect to database"})
-		return
-	}
-	defer db.Close()
-
 	// Example SQL query
-	rows, err := db.Query("SELECT room_uuid, dorm, dorm_name, room_id, suite_uuid, max_occupancy, current_occupancy, occupants, pull_priority, sgroup_uuid FROM rooms")
+	rows, err := database.DB.Query("SELECT room_uuid, dorm, dorm_name, room_id, suite_uuid, max_occupancy, current_occupancy, occupants, pull_priority, sgroup_uuid FROM rooms")
 	if err != nil {
 		// Handle query error
 		// print the error to the console
@@ -54,15 +46,8 @@ func GetRoomsHandler(c *gin.Context) {
 func GetSimpleFormattedDorm(c *gin.Context) {
 	dormNameParam := c.Param("dormName")
 
-	db, err := database.NewDatabase()
-	if err != nil {
-		// Handle error opening the database
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to connect to database"})
-		return
-	}
-
 	// Start a transaction
-	tx, err := db.Begin()
+	tx, err := database.DB.Begin()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to start transaction"})
 		return
@@ -78,10 +63,9 @@ func GetSimpleFormattedDorm(c *gin.Context) {
 		} else {
 			err = tx.Commit()
 		}
-		db.Close()
 	}()
 
-	rows, err := db.Query("SELECT room_uuid, dorm, dorm_name, room_id, suite_uuid, max_occupancy, current_occupancy, occupants, pull_priority FROM rooms WHERE UPPER(dorm_name) = UPPER($1)", dormNameParam)
+	rows, err := database.DB.Query("SELECT room_uuid, dorm, dorm_name, room_id, suite_uuid, max_occupancy, current_occupancy, occupants, pull_priority FROM rooms WHERE UPPER(dorm_name) = UPPER($1)", dormNameParam)
 	if err != nil {
 		// Handle query error
 		// print the error to the console
@@ -101,7 +85,7 @@ func GetSimpleFormattedDorm(c *gin.Context) {
 		rooms = append(rooms, d)
 	}
 
-	rows, err = db.Query("SELECT suite_uuid, dorm, dorm_name, floor, room_count, rooms, alternative_pull, suite_design FROM suites WHERE UPPER(dorm_name) = UPPER($1)", dormNameParam)
+	rows, err = database.DB.Query("SELECT suite_uuid, dorm, dorm_name, floor, room_count, rooms, alternative_pull, suite_design FROM suites WHERE UPPER(dorm_name) = UPPER($1)", dormNameParam)
 	if err != nil {
 		log.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database query failed on suites"})
@@ -200,15 +184,8 @@ func UpdateRoomOccupants(c *gin.Context) {
 
 	proposedOccupants := request.ProposedOccupants
 
-	db, err := database.NewDatabase()
-	if err != nil {
-		// Handle error opening the database
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to connect to database"})
-		return
-	}
-
 	// Start a transaction
-	tx, err := db.Begin()
+	tx, err := database.DB.Begin()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to start transaction"})
 		return
@@ -224,7 +201,6 @@ func UpdateRoomOccupants(c *gin.Context) {
 		} else {
 			err = tx.Commit()
 		}
-		db.Close()
 	}()
 
 	var currentRoomInfo models.RoomRaw
@@ -388,13 +364,13 @@ func UpdateRoomOccupants(c *gin.Context) {
 				return
 			}
 
-			if pullLeaderSuiteGroupUUID != uuid.Nil {
-				// inherit the suite group's priority
-				// for now throw an error because this is not implemented
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Pull leader is already in a suite group (TODO: implement this case)"})
-				tx.Rollback()
-				return
-			}
+			// if pullLeaderSuiteGroupUUID != uuid.Nil {
+			// 	// inherit the suite group's priority
+			// 	// for now throw an error because this is not implemented
+			// 	c.JSON(http.StatusInternalServerError, gin.H{"error": "Pull leader is already in a suite group (TODO: implement this case)"})
+			// 	tx.Rollback()
+			// 	return
+			// }
 
 			sortedOccupants := sortUsersByPriority(occupantsInfo, currentRoomInfo.Dorm)
 
@@ -529,10 +505,44 @@ func UpdateRoomOccupants(c *gin.Context) {
 				return
 			}
 		} else {
-			// TODO: create new suite group with the pull leader's priority
-			// for now throw an error because this is not implemented
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Pull leader is already in a suite group (TODO: implement this case)"})
-			return
+			log.Println("Pull leader is in a suite group")
+			// check if the pull leader is the leader of the suite group by checking if the suite group's pull priority is the same as the pull leader's pull priority
+			var pullLeaderSuiteGroupPriority models.PullPriority
+			err = tx.QueryRow("SELECT pull_priority FROM suitegroups WHERE sgroup_uuid = $1", pullLeaderSuiteGroupUUID).Scan(&pullLeaderSuiteGroupPriority)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to query pull leader's suite group's pull priority from suitegroups table"})
+			}
+
+			// deep equal the pull leader's priority and the suite group's priority
+			if pullLeaderSuiteGroupPriority != pullLeaderPriority {
+				log.Println(pullLeaderSuiteGroupPriority)
+				log.Println(pullLeaderPriority)
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Pull leader is not the leader of the suite group"})
+				tx.Rollback()
+				return
+			}
+
+			// add the room to the suite group
+			_, err = tx.Exec("UPDATE suitegroups SET rooms = array_append(rooms, $1) WHERE sgroup_uuid = $2", roomUUIDParam, pullLeaderSuiteGroupUUID)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update rooms in suitegroups table"})
+				return
+			}
+
+			// update the sgroup_uuid field in the rooms table
+			_, err = tx.Exec("UPDATE rooms SET sgroup_uuid = $1 WHERE room_uuid = $2", pullLeaderSuiteGroupUUID, roomUUIDParam)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update suite_uuid in rooms table"})
+				return
+			}
+
+			// update the sgroup_uuid field in the users table for all occupants of the room
+			_, err = tx.Exec("UPDATE users SET sgroup_uuid = $1 WHERE room_uuid = $2", pullLeaderSuiteGroupUUID, roomUUIDParam)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update sgroup_uuid in users table"})
+				return
+			}
+
 		}
 	}
 

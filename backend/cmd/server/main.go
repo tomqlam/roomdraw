@@ -2,6 +2,7 @@ package main
 
 import (
 	"roomdraw/backend/pkg/config"
+	"roomdraw/backend/pkg/database"
 	"roomdraw/backend/pkg/handlers"
 	"roomdraw/backend/pkg/middleware"
 	"sync"
@@ -13,6 +14,12 @@ import (
 )
 
 func main() {
+	err := database.InitDB()
+	if err != nil {
+		panic(err)
+	}
+	defer database.DB.Close()
+
 	router := gin.Default()
 
 	// Configure CORS middleware options
