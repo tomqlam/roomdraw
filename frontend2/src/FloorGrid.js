@@ -1,12 +1,9 @@
-import logo from './logo.svg';
 import React from 'react';
-import { useState, useContext } from 'react';
+import { useContext } from 'react';
 import { MyContext } from './MyContext';
 import 'bulma/css/bulma.min.css';
-import BumpModal from './BumpModal';
 
 function FloorGrid({ gridData }) {
-  // Define your data structure with columns
   const {
     setIsModalOpen,
     setSelectedItem,
@@ -18,18 +15,16 @@ function FloorGrid({ gridData }) {
     setPullMethod,
     cellColors,
     selectedID,
-    setSelectedID,
     onlyShowBumpableRooms,
     userMap
   } = useContext(MyContext);
 
 
   function getOccupantsByRoomNumber(roomNumber) {
+    // given a room number, return the occupants of the room
     // Iterate over each suite
     for (let suite of gridData.suites) {
       // Find the room with the given room number within the current suite
-      console.log("FIRST ITERATION");
-      console.log(suite);
       const room = suite.rooms.find(r => r.roomNumber.toString() === roomNumber.toString());
 
       // If the room exists, return the list of occupants
@@ -39,32 +34,30 @@ function FloorGrid({ gridData }) {
         return [room.occupant1.toString(), room.occupant2.toString(), room.occupant3.toString(), room.occupant4.toString()];
       }
     }
-    console.log("did not find the occupants");
-
+    console.log("Did not find the occupants");
     // If the room does not exist in any suite, return an empty array
     return ['', '', '', ''];
   }
-
+  // entire collection of cells
   const gridContainerStyle = {
     display: 'grid',
-    gridTemplateColumns: 'auto auto auto auto auto auto auto', // Adjust the number of 'auto' as needed
+    gridTemplateColumns: 'auto auto auto auto auto auto auto', // this must scale with the number of columns
     gap: '5px',
     maxWidth: '800px', // Set the maximum width of the grid container
     margin: '0 auto', // Center the grid container horizontally
 
   };
-
+  // each cell in floorgrid
   const gridItemStyle = {
-    //border: '1px solid #ddd',
     borderRadius: '3px',
     padding: '2px',
-    backgroundColor: cellColors.occupants, // Set the background color of the cells
     textAlign: 'center',
-    fontSize: '15px', // Set the font size of the cells
+    fontSize: '15px', 
     color: '#000000',
 
   };
 
+  // darkens given color by a factor, using match
   function darken(color, factor) {
     const f = parseInt(factor, 10) || 0;
     const RGB = color.substring(1).match(/.{2}/g);
@@ -75,6 +68,7 @@ function FloorGrid({ gridData }) {
     return `#${newColor.join('')}`;
   }
   
+  // given parameters, return grid item style with correct background color shading
   const getGridItemStyle = (occupancy, maxOccupancy, suiteIndex, pullPriority) => {
     if (occupancy < maxOccupancy){
       return {
@@ -96,19 +90,18 @@ function FloorGrid({ gridData }) {
 
   const roomNumberStyle = {
     ...gridItemStyle,
-    backgroundColor: cellColors.roomNumber, // Change the color to your desired color
+    backgroundColor: cellColors.roomNumber, 
   };
   const pullMethodStyle = {
     ...gridItemStyle,
-    backgroundColor: cellColors.pullMethod, // Change the color to your desired color
+    backgroundColor: cellColors.pullMethod, 
   };
   const handleCellClick = (roomNumber) => {
     setIsModalOpen(true);
     setSelectedItem(roomNumber);
     setSelectedOccupants(getOccupantsByRoomNumber(roomNumber));
     console.log(selectedOccupants);
-    console.log('lol');
-    setPullMethod("Select a pull method");
+    setPullMethod("Pulled themselves");
 
   };
 
@@ -169,13 +162,6 @@ function FloorGrid({ gridData }) {
 
   return (
     <div style={gridContainerStyle}>
-      {/* <div style={gridItemStyle}><strong></strong></div>
-
-        {/* begin filler code that does nothing*/}
-      {/* <div style={gridItemStyle}><strong>{}</strong></div>
-        <div style={gridItemStyle}><strong>{}</strong></div>
-        <div style={gridItemStyle}><strong>{}</strong></div>
-        <div style={gridItemStyle}><strong>{}</strong></div> */}
 
 
 
@@ -221,15 +207,7 @@ function FloorGrid({ gridData }) {
 
 
 
-      {/* {gridData.map((item, index) => (
-        <React.Fragment key={index}>
-          <div style={roomNumberStyle} onClick={() => handleCellClick(item.roomNumber)}>{item.roomNumber}</div>
-          <div style={pullMethodStyle} onClick={() => handleCellClick(item.roomNumber)}>{item.notes}</div>
-          <div style={gridItemStyle} onClick={() => handleCellClick(item.roomNumber)}>{item.occupant1}</div>
-          <div style={gridItemStyle} onClick={() => handleCellClick(item.roomNumber)}>{item.occupant2}</div>
-          <div style={gridItemStyle} onClick={() => handleCellClick(item.roomNumber)}>{item.occupant3}</div>
-        </React.Fragment>
-      ))} */}
+
     </div>
 
   );

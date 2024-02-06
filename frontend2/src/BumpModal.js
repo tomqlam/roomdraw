@@ -4,7 +4,7 @@ import { MyContext } from './MyContext';
 function BumpModal() {
   const {
     selectedItem,
-    // setSelectedItem,
+    print,
     setIsModalOpen,
     selectedOccupants,
     setSelectedOccupants,
@@ -12,7 +12,6 @@ function BumpModal() {
     setPullMethod,
     showModalError,
     setShowModalError,
-    // drawNumbers,
     getNameById,
     userMap,
     setRefreshKey,
@@ -21,26 +20,27 @@ function BumpModal() {
     selectedSuiteObject,
     pullError,
     setPullError,
-    // setSelectedRoomObject
   } = useContext(MyContext);
 
-  const [othersInSuite, setOthersInSuite] = useState(["Person 1", "person 2"]);
+  // List of arrays with two elements, where the first element is the occupant ID and the second element is the room UUID
+  const [peopleWhoCanPull, setPeopleWhoCanPull] = useState([["Example ID", "Example Room UUID"]]);
 
   useEffect(() => {
+    // If the selected suite or room changes, change the people who can pull 
     if (selectedSuiteObject) {
       const otherRooms = selectedSuiteObject.rooms;
       const otherOccupants = [];
       for (let room of otherRooms) {
-        if (room.roomNumber !== selectedItem && room.maxOccupancy === 1 && room.occupant1 !== 0) {
-          otherOccupants.push(room.occupant1);
+        if (room.roomNumber !== selectedItem && room.maxOccupancy === 1 && room.occupant1 !== 0 && room.pullPriority.pullType === 1) {
+          otherOccupants.push([room.occupant1, room.roomUUID]);
         }
       }
-      setOthersInSuite(otherOccupants);
+      setPeopleWhoCanPull(otherOccupants);
     }
   }, [selectedSuiteObject, selectedItem]);      
 
   const handlePullMethodChange = (e) => {
-    console.log(pullMethod);
+    print(pullMethod);
     setPullMethod(e.target.value);
   };
   const closeModal = () => {
@@ -48,42 +48,43 @@ function BumpModal() {
     setIsModalOpen(false);
   };
   const handleDropdownChange = (index, value) => {
-    console.log(value);
+    
     const updatedselectedOccupants = [...selectedOccupants];
-    console.log(selectedOccupants);
-    //console.log(selectedOccupants);
     updatedselectedOccupants[index - 1] = value;
-    //console.log(updatedselectedOccupants);
     setSelectedOccupants(updatedselectedOccupants);
-    console.log(selectedOccupants);
+
   };
 
   const handleSubmit = async (e) => {  // Declare handleSubmit as async
     // Handle form submission logic here
     e.preventDefault();
-    // if (!pullMethod) {
-    //   setShowModalError(true);
-    //   return false;
-    // }
-    if (await canIBump()) {  // Wait for canIBump to complete
-      // TODO: check if you can bump
-      // valid bump
-      // const newRoomData = { roomNumber: selectedItem, notes: pullMethod, occupant1: selectedOccupants[1], occupant2: selectedOccupants[2], occupant3: selectedOccupants[3] };
-      // //console.log(newRoomData);
-      // updateGridData(newRoomData);
-      //console.log('Form submitted');
-      console.log("closed");
-      closeModal();
+    
+    if (/^\d+$/.test(pullMethod)) {
+      console.log("Pull method is a number");
+      // pullMethod only includes number, implying that you were pulled by someone else
+      if (await canIBePulled()) {  // Wait for canIBePulled to complete
+        print("This room was successfully pulled by someone else in the suite");
+        closeModal();
+      } else {
+        setShowModalError(true);
+      }
     } else {
-      console.log("showing error");
-      // can't bump, show error 
-      setShowModalError(true);
-    }
+      // pullMethod is either Lock Pull or Pulled themselves 
+      if (await canIBump()) {  // Wait for canIBePulled to complete
 
-    // // check that this is a valid pull method 
+        print("This room pulled themselves");
+        closeModal();
+      } else {
+        setShowModalError(true);
+      }
+
+    }
+    
+
   };
 
   const canIBump = () => {
+    // for non-normal pulls, this checks if the room can be pulled
     return new Promise((resolve, reject) => {  // Return a new Promise
       fetch(`/rooms/${selectedRoomObject.roomUUID}`, {
         method: 'PATCH',
@@ -97,28 +98,58 @@ function BumpModal() {
       })
         .then(response => response.json())
         .then(data => {
-          console.log(data);
-          console.log("printed data");
           if (data.error) {
-            console.log("error");
-            console.log(data.error);
+            // There was an error pulling the room
             setPullError(data.error);
             setIsModalOpen(true);
             setShowModalError(true);
-            resolve(false);  // Resolve the Promise with false
+            resolve(false); 
           } else {
-            console.log("empty ? room");
-            console.log("setting refresh key");
+            // There was no error pulling the room, and the grid should refresh
             setRefreshKey(refreshKey + 1);
-            resolve(true);  // Resolve the Promise with true
+            resolve(true); 
           }
         })
         .catch((error) => {
-          console.log("hello");
-          console.error(error.error);
-          console.log("setting refresh key");
+          print(error.error);
           setRefreshKey(refreshKey + 1);
-          resolve(true);  // Resolve the Promise with false
+          resolve(true); 
+        });
+
+    });
+  }
+
+  const canIBePulled = () => {
+    return new Promise((resolve, _) => {  // Return a new Promise
+      fetch(`/rooms/${selectedRoomObject.roomUUID}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          proposedOccupants: selectedOccupants.map(Number).filter(num => num !== 0),  // Convert to array of numbers and remove zeros
+          pullType: 2,
+          pullLeaderRoom: peopleWhoCanPull.find(person => person[0] === Number(pullMethod))[1],
+        }),
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.error) {
+            // There was an error pulling the room
+            setPullError(data.error);
+            setIsModalOpen(true);
+            setShowModalError(true);
+            resolve(false); 
+          } else {
+            // There was no error pulling the room, and the grid should refresh
+            setRefreshKey(refreshKey + 1);
+            resolve(true); 
+          }
+        })
+        .catch((error) => {
+          console.error(error.error);
+          setRefreshKey(refreshKey + 1);
+          resolve(true); 
         });
 
     });
@@ -145,7 +176,7 @@ function BumpModal() {
                 <div className="select" style={{ marginRight: "10px" }}>
                   <select value={selectedOccupants[index - 1]} onChange={(e) => handleDropdownChange(index, e.target.value)}>
 
-                    <option value="">Select an occupant</option>
+                    <option value="">No occupant</option>
 
                     {userMap && Object.keys(userMap)
                       .sort((a, b) => {
@@ -171,11 +202,10 @@ function BumpModal() {
           <label className="label" >How did you pull this room?</label>
           <div className="select">
             <select value={pullMethod} onChange={handlePullMethodChange}>
-              <option value="Select a pull method">Select a pull method</option>
               <option value="Pulled themselves">Pulled themselves</option>
-              {othersInSuite.map((item, index) => (
-                <option key={index} value={item}>
-                  Pulled by {getNameById(item)}
+              {selectedRoomObject.maxOccupancy === 1 && peopleWhoCanPull.map((item, index) => (
+                <option key={index} value={item[0]}>
+                  Pulled by {getNameById(item[0])}
                 </option>
               ))}
               <option value="Lock Pull">Lock Pull</option>

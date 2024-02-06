@@ -11,7 +11,6 @@ function App() {
     currPage,
     setCurrPage,
     gridData,
-    setGridData,
     userMap,
     isModalOpen,
     dormMapping,
@@ -23,82 +22,54 @@ function App() {
     rooms,
   } = useContext(MyContext);
 
-  const [showNotification, setShowNotification] = useState(false);
-  const [myRoom, setMyRoom] = useState("Bruh");
+  // const [showNotification, setShowNotification] = useState(false);
+  const [myRoom, setMyRoom] = useState("You are not in a room yet."); // to show what room current user is in
 
 
   useEffect(() => {
+    // updates room that the current user is in every time the selected user or the room data changes
     if (!rooms) {
       return "";
     }
     if (rooms) {
       for (let room of rooms) {
-        // console.log(`Comparing ${room.Occupants} with ${selectedID}`);
 
         if (room.Occupants && room.Occupants.includes(Number(selectedID))) {
-        // console.log(`Comparing ${room.Occupants} with ${selectedID}`);
 
-        
-        setMyRoom(`You are in ${room.DormName} ${room.RoomID}.`);
-        return;
+
+          setMyRoom(`You are in ${room.DormName} ${room.RoomID}.`);
+          return;
         }
       }
       setMyRoom("You are not in a room yet.");
 
-      
+
     }
   }, [selectedID, rooms]);
 
 
 
 
-  const handleDeleteClick = () => {
-    setShowNotification(false);
-  };
 
-
-  // const tabs = ["Atwood", "East", "Drinkward", "Linde", "North", "South", "Sontag", "West", "Case"]
-  // const { drawNumbers } = useContext(MyContext);
-
-
-
-
-  const [activeTab, setActiveTab] = useState('Atwood');
+  const [activeTab, setActiveTab] = useState('Atwood'); // controls which dorm is shown
 
   const handleNameChange = (event) => {
     setSelectedID(event.target.value);
   };
+
   const handleTabClick = (tab) => {
     setActiveTab(tab);
   };
 
-  function updateGridData(roomData) {
-    setShowNotification(true);
-    setGridData((prevGridData) => {
-      const updatedGridData = prevGridData.map((dorm) => {
-        const updatedFloors = dorm.floors.map((floor) => {
-          return floor.map((room) => {
-            if (room.roomNumber === roomData.roomNumber) {
-              return { ...room, ...roomData };
-            }
-            return room;
-          });
-        });
-        return { ...dorm, floors: updatedFloors };
-      });
-      return updatedGridData;
-    });
-  }
-
 
 
   function getDrawNumberAndYear(id) {
-    // Find the drawNumber object with the given full name
+    // Find the drawNumber in laymans terms with the given id, including in-dorm status
+    // ex: given 2, returns Sophomore 46
     if (!userMap) {
       return "Loading...";
     }
 
-    // console.log(userMap[id]);
     if (userMap[id].InDorm !== 0) {
       // has in dorm
       return `${userMap[id].Year.charAt(0).toUpperCase() + userMap[id].Year.slice(1)} ${userMap[id].DrawNumber} ${dormMapping[userMap[id].InDorm]}`;
@@ -106,26 +77,25 @@ function App() {
     return `${userMap[id].Year.charAt(0).toUpperCase() + userMap[id].Year.slice(1)} ${userMap[id].DrawNumber}`
   }
 
-  // function getDrawNumberByName(name) {
-  //   const foundItem = drawNumbers.find((item) => item.name === name);
-  //   return foundItem ? foundItem.drawNumber : null;
-  // }
 
-  
-  // fetch('/users/idmap')
-  //         .then(res => {
-  //             console.log(res);
-  //             console.log("just printed");
-  //             return res.json();  // Parse the response data as JSON
-  //         })
-  //         .then(data => {
-  //             console.log(data);
-  //             console.log("success");
-  //             setUserMap(data);
-  //         })
-  //         .catch(err => {
-  //             console.log(err);
-  //         })
+  // Component for each floor, to show even and odd floors separately
+  const FloorColumn = ({ gridData, filterCondition }) => (
+    <div class="column">
+      {gridData.map((dorm) => (
+        <div key={dorm.dormName} className={activeTab === dorm.dormName ? '' : 'is-hidden'}>
+          {dorm.floors
+            .filter((floor) => filterCondition(floor.floorNumber))
+            .sort((a, b) => Number(a.floorNumber) - Number(b.floorNumber))  // Convert to numbers before comparing
+            .map((floor, floorIndex) => (
+              <div style={{ paddingBottom: 20 }} className="container" key={floorIndex}>
+                <h2 class="subtitle has-text-centered">Floor {floor.floorNumber + 1}</h2>
+                <FloorGrid gridData={floor} />
+              </div>
+            ))}
+        </div>
+      ))}
+    </div>
+  );
 
 
 
@@ -192,10 +162,10 @@ function App() {
         </div>
       </nav>
       {isModalOpen && <BumpModal />}
-      {showNotification && (<div class="notification is-primary m-2">
+      {/* {showNotification && (<div class="notification is-primary m-2">
         <button onClick={handleDeleteClick} class="delete "></button>
         Your room status has been updated. Please check that everything is still the way you'd like it to be!
-      </div>)}
+      </div>)} */}
       <section class="section">
         <div style={{ textAlign: 'center' }}>
 
@@ -229,7 +199,7 @@ function App() {
 
       </section>
 
-      {currPage == "Home" && <section class="section">
+      {currPage === "Home" && <section class="section">
         <label className="checkbox" style={{ display: 'flex', alignItems: 'center' }}>
           <input
             type="checkbox"
@@ -258,59 +228,16 @@ function App() {
         {/* Left column is room draw, right side is tips */}
         <div class="columns">
 
-          <div class="column">
-            {gridData.map((dorm) => (
+          <FloorColumn gridData={gridData} filterCondition={(floorNumber) => floorNumber === 0} />
+          <FloorColumn gridData={gridData} filterCondition={(floorNumber) => floorNumber === 1} />
+          <FloorColumn gridData={gridData} filterCondition={(floorNumber) => floorNumber === 2} />
 
-              <div key={dorm.dormName} className={activeTab === dorm.dormName ? '' : 'is-hidden'}>
 
-                {dorm.floors
-                  .filter((floor) => floor.floorNumber % 2 === 0)
-                  .sort((a, b) => Number(a.floorNumber) - Number(b.floorNumber))  // Convert to numbers before comparing
-                  .map((floor, floorIndex) => (
-                    <div style={{ paddingBottom: 20 }} className="container" key={floorIndex}>
-                      <h2 class="subtitle has-text-centered">Floor {floor.floorNumber + 1}</h2>
-                      <FloorGrid gridData={floor} />
-                    </div>
-                  ))}
-              </div>
-            ))}
-          </div>
-          <div class="column">
-            {gridData.map((dorm) => (
-
-              <div key={dorm.dormName} className={activeTab === dorm.dormName ? '' : 'is-hidden'}>
-
-                {dorm.floors
-                  .filter((floor) => floor.floorNumber % 2 !== 0)
-                  .sort((a, b) => Number(a.floorNumber) - Number(b.floorNumber))  // Convert to numbers before comparing
-                  .map((floor, floorIndex) => (
-                    <div style={{ paddingBottom: 20 }} className="container" key={floorIndex}>
-                      <h2 class="subtitle has-text-centered">Floor {floor.floorNumber + 1}</h2>
-                      <FloorGrid gridData={floor} />
-                    </div>
-                  ))}
-              </div>
-            ))}
-          </div>
-          <div class="column">
-            {gridData.map((dorm) => (
-
-              <div key={dorm.dormName} className={activeTab === dorm.dormName ? '' : 'is-hidden'}>
-                <p>{dorm.description}</p>
-                {/* TODO!!! */}
-                {/* {dorm.imageLinks.map((link, index) => (
-                  <img src={link} alt="dorm" key={index} />
-                ))} */}
-
-              </div>
-            ))}
-          </div>
         </div>
 
-        {/* {(activeTab === 'Recommendations' && (<Recommendations />))} */}
 
       </section>}
-      {currPage == "Recommendations" && <section class="section">
+      {currPage === "Recommendations" && <section class="section">
         <Recommendations gridData={gridData} setCurrPage={setCurrPage} />
       </section>}
 
