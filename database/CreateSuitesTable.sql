@@ -11,5 +11,7 @@ CREATE TABLE Suites (
     rooms uuid array,
     alternative_pull bool NOT NULL,
     suite_design varchar NOT NULL DEFAULT '',
+    can_pull bool NOT NULL DEFAULT false,
+    lock_pulled_room uuid,
     PRIMARY KEY (suite_uuid)
 );
