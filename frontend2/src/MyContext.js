@@ -110,6 +110,7 @@ export const MyContextProvider = ({ children }) => {
         pullMethod: "#ffbbf2",
         evenSuite: "#ffc8dd",
         oddSuite: "#ffbbf2",
+        myRoom: "#a2d2ff",
 
     };
 

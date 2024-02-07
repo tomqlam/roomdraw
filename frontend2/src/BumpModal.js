@@ -68,6 +68,14 @@ function BumpModal() {
       } else {
         setShowModalError(true);
       }
+    } else if (pullMethod === "Lock Pull") {
+      // lock pulled 
+      if (await canILockPull()) {  // Wait for canIBePulled to complete
+        print("This room was successfully lock pulled");
+        closeModal();
+      } else {
+        setShowModalError(true);
+      }
     } else {
       // pullMethod is either Lock Pull or Pulled themselves 
       if (await canIBump()) {  // Wait for canIBePulled to complete
@@ -148,6 +156,43 @@ function BumpModal() {
         })
         .catch((error) => {
           console.error(error.error);
+          setRefreshKey(refreshKey + 1);
+          resolve(true); 
+        });
+
+    });
+  }
+
+  const canILockPull = () => {
+    // for lock pulling
+    return new Promise((resolve, reject) => {  // Return a new Promise
+      fetch(`/rooms/${selectedRoomObject.roomUUID}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          proposedOccupants: selectedOccupants.map(Number).filter(num => num !== 0),  // Convert to array of numbers and remove zeros
+          pullType: 3
+        }),
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.error) {
+            // There was an error pulling the room
+            setPullError(data.error);
+            setIsModalOpen(true);
+            setShowModalError(true);
+            resolve(false); 
+          } else {
+            // There was no error pulling the room, and the grid should refresh
+            print("This room was successfully lock pulled");
+            setRefreshKey(refreshKey + 1);
+            resolve(true); 
+          }
+        })
+        .catch((error) => {
+          print(error.error);
           setRefreshKey(refreshKey + 1);
           resolve(true); 
         });

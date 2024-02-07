@@ -5,6 +5,7 @@ import 'bulma/css/bulma.min.css';
 
 function FloorGrid({ gridData }) {
   const {
+    print,
     setIsModalOpen,
     setSelectedItem,
     selectedOccupants,
@@ -69,13 +70,23 @@ function FloorGrid({ gridData }) {
   }
   
   // given parameters, return grid item style with correct background color shading
-  const getGridItemStyle = (occupancy, maxOccupancy, suiteIndex, pullPriority) => {
+  const getGridItemStyle = (room, occupancy, maxOccupancy, suiteIndex, pullPriority) => {
+    
+    // Not valid for pulling
     if (occupancy < maxOccupancy){
       return {
         ...gridItemStyle,
         backgroundColor: cellColors.unbumpableRoom
       };
     }
+    // Selected person lives in this room
+    if (room.roomUUID === userMap[selectedID].RoomUUID) {
+      return {
+        ...gridItemStyle,
+        backgroundColor: cellColors.myRoom,
+      };
+    }
+    
     let backgroundColor = (suiteIndex % 2 === 0 ? cellColors.evenSuite : cellColors.oddSuite);
     
     if (!checkBumpable(pullPriority) && onlyShowBumpableRooms) {
@@ -116,6 +127,9 @@ function FloorGrid({ gridData }) {
       
 
       if (room) {
+        if (room.pullPriority.pullType === 3) {
+          return "Lock Pull";
+        }
         var pullPriority = room.pullPriority;
         var finalString = "";
         if (pullPriority.pullType === 2){
@@ -179,12 +193,12 @@ function FloorGrid({ gridData }) {
         .map((room, roomIndex) => (
           <React.Fragment key={roomIndex}>
             <div
-              style={getGridItemStyle(room.maxOccupancy, 1, suiteIndex, room.pullPriority)}
+              style={getGridItemStyle(room, room.maxOccupancy, 1, suiteIndex, room.pullPriority)}
               onClick={() => handleCellClick(room.roomNumber)}
             >
               {room.roomNumber}
             </div>
-            <div style={getGridItemStyle(room.maxOccupancy, 1, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{getPullMethodByRoomNumber(room.roomNumber)}</div>
+            <div style={getGridItemStyle(room, room.maxOccupancy, 1, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{getPullMethodByRoomNumber(room.roomNumber)}</div>
             {
               roomIndex === 0
               && <div style={{
@@ -194,10 +208,10 @@ function FloorGrid({ gridData }) {
               }} >Insert suite name</div>
 
             }
-            <div style={getGridItemStyle(room.maxOccupancy, 1, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{getNameById(room.occupant1)}</div>
-            <div style={getGridItemStyle(room.maxOccupancy, 2, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{getNameById(room.occupant2)}</div>
-            <div style={getGridItemStyle(room.maxOccupancy, 3, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{getNameById(room.occupant3)}</div>
-            <div style={getGridItemStyle(room.maxOccupancy, 4, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{getNameById(room.occupant4)}</div>
+            <div style={getGridItemStyle(room, room.maxOccupancy, 1, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{getNameById(room.occupant1)}</div>
+            <div style={getGridItemStyle(room, room.maxOccupancy, 2, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{getNameById(room.occupant2)}</div>
+            <div style={getGridItemStyle(room, room.maxOccupancy, 3, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{getNameById(room.occupant3)}</div>
+            <div style={getGridItemStyle(room, room.maxOccupancy, 4, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{getNameById(room.occupant4)}</div>
 
           </React.Fragment>
         ))
