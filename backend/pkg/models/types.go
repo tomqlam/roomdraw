@@ -158,6 +158,8 @@ type SuiteGroupRaw struct {
 	SGroupPriority string    `db:"sgroup_priority"`
 	Rooms          UUIDArray `db:"rooms"`
 	Disbanded      bool      `db:"disbanded"`
+	CanLockPull    bool      `db:"can_lock_pull"`
+	LockPulledRoom uuid.UUID `db:"contains_lock_pull"`
 }
 
 func (pp *PullPriority) Scan(src interface{}) error {

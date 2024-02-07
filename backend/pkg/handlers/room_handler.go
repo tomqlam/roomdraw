@@ -17,8 +17,27 @@ import (
 )
 
 func GetRoomsHandler(c *gin.Context) {
+	// Start a transaction
+	tx, err := database.DB.Begin()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to start transaction"})
+		return
+	}
+
+	// Ensure the transaction is either committed or rolled back
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+			panic(r)
+		} else if err != nil {
+			tx.Rollback()
+		} else {
+			err = tx.Commit()
+		}
+	}()
+
 	// Example SQL query
-	rows, err := database.DB.Query("SELECT room_uuid, dorm, dorm_name, room_id, suite_uuid, max_occupancy, current_occupancy, occupants, pull_priority, sgroup_uuid FROM rooms")
+	rows, err := tx.Query("SELECT room_uuid, dorm, dorm_name, room_id, suite_uuid, max_occupancy, current_occupancy, occupants, pull_priority, sgroup_uuid FROM rooms")
 	if err != nil {
 		// Handle query error
 		// print the error to the console
@@ -26,7 +45,6 @@ func GetRoomsHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database query failed"})
 		return
 	}
-	defer rows.Close()
 
 	var rooms []models.RoomRaw
 	for rows.Next() {
@@ -65,7 +83,7 @@ func GetSimpleFormattedDorm(c *gin.Context) {
 		}
 	}()
 
-	rows, err := database.DB.Query("SELECT room_uuid, dorm, dorm_name, room_id, suite_uuid, max_occupancy, current_occupancy, occupants, pull_priority FROM rooms WHERE UPPER(dorm_name) = UPPER($1)", dormNameParam)
+	rows, err := tx.Query("SELECT room_uuid, dorm, dorm_name, room_id, suite_uuid, max_occupancy, current_occupancy, occupants, pull_priority FROM rooms WHERE UPPER(dorm_name) = UPPER($1)", dormNameParam)
 	if err != nil {
 		// Handle query error
 		// print the error to the console
@@ -85,7 +103,7 @@ func GetSimpleFormattedDorm(c *gin.Context) {
 		rooms = append(rooms, d)
 	}
 
-	rows, err = database.DB.Query("SELECT suite_uuid, dorm, dorm_name, floor, room_count, rooms, alternative_pull, suite_design FROM suites WHERE UPPER(dorm_name) = UPPER($1)", dormNameParam)
+	rows, err = tx.Query("SELECT suite_uuid, dorm, dorm_name, floor, room_count, rooms, alternative_pull, suite_design FROM suites WHERE UPPER(dorm_name) = UPPER($1)", dormNameParam)
 	if err != nil {
 		log.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database query failed on suites"})
@@ -255,6 +273,7 @@ func UpdateRoomOccupants(c *gin.Context) {
 	var pullLeaderPriority models.PullPriority
 	var pullLeaderSuiteGroupUUID uuid.UUID
 	log.Println(request.PullType)
+
 	switch request.PullType {
 	case 1: // self pull
 		if len(proposedOccupants) > 0 {
@@ -393,8 +412,86 @@ func UpdateRoomOccupants(c *gin.Context) {
 			proposedPullPriority.Inherited.Year = pullLeaderPriority.Year
 		}
 	case 3: // lock pull
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Lock pull not implemented"})
-		return
+		// can only lock pull info an empty room
+		if currentRoomInfo.CurrentOccupancy > 0 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Lock pull is only allowed for empty rooms"})
+			err = errors.New("lock pull is only allowed for empty rooms")
+			tx.Rollback()
+			return
+		}
+
+		if len(proposedOccupants) == 0 {
+			// error because lock pull requires at least one occupant
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Lock pull requires at least one occupant"})
+			err = errors.New("lock pull requires at least one occupant")
+			tx.Rollback()
+			return
+		}
+
+		// lock pulled room must be full
+		if len(proposedOccupants) != currentRoomInfo.MaxOccupancy {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Lock pull requires the room to be full"})
+			err = errors.New("lock pull requires the room to be full")
+			tx.Rollback()
+			return
+		}
+
+		// get suite info for the room
+		suiteInfo := models.SuiteRaw{}
+
+		err = tx.QueryRow("SELECT suite_uuid, dorm, dorm_name, floor, room_count, rooms, alternative_pull FROM suites WHERE suite_uuid = $1", currentRoomInfo.SuiteUUID).Scan(
+			&suiteInfo.SuiteUUID,
+			&suiteInfo.Dorm,
+			&suiteInfo.DormName,
+			&suiteInfo.Floor,
+			&suiteInfo.RoomCount,
+			&suiteInfo.Rooms,
+			&suiteInfo.AlternativePull,
+		)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to query suite info from suites table"})
+			tx.Rollback()
+		}
+
+		// query all the rooms and ensure that they are full
+		var roomsInSuite []models.RoomRaw
+
+		for _, roomInSuite := range roomsInSuite {
+			if roomInSuite.CurrentOccupancy < roomInSuite.MaxOccupancy {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "One or more rooms in the suite are not full"})
+				tx.Rollback()
+				return
+			}
+		}
+
+		var occupantsInfo []models.UserRaw
+		rows, err := tx.Query("SELECT id, draw_number, year, in_dorm FROM users WHERE id = ANY($1)", pq.Array(proposedOccupants))
+		if err != nil {
+			// Handle query error
+			// print the error to the console
+			log.Println(err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Database query failed on users for pull priority"})
+			return
+		}
+		for rows.Next() {
+			var u models.UserRaw
+			if err := rows.Scan(&u.Id, &u.DrawNumber, &u.Year, &u.InDorm); err != nil {
+				// Handle scan error
+				log.Println(err)
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Database scan failed on users for pull priority"})
+				return
+			}
+			occupantsInfo = append(occupantsInfo, u)
+		}
+
+		sortedOccupants := sortUsersByPriority(occupantsInfo, currentRoomInfo.Dorm)
+
+		proposedPullPriority = generateUserPriority(sortedOccupants[0], currentRoomInfo.Dorm)
+
+		proposedPullPriority.Valid = true
+		proposedPullPriority.PullType = 3
+		proposedPullPriority.Inherited.Valid = true
+
 	case 4: // alternative pull
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Alternative pull not implemented"})
 		return
@@ -423,18 +520,20 @@ func UpdateRoomOccupants(c *gin.Context) {
 		}
 	}
 
-	// remove the current occupants from the room
-	_, err = tx.Exec("UPDATE rooms SET occupants = $1, current_occupancy = $2 WHERE room_uuid = $3", nil, 0, roomUUIDParam)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update current occupants in rooms table"})
-		return
-	}
+	if currentRoomInfo.CurrentOccupancy > 0 {
+		// remove the current occupants from the room
+		_, err = tx.Exec("UPDATE rooms SET occupants = $1, current_occupancy = $2 WHERE room_uuid = $3", nil, 0, roomUUIDParam)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update current occupants in rooms table"})
+			return
+		}
 
-	// for each current occupant, nullify the room_uuid field in the users table
-	_, err = tx.Exec("UPDATE users SET room_uuid = $1 WHERE room_uuid = $2", nil, roomUUIDParam)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update room_uuid in users table"})
-		return
+		// for each current occupant, nullify the room_uuid field in the users table
+		_, err = tx.Exec("UPDATE users SET room_uuid = $1 WHERE room_uuid = $2", nil, roomUUIDParam)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update room_uuid in users table"})
+			return
+		}
 	}
 
 	// update the occupants in the database and the current_occupancy
@@ -544,6 +643,13 @@ func UpdateRoomOccupants(c *gin.Context) {
 			}
 
 		}
+	} else if request.PullType == 3 {
+		// update the suite's lock pull status
+		_, err = tx.Exec("UPDATE suites SET lock_pulled_room = $1 WHERE suite_uuid = $2", roomUUIDParam, currentRoomInfo.SuiteUUID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update lock_pulled_room in suites table"})
+			return
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Successfully updated occupants"})
@@ -562,6 +668,42 @@ func clearRoom(roomUUID uuid.UUID, tx *sql.Tx) error {
 		_, err := disbandSuiteGroup(suiteGroupUUID, tx)
 		if err != nil {
 			return err
+		}
+	}
+
+	// check the suite if there is a lock pull
+	var lockPulledRoomUUID uuid.UUID
+	err = tx.QueryRow("SELECT lock_pulled_room FROM suites WHERE suite_uuid = (SELECT suite_uuid FROM rooms WHERE room_uuid = $1)", roomUUID).Scan(&lockPulledRoomUUID)
+	if err != nil {
+		return err
+	}
+
+	if lockPulledRoomUUID != uuid.Nil {
+		// set the lock_pulled_room field in the suites table to nil
+		_, err = tx.Exec("UPDATE suites SET lock_pulled_room = $1 WHERE suite_uuid = (SELECT suite_uuid FROM rooms WHERE room_uuid = $2)", nil, roomUUID)
+		if err != nil {
+			return err
+		}
+
+		if lockPulledRoomUUID != roomUUID {
+			// set the pull_type field in the pull_priority to 1 and the inherited.valid field to false
+			_, err = tx.Exec(`
+					UPDATE rooms 
+					SET pull_priority = jsonb_set(
+											jsonb_set(
+												pull_priority, 
+												'{pullType}', 
+												'1'::jsonb
+											),
+											'{inherited,valid}', 
+											'false'::jsonb
+										)
+					WHERE room_uuid = $1`,
+				lockPulledRoomUUID)
+			if err != nil {
+				return err
+			}
+
 		}
 	}
 

@@ -5,27 +5,13 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"time"
 
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
 
 var DB *sql.DB
-
-func NewDatabase() (*sql.DB, error) {
-	godotenv.Load(".env")
-
-	cloudSQLPass := os.Getenv("CLOUD_SQL_PASS")
-	cloudSQLIP := os.Getenv("CLOUD_SQL_IP")
-	encodedPass := url.QueryEscape(cloudSQLPass)
-
-	// Construct the connection string
-	connStr := fmt.Sprintf("postgresql://postgres:%s@%s/test-db", encodedPass, cloudSQLIP)
-
-	// Open the database connection
-	db, err := sql.Open("postgres", connStr)
-	return db, err
-}
 
 func InitDB() error {
 	err := godotenv.Load(".env")
@@ -45,6 +31,11 @@ func InitDB() error {
 	if err != nil {
 		return fmt.Errorf("error opening database connection: %v", err)
 	}
+
+	// Configure connection pool
+	DB.SetMaxOpenConns(25)                 // Example: 25 open connections
+	DB.SetMaxIdleConns(10)                 // Example: 10 idle connections
+	DB.SetConnMaxLifetime(5 * time.Minute) // Example: 5 minutes
 
 	// Check the connection
 	if err = DB.Ping(); err != nil {
