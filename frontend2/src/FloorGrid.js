@@ -42,7 +42,7 @@ function FloorGrid({ gridData }) {
   // entire collection of cells
   const gridContainerStyle = {
     display: 'grid',
-    gridTemplateColumns: 'auto auto auto auto auto auto auto', // this must scale with the number of columns
+    gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr 1fr 1fr', // this must scale with the number of columns
     gap: '5px',
     maxWidth: '800px', // Set the maximum width of the grid container
     margin: '0 auto', // Center the grid container horizontally
