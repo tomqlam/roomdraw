@@ -5,6 +5,9 @@ import { useState, useContext } from 'react';
 import FloorGrid from './FloorGrid';
 import Recommendations from './Recommendations';
 import { MyContext } from './MyContext';
+import { GoogleLogin } from '@react-oauth/google';
+import { jwtDecode } from "jwt-decode";
+
 
 function App() {
   const {
@@ -24,7 +27,7 @@ function App() {
 
   // const [showNotification, setShowNotification] = useState(false);
   const [myRoom, setMyRoom] = useState("You are not in a room yet."); // to show what room current user is in
-
+  const [credentials, setCredentials] = useState(null);
 
   useEffect(() => {
     // updates room that the current user is in every time the selected user or the room data changes
@@ -150,12 +153,20 @@ function App() {
           <div class="navbar-end">
             <div class="navbar-item">
               <div class="buttons">
-                <a class="button is-primary">
-                  <strong>Sign up</strong>
-                </a>
-                <a class="button is-light">
-                  Log in
-                </a>
+                {!credentials && <GoogleLogin auto_select={true}
+                  onSuccess={credentialResponse => {
+                    const decoded = jwtDecode(credentialResponse?.credential);
+                    console.log(decoded);
+                    console.log("hello");
+                    setCredentials(decoded);
+                  }}
+                  onError={() => {
+                    console.log('Login Failed');
+                  }}
+                />}
+                {credentials && <a class="button is-primary">
+                  <strong>Welcome, {credentials?.given_name}</strong>
+                </a>}
               </div>
             </div>
           </div>

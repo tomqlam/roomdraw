@@ -91,112 +91,74 @@ function BumpModal() {
 
   };
 
-  const canIBump = () => {
-    // for non-normal pulls, this checks if the room can be pulled
-    return new Promise((resolve, reject) => {  // Return a new Promise
+  const performRoomAction = (pullType, pullLeaderRoom = null) => {
+    return new Promise((resolve) => {
       fetch(`/rooms/${selectedRoomObject.roomUUID}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          proposedOccupants: selectedOccupants.map(Number).filter(num => num !== 0),  // Convert to array of numbers and remove zeros
-          pullType: 1
+          proposedOccupants: selectedOccupants.map(Number).filter(num => num !== 0),
+          pullType,
+          pullLeaderRoom,
         }),
       })
         .then(response => response.json())
         .then(data => {
           if (data.error) {
-            // There was an error pulling the room
             setPullError(data.error);
             setIsModalOpen(true);
             setShowModalError(true);
-            resolve(false); 
+            resolve(false);
           } else {
-            // There was no error pulling the room, and the grid should refresh
             setRefreshKey(refreshKey + 1);
-            resolve(true); 
-          }
-        })
-        .catch((error) => {
-          print(error.error);
-          setRefreshKey(refreshKey + 1);
-          resolve(true); 
-        });
-
-    });
-  }
-
-  const canIBePulled = () => {
-    return new Promise((resolve, _) => {  // Return a new Promise
-      fetch(`/rooms/${selectedRoomObject.roomUUID}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          proposedOccupants: selectedOccupants.map(Number).filter(num => num !== 0),  // Convert to array of numbers and remove zeros
-          pullType: 2,
-          pullLeaderRoom: peopleWhoCanPull.find(person => person[0] === Number(pullMethod))[1],
-        }),
-      })
-        .then(response => response.json())
-        .then(data => {
-          if (data.error) {
-            // There was an error pulling the room
-            setPullError(data.error);
-            setIsModalOpen(true);
-            setShowModalError(true);
-            resolve(false); 
-          } else {
-            // There was no error pulling the room, and the grid should refresh
-            setRefreshKey(refreshKey + 1);
-            resolve(true); 
+            resolve(true);
           }
         })
         .catch((error) => {
           console.error(error.error);
           setRefreshKey(refreshKey + 1);
-          resolve(true); 
+          resolve(true);
         });
-
     });
   }
+  
+  const canIBump = () => performRoomAction(1);
+  const canIBePulled = () => performRoomAction(2, peopleWhoCanPull.find(person => person[0] === Number(pullMethod))[1]);
+  const canILockPull = () => performRoomAction(3);
 
-  const canILockPull = () => {
-    // for lock pulling
-    return new Promise((resolve, reject) => {  // Return a new Promise
+  const handleClearRoom = () => {
+    return new Promise((resolve) => {
       fetch(`/rooms/${selectedRoomObject.roomUUID}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          proposedOccupants: selectedOccupants.map(Number).filter(num => num !== 0),  // Convert to array of numbers and remove zeros
-          pullType: 3
+          proposedOccupants: [],
+          pullType: 1,
         }),
       })
         .then(response => response.json())
         .then(data => {
           if (data.error) {
-            // There was an error pulling the room
             setPullError(data.error);
             setIsModalOpen(true);
             setShowModalError(true);
-            resolve(false); 
+            resolve(false);
           } else {
-            // There was no error pulling the room, and the grid should refresh
-            print("This room was successfully lock pulled");
+            closeModal();
             setRefreshKey(refreshKey + 1);
-            resolve(true); 
+            resolve(true);
+            
           }
         })
         .catch((error) => {
-          print(error.error);
+          console.error(error.error);
           setRefreshKey(refreshKey + 1);
-          resolve(true); 
+          resolve(true);
         });
-
     });
   }
 
@@ -210,7 +172,10 @@ function BumpModal() {
           <button className="delete" aria-label="close" onClick={closeModal}></button>
         </header>
         <section className="modal-card-body">
+        <button className="button is-primary" onClick={handleClearRoom}>Clear room</button>
+
           {/* description */}
+          
           <label className="label">{`Occupant${selectedRoomObject.maxOccupancy > 1 ? "s" : ""}`}</label>
 
 

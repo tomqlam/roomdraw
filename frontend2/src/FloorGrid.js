@@ -189,7 +189,7 @@ function FloorGrid({ gridData }) {
       <div style={roomNumberStyle}><strong>Occupant 4</strong></div>
 
       {gridData.suites.map((suite, suiteIndex) => (
-        suite.rooms.sort((a, b) => Number(a.roomNumber) - Number(b.roomNumber))  // Sort the rooms by room number
+        suite.rooms.sort((a, b) => String(a.roomNumber).localeCompare(String(b.roomNumber)))
         .map((room, roomIndex) => (
           <React.Fragment key={roomIndex}>
             <div
