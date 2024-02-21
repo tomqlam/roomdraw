@@ -817,21 +817,6 @@ func UpdateRoomOccupants(c *gin.Context) {
 			return
 		}
 
-		// {
-		// 	"year": 3,
-		// 	"valid": true,
-		// 	"pullType": 1,
-		// 	"hasInDorm": false,
-		// 	"inherited": {
-		// 	  "year": 0,
-		// 	  "valid": false,
-		// 	  "hasInDorm": false,
-		// 	  "drawNumber": 0
-		// 	},
-		// 	"drawNumber": 58,
-		// 	"isPreplaced": false
-		//   }
-
 		_, err = tx.Exec(`
 			UPDATE Rooms
 			SET pull_priority = jsonb_set(

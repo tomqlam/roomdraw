@@ -205,3 +205,8 @@ type OccupantUpdateRequest struct {
 	PullType          int       `json:"pullType"` // 0 = undefined, 1 = self, 2 = normal pull, 3 = lock pull, 4 = alternative pull
 	PullLeaderRoom    uuid.UUID `json:"pullLeaderRoom"`
 }
+
+type SuiteDesignUpdateRequest struct {
+	SuiteDesign string `json:"suiteDesign"`
+	SuiteUUID   string `json:"suiteUUID"`
+}

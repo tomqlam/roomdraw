@@ -51,7 +51,8 @@ func main() {
 	router.GET("/rooms/simple/:dormName", handlers.GetSimpleFormattedDorm) // Read
 	router.PATCH("/rooms/:roomuuid", handlers.UpdateRoomOccupants)         // Write
 	router.GET("/users", handlers.GetUsers)                                // Read
-	router.GET("/users/idmap", handlers.GetUsersIdMap)                     // Read
+	router.GET("/users/idmap", handlers.GetUsersIdMap)
+	router.POST("/suites/design", handlers.SetSuiteDesign)
 
 	// Start the server
 	router.Run(config.ServerAddress)
