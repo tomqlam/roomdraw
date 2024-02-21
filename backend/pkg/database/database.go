@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"net/url"
 	"os"
 	"time"
@@ -21,10 +22,13 @@ func InitDB() error {
 
 	cloudSQLPass := os.Getenv("CLOUD_SQL_PASS")
 	cloudSQLIP := os.Getenv("CLOUD_SQL_IP")
+	cloudSQLDBName := os.Getenv("CLOUD_SQL_DB_NAME")
 	encodedPass := url.QueryEscape(cloudSQLPass)
 
 	// Construct the connection string
-	connStr := fmt.Sprintf("postgresql://postgres:%s@%s/test-db", encodedPass, cloudSQLIP)
+	connStr := fmt.Sprintf("postgresql://postgres:%s@%s/%s?sslmode=disable", encodedPass, cloudSQLIP, cloudSQLDBName)
+
+	log.Println("connStr", connStr)
 
 	// Open the database connection
 	DB, err = sql.Open("postgres", connStr)

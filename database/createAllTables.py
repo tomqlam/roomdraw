@@ -1,3 +1,4 @@
+from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy import Table, Column, Integer, String, MetaData, ForeignKey
 from sqlalchemy import inspect
@@ -7,12 +8,17 @@ from sqlalchemy.sql import text
 import os
 from pathlib import Path
 
-# get env variable called neon_pass from env file
+# load env variables
+env_path = Path('.') / '.env'
+load_dotenv(dotenv_path=env_path, verbose=True)
+
 cloud_sql_pass = os.environ.get('CLOUD_SQL_PASS')
 cloud_sql_ip = os.environ.get('CLOUD_SQL_IP')
+cloud_sql_db_name = os.environ.get('CLOUD_SQL_DB_NAME')
 
-CONNSTR = f'postgresql://postgres:{cloud_sql_pass}@{cloud_sql_ip}/test-db'
+CONNSTR = f'postgresql://postgres:{cloud_sql_pass}@{cloud_sql_ip}/{cloud_sql_db_name}'
 
+print(CONNSTR)
 engine = create_engine(CONNSTR)
 
 with engine.connect() as connection:
