@@ -54,7 +54,18 @@ function App() {
 
 
 
-  const [activeTab, setActiveTab] = useState('Atwood'); // controls which dorm is shown
+
+  // Initialize state from localStorage or default to 'Atwood'
+  const [activeTab, setActiveTab] = useState(() => {
+    const savedTab = localStorage.getItem('activeTab');
+    return savedTab !== null ? savedTab : 'Atwood';
+  });
+
+  // Save state to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('activeTab', activeTab);
+  }, [activeTab]);
+
 
   const handleNameChange = (event) => {
     setSelectedID(event.target.value);

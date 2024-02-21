@@ -20,10 +20,12 @@ function BumpModal() {
     selectedSuiteObject,
     pullError,
     setPullError,
+    rooms,
   } = useContext(MyContext);
 
   // List of arrays with two elements, where the first element is the occupant ID and the second element is the room UUID
   const [peopleWhoCanPull, setPeopleWhoCanPull] = useState([["Example ID", "Example Room UUID"]]);
+  const [peopleAlreadyInRoom, setPeopleAlreadyInRoom] = useState([]); // list of numeric IDs of people already in the Room
 
   useEffect(() => {
     // If the selected suite or room changes, change the people who can pull 
@@ -37,7 +39,23 @@ function BumpModal() {
       }
       setPeopleWhoCanPull(otherOccupants);
     }
-  }, [selectedSuiteObject, selectedItem]);      
+  }, [selectedSuiteObject, selectedItem]);
+
+  const getRoomUUIDFromUserID = (userID) => {
+    if (rooms) {
+      for (let room of rooms) {
+
+        if (room.Occupants && room.Occupants.includes(Number(userID))) {
+          // they are this room
+
+          return room.RoomUUID;
+        }
+      }
+
+
+    }
+    return null;
+  }
 
   const handlePullMethodChange = (e) => {
     print(pullMethod);
@@ -48,17 +66,19 @@ function BumpModal() {
     setIsModalOpen(false);
   };
   const handleDropdownChange = (index, value) => {
-    
+
     const updatedselectedOccupants = [...selectedOccupants];
     updatedselectedOccupants[index - 1] = value;
     setSelectedOccupants(updatedselectedOccupants);
+    setPeopleAlreadyInRoom([]);
+    setShowModalError(false);
 
   };
 
   const handleSubmit = async (e) => {  // Declare handleSubmit as async
     // Handle form submission logic here
     e.preventDefault();
-    
+
     if (/^\d+$/.test(pullMethod)) {
       console.log("Pull method is a number");
       // pullMethod only includes number, implying that you were pulled by someone else
@@ -87,7 +107,7 @@ function BumpModal() {
       }
 
     }
-    
+
 
   };
 
@@ -107,7 +127,16 @@ function BumpModal() {
         .then(response => response.json())
         .then(data => {
           if (data.error) {
-            setPullError(data.error);
+            if (data.error === "One or more of the proposed occupants is already in a room") {
+              console.log("Someone's already there rrror");
+              setPeopleAlreadyInRoom(data.occupants);
+              const names = data.occupants.map(getNameById).join(', ');
+              setPullError("Please remove " + names + " from their existing room");
+
+            } else {
+              setPullError(data.error);
+            }
+            
             setIsModalOpen(true);
             setShowModalError(true);
             resolve(false);
@@ -123,14 +152,14 @@ function BumpModal() {
         });
     });
   }
-  
+
   const canIBump = () => performRoomAction(1);
   const canIBePulled = () => performRoomAction(2, peopleWhoCanPull.find(person => person[0] === Number(pullMethod))[1]);
   const canILockPull = () => performRoomAction(3);
 
-  const handleClearRoom = () => {
+  const handleClearRoom = (roomUUID, closeModalBool) => {
     return new Promise((resolve) => {
-      fetch(`/rooms/${selectedRoomObject.roomUUID}`, {
+      fetch(`/rooms/${roomUUID}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -147,17 +176,21 @@ function BumpModal() {
             setIsModalOpen(true);
             setShowModalError(true);
             resolve(false);
-          } else {
-            closeModal();
-            setRefreshKey(refreshKey + 1);
-            resolve(true);
-            
+
           }
         })
         .catch((error) => {
-          console.error(error.error);
           setRefreshKey(refreshKey + 1);
           resolve(true);
+          if (closeModalBool) { 
+          closeModal();
+          } else {
+            // On tap action for clearing other room
+            // Also clear the error and the button 
+            setShowModalError(false);
+            setPeopleAlreadyInRoom([]);
+          }
+
         });
     });
   }
@@ -172,11 +205,9 @@ function BumpModal() {
           <button className="delete" aria-label="close" onClick={closeModal}></button>
         </header>
         <section className="modal-card-body">
-        <button className="button is-primary" onClick={handleClearRoom}>Clear room</button>
 
-          {/* description */}
-          
-          <label className="label">{`Occupant${selectedRoomObject.maxOccupancy > 1 ? "s" : ""}`}</label>
+
+          <label className="label">{`Reassign Occupant${selectedRoomObject.maxOccupancy > 1 ? "s" : ""}`}</label>
 
 
 
@@ -209,7 +240,7 @@ function BumpModal() {
             </div>
 
           ))}
-          <label className="label" >How did you pull this room?</label>
+          <label className="label" >How did they pull this room?</label>
           <div className="select">
             <select value={pullMethod} onChange={handlePullMethodChange}>
               <option value="Pulled themselves">Pulled themselves</option>
@@ -223,13 +254,19 @@ function BumpModal() {
           </div>
 
           {/* Add your modal content here */}
+
+          
           {showModalError && (<p class="help is-danger">{pullError}</p>)}
+          {peopleAlreadyInRoom.map((person, index) => (
+            <div key={index} style={{ marginTop: '5px' }} className="field">
+            <button className="button is-danger" onClick={() => handleClearRoom(getRoomUUIDFromUserID(person), false)}>Clear {getNameById(person)}'s existing room</button>
+            </div>
+          ))}
 
         </section>
-        <footer className="modal-card-foot">
-
-          <button className="button is-primary" onClick={handleSubmit}>Let's go!</button>
-
+        <footer className="modal-card-foot" style={{ display: 'flex', justifyContent: 'space-between' }}>
+          <button className="button is-primary" onClick={handleSubmit}>Update room</button>
+          <button className="button is-danger" onClick={() => handleClearRoom(selectedRoomObject.roomUUID, true)}>Clear room</button>
         </footer>
       </div>
     </div>

@@ -127,6 +127,7 @@ function FloorGrid({ gridData }) {
       
 
       if (room) {
+        print(room);
         if (room.pullPriority.pullType === 3) {
           return "Lock Pull";
         }
@@ -157,9 +158,11 @@ function FloorGrid({ gridData }) {
 
   const checkBumpable = (pullPriority) => {
     if (!pullPriority.valid)  {
+      // You can bump this
       return true;
     }
     if (pullPriority.isPreplaced) {
+      // You can't bump this 
       return false;
     }
     if (pullPriority.hasInDorm) {

@@ -18,7 +18,19 @@ export const MyContextProvider = ({ children }) => {
     const [selectedSuiteObject, setSelectedSuiteObject] = useState(null); // json object for current suite
     const [refreshKey, setRefreshKey] = useState(0); // key, when incremented, refreshes the main page
     const [pullError, setPullError] = useState("There was an unknown error. Please try again."); // text of error showig up when you can't pull
-    const [selectedID, setSelectedID] = useState(8); // selected person's id (integer)
+    const [selectedID, setSelectedID] = useState(() => {
+        const selectedID = localStorage.getItem('selectedID');
+        return selectedID !== null ? selectedID : '8'; //TODO 
+      });
+
+
+  // Save state to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('selectedID', selectedID);
+  }, [selectedID]);
+
+  // rest of your component
+
 
 
     useEffect(() => {
