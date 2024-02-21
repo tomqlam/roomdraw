@@ -13,5 +13,6 @@ CREATE TABLE Suites (
     suite_design varchar NOT NULL DEFAULT '',
     can_pull bool NOT NULL DEFAULT false,
     lock_pulled_room uuid,
+    reslife_room uuid,
     PRIMARY KEY (suite_uuid)
 );

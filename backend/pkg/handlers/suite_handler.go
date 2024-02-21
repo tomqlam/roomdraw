@@ -40,5 +40,12 @@ func SetSuiteDesign(c *gin.Context) {
 		return
 	}
 
+	// commit the transaction
+	err = tx.Commit()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to commit transaction"})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{"message": "Suite design updated"})
 }

@@ -26,6 +26,8 @@ CREATE TABLE Rooms (
         }
     }'::jsonb,
     sgroup_uuid uuid,
+    has_frosh bool NOT NULL DEFAULT false,
+    frosh_room_type INT NOT NULL DEFAULT 0,
     PRIMARY KEY (room_uuid),
     FOREIGN KEY (suite_uuid) REFERENCES Suites(suite_uuid)
 );

@@ -95,6 +95,8 @@ type RoomRaw struct {
 	Occupants        IntArray     `db:"occupants"`
 	PullPriority     PullPriority `db:"pull_priority"`
 	SGroupUUID       uuid.UUID    `db:"sgroup_uuid"`
+	HasFrosh         bool         `db:"has_frosh"`
+	FroshRoomType    int          `db:"frosh_room_type"`
 }
 
 type SuiteRaw struct {
@@ -114,15 +116,28 @@ type DormSimple struct {
 	Floors      []FloorSimple `json:"floors"`
 }
 
+type DormSimpler struct {
+	Floors []FloorSimpler `json:"floors"`
+}
+
 type FloorSimple struct {
 	FloorNumber int           `json:"floorNumber"`
 	Suites      []SuiteSimple `json:"suites"`
+}
+
+type FloorSimpler struct {
+	Suites []SuiteSimpler `json:"suites"`
 }
 
 type SuiteSimple struct {
 	Rooms       []RoomSimple `json:"rooms"`
 	SuiteDesign string       `json:"suiteDesign"`
 	SuiteUUID   uuid.UUID    `json:"suiteUUID"`
+}
+
+type SuiteSimpler struct {
+	Rooms           []RoomSimpler `json:"rooms"`
+	AlternativePull bool          `json:"alternative_pull"`
 }
 
 type RoomSimple struct {
@@ -134,6 +149,13 @@ type RoomSimple struct {
 	Occupant2    int          `json:"occupant2"`
 	Occupant3    int          `json:"occupant3"`
 	Occupant4    int          `json:"occupant4"`
+	HasFrosh     bool         `json:"hasFrosh"`
+}
+
+type RoomSimpler struct {
+	RoomNumber    string `json:"room_number"`
+	MaxOccupancy  int    `json:"capacity"`
+	FroshRoomType int    `json:"frosh_room_type"`
 }
 
 type UserRaw struct {
@@ -160,6 +182,7 @@ type SuiteGroupRaw struct {
 	Disbanded      bool      `db:"disbanded"`
 	CanLockPull    bool      `db:"can_lock_pull"`
 	LockPulledRoom uuid.UUID `db:"contains_lock_pull"`
+	ReslifeRoom    uuid.UUID `db:"reslife_room"`
 }
 
 func (pp *PullPriority) Scan(src interface{}) error {
@@ -209,4 +232,8 @@ type OccupantUpdateRequest struct {
 type SuiteDesignUpdateRequest struct {
 	SuiteDesign string `json:"suiteDesign"`
 	SuiteUUID   string `json:"suiteUUID"`
+}
+
+type BumpFroshRequest struct {
+	TargetRoomUUID string `json:"targetRoomUUID"`
 }
