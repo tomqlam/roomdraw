@@ -7,22 +7,22 @@
                         {
                             "room_number": "351D",
                             "capacity": 1,
-                            "frosh_room_type": 0
+                            "frosh_room_type": 2
                         },
                         {
                             "room_number": "351C",
                             "capacity": 1,
-                            "frosh_room_type": 0
+                            "frosh_room_type": 2
                         },
                         {
                             "room_number": "351A",
                             "capacity": 1,
-                            "frosh_room_type": 0
+                            "frosh_room_type": 2
                         },
                         {
                             "room_number": "351B",
                             "capacity": 1,
-                            "frosh_room_type": 0
+                            "frosh_room_type": 2
                         }
                     ],
                     "alternative_pull": false
@@ -32,22 +32,22 @@
                         {
                             "room_number": "352A",
                             "capacity": 1,
-                            "frosh_room_type": 0
+                            "frosh_room_type": 2
                         },
                         {
                             "room_number": "352B",
                             "capacity": 1,
-                            "frosh_room_type": 0
+                            "frosh_room_type": 2
                         },
                         {
                             "room_number": "352C",
                             "capacity": 1,
-                            "frosh_room_type": 0
+                            "frosh_room_type": 2
                         },
                         {
                             "room_number": "352D",
                             "capacity": 1,
-                            "frosh_room_type": 0
+                            "frosh_room_type": 2
                         }
                     ],
                     "alternative_pull": false
@@ -57,17 +57,17 @@
                         {
                             "room_number": "353A",
                             "capacity": 1,
-                            "frosh_room_type": 0
+                            "frosh_room_type": 1
                         },
                         {
                             "room_number": "353C",
                             "capacity": 1,
-                            "frosh_room_type": 0
+                            "frosh_room_type": 1
                         },
                         {
                             "room_number": "353B",
                             "capacity": 1,
-                            "frosh_room_type": 0
+                            "frosh_room_type": 1
                         }
                     ],
                     "alternative_pull": false
@@ -77,17 +77,17 @@
                         {
                             "room_number": "354A",
                             "capacity": 1,
-                            "frosh_room_type": 0
+                            "frosh_room_type": 1
                         },
                         {
                             "room_number": "354C",
                             "capacity": 1,
-                            "frosh_room_type": 0
+                            "frosh_room_type": 1
                         },
                         {
                             "room_number": "354B",
                             "capacity": 1,
-                            "frosh_room_type": 0
+                            "frosh_room_type": 1
                         }
                     ],
                     "alternative_pull": false
@@ -97,17 +97,17 @@
                         {
                             "room_number": "355A",
                             "capacity": 1,
-                            "frosh_room_type": 0
+                            "frosh_room_type": 1
                         },
                         {
                             "room_number": "355B",
                             "capacity": 1,
-                            "frosh_room_type": 0
+                            "frosh_room_type": 1
                         },
                         {
                             "room_number": "355C",
                             "capacity": 1,
-                            "frosh_room_type": 0
+                            "frosh_room_type": 1
                         }
                     ],
                     "alternative_pull": false
@@ -117,22 +117,22 @@
                         {
                             "room_number": "356D",
                             "capacity": 1,
-                            "frosh_room_type": 0
+                            "frosh_room_type": 2
                         },
                         {
                             "room_number": "356C",
                             "capacity": 1,
-                            "frosh_room_type": 0
+                            "frosh_room_type": 2
                         },
                         {
                             "room_number": "356B",
                             "capacity": 1,
-                            "frosh_room_type": 0
+                            "frosh_room_type": 2
                         },
                         {
                             "room_number": "356A",
                             "capacity": 1,
-                            "frosh_room_type": 0
+                            "frosh_room_type": 2
                         }
                     ],
                     "alternative_pull": false
@@ -142,22 +142,22 @@
                         {
                             "room_number": "357D",
                             "capacity": 1,
-                            "frosh_room_type": 0
+                            "frosh_room_type": 2
                         },
                         {
                             "room_number": "357B",
                             "capacity": 1,
-                            "frosh_room_type": 0
+                            "frosh_room_type": 2
                         },
                         {
                             "room_number": "357C",
                             "capacity": 1,
-                            "frosh_room_type": 0
+                            "frosh_room_type": 2
                         },
                         {
                             "room_number": "357A",
                             "capacity": 1,
-                            "frosh_room_type": 0
+                            "frosh_room_type": 2
                         }
                     ],
                     "alternative_pull": false
@@ -167,22 +167,22 @@
                         {
                             "room_number": "358D",
                             "capacity": 1,
-                            "frosh_room_type": 0
+                            "frosh_room_type": 2
                         },
                         {
                             "room_number": "358C",
                             "capacity": 1,
-                            "frosh_room_type": 0
+                            "frosh_room_type": 2
                         },
                         {
                             "room_number": "358B",
                             "capacity": 1,
-                            "frosh_room_type": 0
+                            "frosh_room_type": 2
                         },
                         {
                             "room_number": "358A",
                             "capacity": 1,
-                            "frosh_room_type": 0
+                            "frosh_room_type": 2
                         }
                     ],
                     "alternative_pull": false
@@ -192,12 +192,12 @@
                         {
                             "room_number": "359",
                             "capacity": 2,
-                            "frosh_room_type": 0
+                            "frosh_room_type": 3
                         },
                         {
                             "room_number": "361",
                             "capacity": 2,
-                            "frosh_room_type": 0
+                            "frosh_room_type": 3
                         }
                     ],
                     "alternative_pull": false
@@ -222,12 +222,12 @@
                         {
                             "room_number": "363",
                             "capacity": 2,
-                            "frosh_room_type": 0
+                            "frosh_room_type": 3
                         },
                         {
                             "room_number": "365",
                             "capacity": 2,
-                            "frosh_room_type": 0
+                            "frosh_room_type": 3
                         }
                     ],
                     "alternative_pull": false
@@ -256,22 +256,22 @@
                         {
                             "room_number": "301A",
                             "capacity": 1,
-                            "frosh_room_type": 0
+                            "frosh_room_type": 2
                         },
                         {
                             "room_number": "301B",
                             "capacity": 1,
-                            "frosh_room_type": 0
+                            "frosh_room_type": 2
                         },
                         {
                             "room_number": "301D",
                             "capacity": 1,
-                            "frosh_room_type": 0
+                            "frosh_room_type": 2
                         },
                         {
                             "room_number": "301C",
                             "capacity": 1,
-                            "frosh_room_type": 0
+                            "frosh_room_type": 2
                         }
                     ],
                     "alternative_pull": false
@@ -281,17 +281,17 @@
                         {
                             "room_number": "303C",
                             "capacity": 1,
-                            "frosh_room_type": 0
+                            "frosh_room_type": 1
                         },
                         {
                             "room_number": "303A",
                             "capacity": 1,
-                            "frosh_room_type": 0
+                            "frosh_room_type": 1
                         },
                         {
                             "room_number": "303B",
                             "capacity": 1,
-                            "frosh_room_type": 0
+                            "frosh_room_type": 1
                         }
                     ],
                     "alternative_pull": false
@@ -301,17 +301,17 @@
                         {
                             "room_number": "304B",
                             "capacity": 1,
-                            "frosh_room_type": 0
+                            "frosh_room_type": 1
                         },
                         {
                             "room_number": "304C",
                             "capacity": 1,
-                            "frosh_room_type": 0
+                            "frosh_room_type": 1
                         },
                         {
                             "room_number": "304A",
                             "capacity": 1,
-                            "frosh_room_type": 0
+                            "frosh_room_type": 1
                         }
                     ],
                     "alternative_pull": false
@@ -321,17 +321,17 @@
                         {
                             "room_number": "305B",
                             "capacity": 1,
-                            "frosh_room_type": 0
+                            "frosh_room_type": 1
                         },
                         {
                             "room_number": "305C",
                             "capacity": 1,
-                            "frosh_room_type": 0
+                            "frosh_room_type": 1
                         },
                         {
                             "room_number": "305A",
                             "capacity": 1,
-                            "frosh_room_type": 0
+                            "frosh_room_type": 1
                         }
                     ],
                     "alternative_pull": false
@@ -341,22 +341,22 @@
                         {
                             "room_number": "306A",
                             "capacity": 1,
-                            "frosh_room_type": 0
+                            "frosh_room_type": 2
                         },
                         {
                             "room_number": "306C",
                             "capacity": 1,
-                            "frosh_room_type": 0
+                            "frosh_room_type": 2
                         },
                         {
                             "room_number": "306B",
                             "capacity": 1,
-                            "frosh_room_type": 0
+                            "frosh_room_type": 2
                         },
                         {
                             "room_number": "306D",
                             "capacity": 1,
-                            "frosh_room_type": 0
+                            "frosh_room_type": 2
                         }
                     ],
                     "alternative_pull": false
@@ -366,22 +366,22 @@
                         {
                             "room_number": "307B",
                             "capacity": 1,
-                            "frosh_room_type": 0
+                            "frosh_room_type": 2
                         },
                         {
                             "room_number": "307A",
                             "capacity": 1,
-                            "frosh_room_type": 0
+                            "frosh_room_type": 2
                         },
                         {
                             "room_number": "307D",
                             "capacity": 1,
-                            "frosh_room_type": 0
+                            "frosh_room_type": 2
                         },
                         {
                             "room_number": "307C",
                             "capacity": 1,
-                            "frosh_room_type": 0
+                            "frosh_room_type": 2
                         }
                     ],
                     "alternative_pull": false
@@ -421,22 +421,22 @@
                         {
                             "room_number": "302B",
                             "capacity": 1,
-                            "frosh_room_type": 0
+                            "frosh_room_type": 2
                         },
                         {
                             "room_number": "302C",
                             "capacity": 1,
-                            "frosh_room_type": 0
+                            "frosh_room_type": 2
                         },
                         {
                             "room_number": "302D",
                             "capacity": 1,
-                            "frosh_room_type": 0
+                            "frosh_room_type": 2
                         },
                         {
                             "room_number": "302A",
                             "capacity": 1,
-                            "frosh_room_type": 0
+                            "frosh_room_type": 2
                         }
                     ],
                     "alternative_pull": false
