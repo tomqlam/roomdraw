@@ -128,6 +128,10 @@ function FloorGrid({ gridData }) {
 
       if (room) {
         print(room);
+        if (room.hasFrosh) {
+          return "Frosh!!!";
+        }
+
         if (room.pullPriority.pullType === 3) {
           return "Lock Pull";
         }
@@ -211,10 +215,10 @@ function FloorGrid({ gridData }) {
               }} >Insert suite name</div>
 
             }
-            <div style={getGridItemStyle(room, room.maxOccupancy, 1, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{getNameById(room.occupant1)}</div>
-            <div style={getGridItemStyle(room, room.maxOccupancy, 2, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{getNameById(room.occupant2)}</div>
-            <div style={getGridItemStyle(room, room.maxOccupancy, 3, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{getNameById(room.occupant3)}</div>
-            <div style={getGridItemStyle(room, room.maxOccupancy, 4, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{getNameById(room.occupant4)}</div>
+            <div style={getGridItemStyle(room, room.maxOccupancy, 1, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{room.hasFrosh ? "Frosh" : getNameById(room.occupant1)}</div>
+            <div style={getGridItemStyle(room, room.maxOccupancy, 2, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{room.hasFrosh ? "Frosh" : getNameById(room.occupant2)}</div>
+            <div style={getGridItemStyle(room, room.maxOccupancy, 3, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{room.hasFrosh ? "Frosh" : getNameById(room.occupant3)}</div>
+            <div style={getGridItemStyle(room, room.maxOccupancy, 4, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{room.hasFrosh ? "Frosh" : getNameById(room.occupant4)}</div>
 
           </React.Fragment>
         ))

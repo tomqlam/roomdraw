@@ -83,7 +83,7 @@ func GetSimpleFormattedDorm(c *gin.Context) {
 		}
 	}()
 
-	rows, err := tx.Query("SELECT room_uuid, dorm, dorm_name, room_id, suite_uuid, max_occupancy, current_occupancy, occupants, pull_priority FROM rooms WHERE UPPER(dorm_name) = UPPER($1)", dormNameParam)
+	rows, err := tx.Query("SELECT room_uuid, dorm, dorm_name, room_id, suite_uuid, max_occupancy, current_occupancy, occupants, pull_priority, has_frosh FROM rooms WHERE UPPER(dorm_name) = UPPER($1)", dormNameParam)
 	if err != nil {
 		// Handle query error
 		// print the error to the console
@@ -95,7 +95,7 @@ func GetSimpleFormattedDorm(c *gin.Context) {
 	var rooms []models.RoomRaw
 	for rows.Next() {
 		var d models.RoomRaw
-		if err := rows.Scan(&d.RoomUUID, &d.Dorm, &d.DormName, &d.RoomID, &d.SuiteUUID, &d.MaxOccupancy, &d.CurrentOccupancy, &d.Occupants, &d.PullPriority); err != nil {
+		if err := rows.Scan(&d.RoomUUID, &d.Dorm, &d.DormName, &d.RoomID, &d.SuiteUUID, &d.MaxOccupancy, &d.CurrentOccupancy, &d.Occupants, &d.PullPriority, &d.HasFrosh); err != nil {
 			log.Println(err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Database scan failed on rooms"})
 			return
@@ -140,6 +140,7 @@ func GetSimpleFormattedDorm(c *gin.Context) {
 			PullPriority: r.PullPriority,
 			MaxOccupancy: r.MaxOccupancy,
 			RoomUUID:     r.RoomUUID,
+			HasFrosh:     r.HasFrosh,
 		}
 
 		if len(r.Occupants) >= 1 {
@@ -331,7 +332,7 @@ func UpdateRoomOccupants(c *gin.Context) {
 	}()
 
 	var currentRoomInfo models.RoomRaw
-	err = tx.QueryRow("SELECT room_uuid, dorm, dorm_name, room_id, suite_uuid, max_occupancy, current_occupancy, occupants, pull_priority FROM rooms WHERE room_uuid = $1", roomUUIDParam).Scan(
+	err = tx.QueryRow("SELECT room_uuid, dorm, dorm_name, room_id, suite_uuid, max_occupancy, current_occupancy, occupants, pull_priority, has_frosh FROM rooms WHERE room_uuid = $1", roomUUIDParam).Scan(
 		&currentRoomInfo.RoomUUID,
 		&currentRoomInfo.Dorm,
 		&currentRoomInfo.DormName,
@@ -341,6 +342,7 @@ func UpdateRoomOccupants(c *gin.Context) {
 		&currentRoomInfo.CurrentOccupancy,
 		&currentRoomInfo.Occupants,
 		&currentRoomInfo.PullPriority,
+		&currentRoomInfo.HasFrosh,
 	)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to query room info from rooms table"})
@@ -349,6 +351,13 @@ func UpdateRoomOccupants(c *gin.Context) {
 
 	// log room uuid
 	log.Println(currentRoomInfo.RoomUUID)
+
+	// make sure the room does not have frosh
+	if currentRoomInfo.HasFrosh {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Room has frosh"})
+		err = errors.New("room has frosh")
+		return
+	}
 
 	// check that the proposed occupants are not more than the max occupancy
 	if len(proposedOccupants) > currentRoomInfo.MaxOccupancy {
