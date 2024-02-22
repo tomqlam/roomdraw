@@ -22,9 +22,27 @@ To run the RoomDraw backend, follow these steps:
     docker build -t roomdraw-backend .
     ```
 
+    If you're running podman on a server on which you need root privs, run the above command locally to build the image. Then do:
+
+    1. ```bash
+        docker save roomdraw-backend > /path/to/roomdraw-backend.tar
+        ```
+    2. ```bash
+        scp /path/to/roomdraw-backend.tar user@destination_host:path_on_destination 
+        ```
+    3. ```bash
+        podman load < roomdraw-backend.tar
+        ```
+
     Run the following command to start the Docker container:
     ```bash
     docker run -it -p 8080:8080 -v $(pwd):/app roomdraw-backend
+    ```
+
+    Or if you're using podman:
+
+    ```bash
+    podman run -it -p 8080:8080 -v $(pwd):/app roomdraw-backend
     ```
 
     This command will start a Docker container with the RoomDraw backend image. It will map port 8080 on your local machine to port 8080 in the container and mount the current directory as `/app` inside the container.

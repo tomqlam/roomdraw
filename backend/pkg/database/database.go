@@ -25,10 +25,14 @@ func InitDB() error {
 	cloudSQLIP := os.Getenv("CLOUD_SQL_IP")
 	cloudSQLDBName := os.Getenv("CLOUD_SQL_DB_NAME")
 	cloudSQLUser := os.Getenv("CLOUD_SQL_USER")
-	encodedPass := url.QueryEscape(url.PathEscape(strings.TrimSpace(cloudSQLPass)))
+	useSSL := os.Getenv("USE_SSL")
+	// replace every space with %20
+	encodedPass := url.QueryEscape(cloudSQLPass)
+	// replace + with %20
+	encodedPass = strings.Replace(encodedPass, "+", "%20", -1)
 
 	// Construct the connection string
-	connStr := fmt.Sprintf("postgresql://%s:%s@%s/%s", cloudSQLUser, encodedPass, cloudSQLIP, cloudSQLDBName)
+	connStr := fmt.Sprintf("postgresql://%s:%s@%s/%s?sslmode=%s", cloudSQLUser, encodedPass, cloudSQLIP, cloudSQLDBName, useSSL)
 
 	log.Println("connStr", connStr)
 
