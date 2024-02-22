@@ -1,6 +1,7 @@
 import random
 from sqlalchemy import create_engine
 from sqlalchemy.sql import text
+from uuid import uuid4
 
 # import env variables
 import os
@@ -71,7 +72,7 @@ with engine.connect() as connection:
         # 1/10 chance of being a preplaced student
         preplaced = (i%10==0)
         in_dorm = random.randint(1, 9) if (i%2==0 and (not preplaced and year =='senior')) else 0;
-        # make query
+        # generate a uuid
         query = f"INSERT INTO Users (first_name, last_name, draw_number, year, preplaced, in_dorm) VALUES ('{first_name}', '{last_name}', {draw_number}, '{year}', {preplaced}, {in_dorm});"
         result = connection.execute(text(query))
     connection.commit()

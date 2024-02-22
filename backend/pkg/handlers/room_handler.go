@@ -815,15 +815,17 @@ func UpdateRoomOccupants(c *gin.Context) {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to marshal pull leader's pull priority"})
 				return
 			}
-			var suiteGroupUUID uuid.UUID
-			err = tx.QueryRow("INSERT INTO suitegroups (sgroup_size, sgroup_name, sgroup_suite, pull_priority, rooms, disbanded) VALUES ($1, $2, $3, $4, $5, $6) RETURNING sgroup_uuid",
+
+			var suiteGroupUUID uuid.UUID = uuid.New()
+			_, err = tx.Exec("INSERT INTO suitegroups (suiteGroupUUID, sgroup_size, sgroup_name, sgroup_suite, pull_priority, rooms, disbanded) VALUES ($1, $2, $3, $4, $5, $6, $7)",
+				suiteGroupUUID,
 				2,
 				"Suite Group",
 				currentRoomInfo.SuiteUUID,
 				pullLeaderPriorityJSON,
 				pq.Array(models.UUIDArray{currentRoomInfo.RoomUUID, request.PullLeaderRoom}),
 				false,
-			).Scan(&suiteGroupUUID)
+			)
 			if err != nil {
 				log.Println(err)
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to insert new suite group into suitegroups table"})
@@ -906,15 +908,16 @@ func UpdateRoomOccupants(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to marshal pull leader's pull priority"})
 			return
 		}
-		var suiteGroupUUID uuid.UUID
-		err = tx.QueryRow("INSERT INTO suitegroups (sgroup_size, sgroup_name, sgroup_suite, pull_priority, rooms, disbanded) VALUES ($1, $2, $3, $4, $5, $6) RETURNING sgroup_uuid",
+		var suiteGroupUUID uuid.UUID = uuid.New()
+		_, err = tx.Exec("INSERT INTO suitegroups (suiteGroupUUID, sgroup_size, sgroup_name, sgroup_suite, pull_priority, rooms, disbanded) VALUES ($1, $2, $3, $4, $5, $6, $7)",
+			suiteGroupUUID,
 			2,
 			"Suite Group",
 			currentRoomInfo.SuiteUUID,
 			alternativeGroupPriorityJSON,
 			pq.Array(models.UUIDArray{currentRoomInfo.RoomUUID, request.PullLeaderRoom}),
 			false,
-		).Scan(&suiteGroupUUID)
+		)
 		if err != nil {
 			log.Println(err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to insert new suite group into suitegroups table"})

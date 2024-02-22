@@ -1,7 +1,7 @@
 -- - Approve Lock Pull Table
 -- 	ApprovalUID, ApprovalGroupID (doesn’t change between approvers), requester USER_ID (must be person with highest number in n-1 filled suite), candidate USER_ID, approver USER_ID (new record for each approver), SuiteID, DateTime created, status(no response, rejected, approved), consensusSuccess(success, fail, inprogress), replyReceived DateTime
 CREATE TABLE ApproveLockPull (
-    approval_uuid uuid DEFAULT UUID_GENERATE_V4(),
+    approval_uuid uuid NOT NULL,
     approval_group_uuid uuid NOT NULL,
     requester_id varchar NOT NULL,
     candidate_id varchar NOT NULL,

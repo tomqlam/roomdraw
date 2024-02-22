@@ -3,7 +3,7 @@
 --	RequestUID, Type of request (join Lock-pull, join pull, join room), request recipient USER_ID, SuiteUID, RoomUID, Request Creator, ApprovalCount (only applicable to lockpull), ApprovalGroupID (only applicable to lockpull), JoinRequestReply (accept, deny, pending), DateTime created
 
 CREATE TABLE JoinRequests (
-    request_uuid uuid DEFAULT UUID_GENERATE_V4(),
+    request_uuid uuid NOT NULL,
     request_type varchar NOT NULL,
     request_recipient varchar NOT NULL,
     suite_uuid uuid,
