@@ -128,6 +128,9 @@ export const MyContextProvider = ({ children }) => {
     };
 
     const getNameById = (id) => {
+        if (id === -1) {
+            return "Frosh!!!";
+        }
         // given an ID, return the First and Last name of the user
         if (id && userMap) {
             id = id.toString();

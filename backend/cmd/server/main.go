@@ -47,12 +47,17 @@ func main() {
 	router.Use(cors.New(corsConfig))
 
 	// Define your routes
-	router.GET("/rooms", handlers.GetRoomsHandler)                         // Read
-	router.GET("/rooms/simple/:dormName", handlers.GetSimpleFormattedDorm) // Read
-	router.PATCH("/rooms/:roomuuid", handlers.UpdateRoomOccupants)         // Write
-	router.GET("/users", handlers.GetUsers)                                // Read
+	router.GET("/rooms", handlers.GetRoomsHandler)                           // Read
+	router.GET("/rooms/simple/:dormName", handlers.GetSimpleFormattedDorm)   // Read
+	router.GET("/rooms/simpler/:dormName", handlers.GetSimplerFormattedDorm) // Read
+	router.PATCH("/rooms/:roomuuid", handlers.UpdateRoomOccupants)           // Write
+	router.GET("/users", handlers.GetUsers)                                  // Read
 	router.GET("/users/idmap", handlers.GetUsersIdMap)
 	router.POST("/suites/design", handlers.SetSuiteDesign)
+
+	router.POST("/frosh/:roomuuid", handlers.AddFroshHandler)
+	router.DELETE("/frosh/:roomuuid", handlers.RemoveFroshHandler)
+	router.PATCH("/frosh/:roomuuid", handlers.BumpFroshHandler)
 
 	// Start the server
 	router.Run(config.ServerAddress)

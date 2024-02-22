@@ -1,7 +1,7 @@
 -- - Bump table
 -- 	BumpUID, GroupUID bumped, UserID bumped, USER_ID of bumper, bumpTime DateTime, isBumpWarning (if bump has not happened yet but will happen if person accepts) 
 CREATE TABLE Bumps (
-    bump_uuid uuid DEFAULT UUID_GENERATE_V4(),
+    bump_uuid uuid NOT NULL,
     group_uuid uuid NOT NULL,
     bumped_id varchar NOT NULL,
     bumper_id varchar NOT NULL,

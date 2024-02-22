@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/url"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -23,10 +24,11 @@ func InitDB() error {
 	cloudSQLPass := os.Getenv("CLOUD_SQL_PASS")
 	cloudSQLIP := os.Getenv("CLOUD_SQL_IP")
 	cloudSQLDBName := os.Getenv("CLOUD_SQL_DB_NAME")
-	encodedPass := url.QueryEscape(cloudSQLPass)
+	cloudSQLUser := os.Getenv("CLOUD_SQL_USER")
+	encodedPass := url.PathEscape(strings.TrimSpace(cloudSQLPass))
 
 	// Construct the connection string
-	connStr := fmt.Sprintf("postgresql://postgres:%s@%s/%s?sslmode=disable", encodedPass, cloudSQLIP, cloudSQLDBName)
+	connStr := fmt.Sprintf("postgresql://%s:%s@%s/%s", cloudSQLUser, encodedPass, cloudSQLIP, cloudSQLDBName)
 
 	log.Println("connStr", connStr)
 

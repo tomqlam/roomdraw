@@ -1,9 +1,7 @@
 -- Random RoomUID, Numeric Dorm, Dorm Name, Room ID (can contain letters), IsInSuite, SuiteID, Max Occupancy, Current Occupancy, Occupant Array (USER_ID), isLockPulled
 -- Postgres SQL
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
 CREATE TABLE Rooms (
-    room_uuid uuid DEFAULT UUID_GENERATE_V4(),
+    room_uuid uuid NOT NULL,
     dorm int NOT NULL,
     dorm_name varchar NOT NULL,
     room_id varchar NOT NULL,
@@ -26,6 +24,8 @@ CREATE TABLE Rooms (
         }
     }'::jsonb,
     sgroup_uuid uuid,
+    has_frosh bool NOT NULL DEFAULT false,
+    frosh_room_type INT NOT NULL DEFAULT 0,
     PRIMARY KEY (room_uuid),
     FOREIGN KEY (suite_uuid) REFERENCES Suites(suite_uuid)
 );

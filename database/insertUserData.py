@@ -1,6 +1,7 @@
 import random
 from sqlalchemy import create_engine
 from sqlalchemy.sql import text
+from uuid import uuid4
 
 # import env variables
 import os
@@ -16,8 +17,9 @@ load_dotenv(dotenv_path=dotenv_path, verbose=True)
 cloud_sql_pass = os.environ.get('CLOUD_SQL_PASS')
 cloud_sql_ip = os.environ.get('CLOUD_SQL_IP')
 cloud_sql_db_name = os.environ.get('CLOUD_SQL_DB_NAME')
+cloud_sql_user = os.environ.get('CLOUD_SQL_USER')
 
-CONNSTR = f'postgresql://postgres:{cloud_sql_pass}@{cloud_sql_ip}/{cloud_sql_db_name}'
+CONNSTR = f'postgresql://{cloud_sql_user}:{cloud_sql_pass}@{cloud_sql_ip}/{cloud_sql_db_name}'
 
 engine = create_engine(CONNSTR)
 
@@ -70,7 +72,7 @@ with engine.connect() as connection:
         # 1/10 chance of being a preplaced student
         preplaced = (i%10==0)
         in_dorm = random.randint(1, 9) if (i%2==0 and (not preplaced and year =='senior')) else 0;
-        # make query
+        # generate a uuid
         query = f"INSERT INTO Users (first_name, last_name, draw_number, year, preplaced, in_dorm) VALUES ('{first_name}', '{last_name}', {draw_number}, '{year}', {preplaced}, {in_dorm});"
         result = connection.execute(text(query))
     connection.commit()

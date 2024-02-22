@@ -1,7 +1,5 @@
 -- Columns: USER_ID(unique) claremontid, Year, DrawNumber, Preplaced(bool), In-Dorm (numbers for which dorm 0: None, 1:East etc.), groupID
 -- POSTGRES SQL
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
 CREATE TABLE Users (
     id serial,
     year varchar NOT NULL,
