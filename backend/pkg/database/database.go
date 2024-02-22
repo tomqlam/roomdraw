@@ -27,7 +27,7 @@ func InitDB() error {
 	encodedPass := url.QueryEscape(cloudSQLPass)
 
 	// Construct the connection string
-	connStr := fmt.Sprintf("postgresql://%s:%s@%s/%s?sslmode=disable", cloudSQLUser, encodedPass, cloudSQLIP, cloudSQLDBName)
+	connStr := fmt.Sprintf("postgresql://%s:%s@%s/%s", cloudSQLUser, encodedPass, cloudSQLIP, cloudSQLDBName)
 
 	log.Println("connStr", connStr)
 
