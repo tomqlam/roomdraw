@@ -21,16 +21,29 @@ export const MyContextProvider = ({ children }) => {
     const [selectedID, setSelectedID] = useState(() => {
         const selectedID = localStorage.getItem('selectedID');
         return selectedID !== null ? selectedID : '8'; //TODO 
-      });
+    });
     const [isSuiteNoteModalOpen, setIsSuiteNoteModalOpen] = useState(false); // If suite note modal 
 
+    // Refresh the page every minute if the the page is visibl 
+    useEffect(() => {
+        const intervalId = setInterval(() => {
+            if (!document.hidden) {
+                setRefreshKey(prevKey => prevKey + 1);
+            }
+        }, 60000); // 60000 milliseconds = 1 minute
 
-  // Save state to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem('selectedID', selectedID);
-  }, [selectedID]);
+        // Cleanup function to clear the interval when the component unmounts
+        return () => {
+            clearInterval(intervalId);
+        };
+    }, []);
 
-  // rest of your component
+    // Save state to localStorage whenever it changes
+    useEffect(() => {
+        localStorage.setItem('selectedID', selectedID);
+    }, [selectedID]);
+
+    // rest of your component
 
 
 
@@ -116,7 +129,7 @@ export const MyContextProvider = ({ children }) => {
         "10": "Garrett House"
     };
 
-    
+
     const cellColors = {
         unbumpableRoom: "black",
         roomNumber: "#ffd6ff",

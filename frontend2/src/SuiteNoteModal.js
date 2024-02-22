@@ -42,7 +42,7 @@ function SuiteNoteModal() {
                 <section className="modal-card-body">
                     <textarea
                         className="textarea"
-                        placeholder="Enter notes here"
+                        placeholder="Enter information about genderlocking, suite culture, etc. here."
                         value={suiteNotes}
                         onChange={event => setSuiteNotes(event.target.value)}
                     />
