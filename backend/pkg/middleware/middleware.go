@@ -1,9 +1,12 @@
 package middleware
 
 import (
+	"net/http"
+	"strings"
 	"sync"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt"
 )
 
 // Define a type for the request type (read or write)
@@ -76,8 +79,6 @@ func RequestProcessor(requestQueue <-chan *gin.Context) {
 	}
 }
 
-// cors
-
 func CORSMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
@@ -91,5 +92,40 @@ func CORSMiddleware() gin.HandlerFunc {
 		}
 
 		c.Next()
+	}
+}
+
+// JWTAuthMiddleware checks if the JWT token is present and valid
+func JWTAuthMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		const BEARER_SCHEMA = "Bearer "
+		authHeader := c.GetHeader("Authorization")
+		if authHeader == "" {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Authorization header missing"})
+			return
+		}
+
+		tokenString := strings.TrimPrefix(authHeader, BEARER_SCHEMA)
+		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+			// This is a simplified way to return the secret key.
+			// You should make sure this is securely stored and accessed.
+			return []byte("your_secret_key"), nil
+		})
+
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+			return
+		}
+
+		if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+			// Check if the email exists and ends with @g.hmc.edu
+			if email, ok := claims["email"].(string); ok && strings.HasSuffix(email, "@g.hmc.edu") {
+				c.Set("email", email) // Pass the email to the next middleware or handler
+				c.Next()
+				return
+			}
+		}
+
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized access"})
 	}
 }
