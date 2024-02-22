@@ -22,6 +22,7 @@ export const MyContextProvider = ({ children }) => {
         const selectedID = localStorage.getItem('selectedID');
         return selectedID !== null ? selectedID : '8'; //TODO 
       });
+    const [isSuiteNoteModalOpen, setIsSuiteNoteModalOpen] = useState(false); // If suite note modal 
 
 
   // Save state to localStorage whenever it changes
@@ -172,6 +173,8 @@ export const MyContextProvider = ({ children }) => {
         selectedSuiteObject,
         setSelectedSuiteObject,
         print,
+        isSuiteNoteModalOpen,
+        setIsSuiteNoteModalOpen
     };
 
     return (

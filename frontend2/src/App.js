@@ -7,6 +7,7 @@ import Recommendations from './Recommendations';
 import { MyContext } from './MyContext';
 import { GoogleLogin } from '@react-oauth/google';
 import { jwtDecode } from "jwt-decode";
+import  SuiteNoteModal  from './SuiteNoteModal';
 
 
 function App() {
@@ -23,6 +24,7 @@ function App() {
     selectedID,
     setSelectedID,
     rooms,
+    isSuiteNoteModalOpen,
   } = useContext(MyContext);
 
   // const [showNotification, setShowNotification] = useState(false);
@@ -84,7 +86,7 @@ function App() {
       return "Loading...";
     }
 
-    if (userMap[id].InDorm !== 0) {
+    if (userMap[id].InDorm && userMap[id].InDorm !== 0) {
       // has in dorm
       return `${userMap[id].Year.charAt(0).toUpperCase() + userMap[id].Year.slice(1)} ${userMap[id].DrawNumber} ${dormMapping[userMap[id].InDorm]}`;
     }
@@ -184,6 +186,7 @@ function App() {
         </div>
       </nav>
       {isModalOpen && <BumpModal />}
+      {isSuiteNoteModalOpen && <SuiteNoteModal />}
       {/* {showNotification && (<div class="notification is-primary m-2">
         <button onClick={handleDeleteClick} class="delete "></button>
         Your room status has been updated. Please check that everything is still the way you'd like it to be!
