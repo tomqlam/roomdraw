@@ -1,7 +1,6 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import 'bulma/css/bulma.min.css';
 import BumpModal from './BumpModal';
-import { useState, useContext } from 'react';
 import FloorGrid from './FloorGrid';
 import Recommendations from './Recommendations';
 import { MyContext } from './MyContext';
@@ -25,12 +24,34 @@ function App() {
     setSelectedID,
     rooms,
     isSuiteNoteModalOpen,
-    jwt,
-    setJwt
+    credentials,
+    setCredentials
   } = useContext(MyContext);
 
   // const [showNotification, setShowNotification] = useState(false);
   const [myRoom, setMyRoom] = useState("You are not in a room yet."); // to show what room current user is in
+  const { /* useContext values */ } = useContext(MyContext);
+
+  useEffect(() => {
+    // Check for stored credentials on component mount
+    const storedCredentials = localStorage.getItem('jwt');
+    if (storedCredentials) {
+      // If credentials exist, decode and set them
+      const decoded = jwtDecode(storedCredentials);
+      setCredentials(decoded);
+    }
+  }, []);
+
+  const handleSuccess = (credentialResponse) => {
+    const decoded = jwtDecode(credentialResponse.credential);
+    setCredentials(decoded);
+    localStorage.setItem('jwt', credentialResponse.credential); // Store credential for future sessions
+  };
+
+  const handleError = () => {
+    console.log('Login Failed');
+    // Optionally, handle login failure (e.g., by clearing stored credentials)
+  };
 
   useEffect(() => {
     // updates room that thei current user is in every time the selected user or the room data changes
@@ -53,11 +74,6 @@ function App() {
     }
   }, [selectedID, rooms]);
 
-
-
-
-
-
   // Initialize state from localStorage or default to 'Atwood'
   const [activeTab, setActiveTab] = useState(() => {
     const savedTab = localStorage.getItem('activeTab');
@@ -77,8 +93,6 @@ function App() {
   const handleTabClick = (tab) => {
     setActiveTab(tab);
   };
-
-
 
   function getDrawNumberAndYear(id) {
     // Find the drawNumber in laymans terms with the given id, including in-dorm status
@@ -113,10 +127,6 @@ function App() {
       ))}
     </div>
   );
-
-
-
-
   return (
     <div>
 
@@ -167,16 +177,10 @@ function App() {
           <div class="navbar-end">
             <div class="navbar-item">
               <div class="buttons">
-                {!jwt && <GoogleLogin auto_select={true}
-                  onSuccess={credentialResponse => {
-                    const decoded = jwtDecode(credentialResponse?.credential);
-                    setJwt(credentialResponse?.credential);
-                    console.log(decoded);
-                    console.log("hello");
-                  }}
-                  onError={() => {
-                    console.log('Login Failed');
-                  }}
+                {!credentials && 
+                  <GoogleLogin auto_select={true}
+                  onSuccess={handleSuccess}
+                  onError={handleError}
                 />}
                 {jwt && <a class="button is-primary">
                   <strong>Welcome, PLACEHOLDER</strong> 
