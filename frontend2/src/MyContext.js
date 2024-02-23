@@ -1,5 +1,4 @@
 import React, { createContext, useState, useEffect } from 'react';
-import { jwtDecode } from "jwt-decode";
 
 
 export const MyContext = createContext();
@@ -19,7 +18,7 @@ export const MyContextProvider = ({ children }) => {
     const [selectedSuiteObject, setSelectedSuiteObject] = useState(null); // json object for current suite
     const [refreshKey, setRefreshKey] = useState(0); // key, when incremented, refreshes the main page
     const [pullError, setPullError] = useState("There was an unknown error. Please try again."); // text of error showig up when you can't pull
-    const [jwt, setJwt] = useState(null); // jwt token for user
+    const [credemtials, setCredentials] = useState(null); // jwt token for user
 
     const [selectedID, setSelectedID] = useState(() => {
         const selectedID = localStorage.getItem('selectedID');
