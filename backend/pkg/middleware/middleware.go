@@ -1,9 +1,15 @@
 package middleware
 
 import (
+	"crypto/rsa"
+	"encoding/base64"
+	"encoding/json"
+	"log"
+	"math/big"
 	"net/http"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
@@ -12,10 +18,111 @@ import (
 // Define a type for the request type (read or write)
 type RequestType int
 
+type GooglePublicKeysResponse struct {
+	Keys []struct {
+		Alg string `json:"alg"`
+		Kty string `json:"kty"`
+		Kid string `json:"kid"`
+		N   string `json:"n"`
+		Use string `json:"use"`
+		E   string `json:"e"`
+	} `json:"keys"`
+}
+
 const (
 	Read RequestType = iota
 	Write
 )
+
+const googleCertsURL = "https://www.googleapis.com/oauth2/v3/certs"
+
+var (
+	keysCache     GooglePublicKeysResponse
+	cacheMutex    = &sync.RWMutex{}
+	keysCacheTime time.Time
+)
+
+// FetchGooglePublicKeys fetches and caches Google's public keys for JWT validation.
+func FetchGooglePublicKeys() error {
+	cacheMutex.Lock()
+	defer cacheMutex.Unlock()
+
+	// Check if keys are still fresh, let's assume keys are refreshed every 24 hours for this example
+	if time.Since(keysCacheTime) < 24*time.Hour && len(keysCache.Keys) > 0 {
+		return nil // Keys are still fresh
+	}
+
+	resp, err := http.Get(googleCertsURL)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	log.Println("YO")
+
+	var certs GooglePublicKeysResponse
+	if err := json.NewDecoder(resp.Body).Decode(&certs); err != nil {
+		log.Println("Response:", resp)
+		return err
+	}
+
+	keysCache = certs
+	keysCacheTime = time.Now()
+	return nil
+}
+
+// getKeyFunc is a helper function to select the appropriate key for JWT validation.
+func getKeyFunc(token *jwt.Token) (interface{}, error) {
+	// Ensure the token method conforms to "RS256"
+	if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
+		return nil, jwt.NewValidationError("unexpected signing method", jwt.ValidationErrorSignatureInvalid)
+	}
+
+	kid, ok := token.Header["kid"].(string)
+	if !ok {
+		return nil, jwt.NewValidationError("kid header not found", jwt.ValidationErrorUnverifiable)
+	}
+
+	cacheMutex.RLock()
+	defer cacheMutex.RUnlock()
+
+	for _, key := range keysCache.Keys {
+		if key.Kid == kid {
+			// Decode the modulus
+			nBytes, err := base64.RawURLEncoding.DecodeString(key.N)
+			if err != nil {
+				return nil, err // Add appropriate error handling
+			}
+			n := new(big.Int).SetBytes(nBytes)
+
+			// Decode the exponent
+			eBytes, err := base64.RawURLEncoding.DecodeString(key.E)
+			if err != nil {
+				return nil, err // Add appropriate error handling
+			}
+			// The exponent is usually 65537, which is a small number, so we can safely use big.Int here as well
+			e := new(big.Int).SetBytes(eBytes).Int64()
+
+			rsaKey := &rsa.PublicKey{
+				N: n,
+				E: int(e),
+			}
+
+			return rsaKey, nil
+		}
+	}
+
+	return nil, jwt.NewValidationError("public key not found", jwt.ValidationErrorSignatureInvalid)
+}
+
+func getGooglePublicKey(token *jwt.Token) (interface{}, error) {
+	err := FetchGooglePublicKeys()
+	if err != nil {
+		log.Println("Error fetching Google public keys:", err)
+		return nil, err
+	}
+	return getKeyFunc(token)
+}
 
 func QueueMiddleware(rwMutex *sync.RWMutex) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -98,29 +205,45 @@ func CORSMiddleware() gin.HandlerFunc {
 // JWTAuthMiddleware checks if the JWT token is present and valid
 func JWTAuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		log.Println("JWTAuthMiddleware")
 		const BEARER_SCHEMA = "Bearer "
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
+			log.Println("Authorization header missing")
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Authorization header missing"})
 			return
 		}
 
-		tokenString := strings.TrimPrefix(authHeader, BEARER_SCHEMA)
-		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-			// This is a simplified way to return the secret key.
-			// You should make sure this is securely stored and accessed.
-			return []byte("your_secret_key"), nil
-		})
+		log.Println("authHeader:", authHeader)
 
+		tokenString := strings.TrimPrefix(authHeader, BEARER_SCHEMA)
+		token, err := jwt.Parse(tokenString, getGooglePublicKey)
 		if err != nil {
+			log.Println("Error parsing token:", err)
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
 			return
 		}
 
+		// Check if the token is expired
+		if ve, ok := err.(*jwt.ValidationError); ok {
+			if ve.Errors&jwt.ValidationErrorExpired != 0 {
+				// Token is expired
+				log.Println("Token expired")
+				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Token is expired"})
+				return
+			} else {
+				// Handle other validation errors
+				log.Println("Error parsing token:", err)
+				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+				return
+			}
+		}
+
 		if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-			// Check if the email exists and ends with @g.hmc.edu
+			// print type of claims
 			if email, ok := claims["email"].(string); ok && strings.HasSuffix(email, "@g.hmc.edu") {
 				c.Set("email", email) // Pass the email to the next middleware or handler
+				log.Println("Email:", email)
 				c.Next()
 				return
 			}

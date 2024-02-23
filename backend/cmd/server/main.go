@@ -47,6 +47,7 @@ func main() {
 	router.Use(cors.New(corsConfig))
 
 	// Define your routes
+	// router.GET("/rooms", handlers.GetRoomsHandler) // Read
 	router.GET("/rooms", middleware.JWTAuthMiddleware(), handlers.GetRoomsHandler) // Read
 	router.GET("/rooms/simple/:dormName", handlers.GetSimpleFormattedDorm)         // Read
 	router.GET("/rooms/simpler/:dormName", handlers.GetSimplerFormattedDorm)       // Read

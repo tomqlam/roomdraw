@@ -83,7 +83,12 @@ export const MyContextProvider = ({ children }) => {
             })
     }
     function fetchRoomsWithUUIDs() {
-        fetch('/rooms')
+        const jwt = localStorage.getItem('jwt');
+        fetch('/rooms', {
+                headers: {
+                    'Authorization': `Bearer ${jwt}`
+                }
+            })
             .then(res => {
                 return res.json();  // Parse the response data as JSON
             })
