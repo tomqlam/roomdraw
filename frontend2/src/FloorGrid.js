@@ -71,8 +71,10 @@ function FloorGrid({ gridData }) {
     return `#${newColor.join('')}`;
   }
 
-  const updateSuiteNotes = () => {
-    setIsModalOpen(true);
+  const updateSuiteNotes = (room) => {
+    setIsSuiteNoteModalOpen(true);
+    getOccupantsByRoomNumber(room);
+
   }
   // given parameters, return grid item style with correct background color shading
   const getGridItemStyle = (room, occupancy, maxOccupancy, suiteIndex, pullPriority) => {
@@ -122,9 +124,7 @@ function FloorGrid({ gridData }) {
   };
 
   function getPullMethodByRoomNumber(roomNumber) {
-    // TODO FINISH 
     // Iterate over each suite
-    // print(gridData.suites);
     for (let suite of gridData.suites) {
       // Find the room with the given room number within the current suite
       const room = suite.rooms.find(r => r.roomNumber.toString() === roomNumber.toString());
@@ -231,7 +231,7 @@ function FloorGrid({ gridData }) {
                   ...pullMethodStyle, gridRow: `span ${suite.rooms.length}`, backgroundColor: suiteIndex % 2 === 0
                     ? cellColors.evenSuite // color for even suiteIndex
                     : cellColors.oddSuite
-                }} onClick={() => setIsSuiteNoteModalOpen(true)}>Insert suite name</div>
+                }} onClick={() => updateSuiteNotes(room.roomNumber)}>Insert suite name</div>
 
             }
             <div style={getGridItemStyle(room, room.maxOccupancy, 1, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{getNameById(room.occupant1)}</div>
