@@ -25,7 +25,11 @@ function App() {
     rooms,
     isSuiteNoteModalOpen,
     credentials,
-    setCredentials
+    setCredentials,
+    lastRefreshedTime,
+    activeTab,
+    setActiveTab
+
   } = useContext(MyContext);
 
   // const [showNotification, setShowNotification] = useState(false);
@@ -75,8 +79,8 @@ function App() {
 
   useEffect(() => {
     // updates room that thei current user is in every time the selected user or the room data changes
-    if (!rooms) {
-      return "";
+    if (!rooms || !Array.isArray(rooms)) {
+      return;
     }
     if (rooms) {
       for (let room of rooms) {
@@ -94,11 +98,7 @@ function App() {
     }
   }, [selectedID, rooms]);
 
-  // Initialize state from localStorage or default to 'Atwood'
-  const [activeTab, setActiveTab] = useState(() => {
-    const savedTab = localStorage.getItem('activeTab');
-    return savedTab !== null ? savedTab : 'Atwood';
-  });
+
 
   // Save state to localStorage whenever it changes
   useEffect(() => {
@@ -226,7 +226,7 @@ function App() {
       <div style={{ textAlign: 'center' }}>
 
         <h1 className="title">You're viewing DigiDraw as {getNameById(selectedID)}. <br /> </h1>
-        <h2 className="subtitle">You are <strong>{getDrawNumberAndYear(selectedID)}</strong>. {myRoom} <br />Click on any room you'd like to change!</h2>
+        <h2 className="subtitle">You are <strong>{getDrawNumberAndYear(selectedID)}</strong>. {myRoom} <br />Click on any room you'd like to change! <br/>Last refreshed at {lastRefreshedTime.toLocaleTimeString()}.</h2>
 
         <div style={{ display: 'flex', justifyContent: 'center' }}>
           <select className="select" onChange={handleNameChange}>

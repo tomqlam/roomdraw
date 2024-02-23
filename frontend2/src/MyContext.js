@@ -19,6 +19,13 @@ export const MyContextProvider = ({ children }) => {
     const [refreshKey, setRefreshKey] = useState(0); // key, when incremented, refreshes the main page
     const [pullError, setPullError] = useState("There was an unknown error. Please try again."); // text of error showig up when you can't pull
     const [credentials, setCredentials] = useState(null); // jwt token for user
+    const [lastRefreshedTime, setLastRefreshedTime] = useState(new Date()); // last time the page was refreshed
+    
+    // Initialize active tab state from localStorage or default to 'Atwood'
+    const [activeTab, setActiveTab] = useState(() => {
+        const savedTab = localStorage.getItem('activeTab');
+        return savedTab !== null ? savedTab : 'Atwood';
+    });
 
     const [selectedID, setSelectedID] = useState(() => {
         const selectedID = localStorage.getItem('selectedID');
@@ -26,19 +33,19 @@ export const MyContextProvider = ({ children }) => {
     });
     const [isSuiteNoteModalOpen, setIsSuiteNoteModalOpen] = useState(false); // If suite note modal 
 
-    // Refresh the page every minute if the the page is visibl 
-    // useEffect(() => {
-    //     const intervalId = setInterval(() => {
-    //         if (!document.hidden) {
-    //             setRefreshKey(prevKey => prevKey + 1);
-    //         }
-    //     }, 60000); // 60000 milliseconds = 1 minute
 
-    //     // Cleanup function to clear the interval when the component unmounts
-    //     return () => {
-    //         clearInterval(intervalId);
-    //     };
-    // }, []);
+    useEffect(() => {
+        const interval = setInterval(() => {
+            if (credentials && !document.hidden) {
+                setRefreshKey(prevKey => prevKey + 1);
+                setLastRefreshedTime(new Date());
+                console.log("refreshed ONE DORM");
+            }
+        }, 60000);
+        return () => {
+            clearInterval(interval);
+        };
+    }, [credentials, document.hidden, activeTab]);
 
     // Save state to localStorage whenever it changes
     useEffect(() => {
@@ -50,23 +57,20 @@ export const MyContextProvider = ({ children }) => {
 
 
     useEffect(() => {
-        // Pulls all necessary data
-        if (refreshKey !== 0 || credentials !== null) {
+        // Pulls all necessary data if never done before
+        if (gridData.length !== 9 && credentials !== null) {
             fetchUserMap();
             // getting the main page floor grid data
             fetchRoomsForDorms(["Atwood", "East", "Drinkward", "Linde", "North", "South", "Sontag", "West", "Case"]);
             // getting the room data for uuid mapping
             fetchRoomsWithUUIDs();
-
-            // const timer = setTimeout(() => {
-
-            // }, 0);  // Delay of 1 second
-
-            // Clean up function
-            // return () => clearTimeout(timer);
+        } else {
+            fetchRoomsForOneDorm(activeTab);
+            fetchRoomsWithUUIDs();
+            fetchUserMap();
         }
 
-    }, [refreshKey, credentials]);
+    }, [credentials, refreshKey, activeTab]);
 
     // debug print function
     function print(text) {
@@ -88,27 +92,41 @@ export const MyContextProvider = ({ children }) => {
             })
     }
     function fetchRoomsWithUUIDs() {
-        // const jwt = localStorage.getItem('jwt');
-        console.log("Here is local storeate");
-        console.log(localStorage.getItem('jwt'));
-        console.log("here are credentials");
-        console.log(credentials);
-        fetch('/rooms', {
+        if (localStorage.getItem('jwt')) {
+            fetch('/rooms', {
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('jwt')}`
                 }
             })
-            .then(res => {
-                return res.json();  // Parse the response data as JSON
-            })
+                .then(res => {
+                    return res.json();  // Parse the response data as JSON
+                })
+                .then(data => {
+                    setRooms(data);
+                    if (data.error) {
+                        print("There was an error printing rooms");
+                        setCredentials(null); // nullify the credentials if there was an error, they're probably failing
+                        localStorage.removeItem('jwt');
+                    }
+                })
+                .catch(err => {
+                    console.log(err);
+                    console.log(err.error);
+                })
+        }
+    }
+    function fetchRoomsForOneDorm(dorm) {
+        fetch(`/rooms/simple/${dorm}`)
+            .then(res => res.json())  // Parse the response data as JSON
             .then(data => {
-                setRooms(data);
+                setGridData(prevGridData => prevGridData.map(item => item.dormName === dorm ? data : item));
+                console.log(data);
             })
             .catch(err => {
-                console.log(err);
-                console.log(err.error);
-            })
+                console.error(`Error fetching rooms for ${dorm}:`, err);
+            });
     }
+
 
     function fetchRoomsForDorms(dorms) {
         const promises = dorms.map(dorm => {
@@ -207,7 +225,11 @@ export const MyContextProvider = ({ children }) => {
         isSuiteNoteModalOpen,
         setIsSuiteNoteModalOpen,
         credentials,
-        setCredentials
+        setCredentials,
+        lastRefreshedTime,
+        setLastRefreshedTime,
+        activeTab,
+        setActiveTab,
     };
 
     return (
