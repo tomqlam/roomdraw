@@ -817,7 +817,7 @@ func UpdateRoomOccupants(c *gin.Context) {
 			}
 
 			var suiteGroupUUID uuid.UUID = uuid.New()
-			_, err = tx.Exec("INSERT INTO suitegroups (suiteGroupUUID, sgroup_size, sgroup_name, sgroup_suite, pull_priority, rooms, disbanded) VALUES ($1, $2, $3, $4, $5, $6, $7)",
+			_, err = tx.Exec("INSERT INTO suitegroups (sgroup_uuid, sgroup_size, sgroup_name, sgroup_suite, pull_priority, rooms, disbanded) VALUES ($1, $2, $3, $4, $5, $6, $7)",
 				suiteGroupUUID,
 				2,
 				"Suite Group",
@@ -909,7 +909,7 @@ func UpdateRoomOccupants(c *gin.Context) {
 			return
 		}
 		var suiteGroupUUID uuid.UUID = uuid.New()
-		_, err = tx.Exec("INSERT INTO suitegroups (suiteGroupUUID, sgroup_size, sgroup_name, sgroup_suite, pull_priority, rooms, disbanded) VALUES ($1, $2, $3, $4, $5, $6, $7)",
+		_, err = tx.Exec("INSERT INTO suitegroups (sgroup_uuid, sgroup_size, sgroup_name, sgroup_suite, pull_priority, rooms, disbanded) VALUES ($1, $2, $3, $4, $5, $6, $7)",
 			suiteGroupUUID,
 			2,
 			"Suite Group",
