@@ -7,6 +7,9 @@ import { MyContext } from './MyContext';
 import { GoogleLogin } from '@react-oauth/google';
 import { jwtDecode } from "jwt-decode";
 import  SuiteNoteModal  from './SuiteNoteModal';
+import { googleLogout } from '@react-oauth/google';
+
+
 
 
 function App() {
@@ -43,14 +46,20 @@ function App() {
   }, []);
 
   const handleSuccess = (credentialResponse) => {
-    const decoded = jwtDecode(credentialResponse.credential);
-    setCredentials(decoded);
+    setCredentials(credentialResponse);
     localStorage.setItem('jwt', credentialResponse.credential); // Store credential for future sessions
+    console.log(jwtDecode(credentialResponse.credential));
   };
 
   const handleError = () => {
     console.log('Login Failed');
     // Optionally, handle login failure (e.g., by clearing stored credentials)
+  };
+
+  const handleLogout = () => {
+    setCredentials(null);
+    localStorage.removeItem('jwt');
+    googleLogout();
   };
 
   useEffect(() => {
@@ -182,8 +191,11 @@ function App() {
                   onSuccess={handleSuccess}
                   onError={handleError}
                 />}
-                {jwt && <a class="button is-primary">
-                  <strong>Welcome, PLACEHOLDER</strong> 
+                {credentials && <a class="button is-primary">
+                  <strong>Welcome, {} </strong> 
+                </a>}
+                {credentials && <a class="button is-primary" onClick={handleLogout}>
+                  <strong>LogOut</strong> 
                 </a>}
               </div>
             </div>
@@ -192,81 +204,84 @@ function App() {
       </nav>
       {isModalOpen && <BumpModal />}
       {isSuiteNoteModalOpen && <SuiteNoteModal />}
-      {/* {showNotification && (<div class="notification is-primary m-2">
-        <button onClick={handleDeleteClick} class="delete "></button>
-        Your room status has been updated. Please check that everything is still the way you'd like it to be!
-      </div>)} */}
-      <section class="section">
-        <div style={{ textAlign: 'center' }}>
 
-          <h1 className="title">Welcome back, <strong>{getNameById(selectedID)}</strong>. <br /> </h1>
-          <h2 className="subtitle">You are <strong>{getDrawNumberAndYear(selectedID)}</strong>. {myRoom} <br />Click on any room you'd like to change!</h2>
+    {!credentials && <section class="section">
+      <div style={{ textAlign: 'center' }}>
+        <h1 className="title">Welcome to Digital Draw!</h1>
+        <h2 className="subtitle">Please log in with your HMC email to continue.</h2>
+      </div>
+    </section>}
+    {credentials && <section class="section">
+      <div style={{ textAlign: 'center' }}>
 
-          <div style={{ display: 'flex', justifyContent: 'center' }}>
-            <select className="select" onChange={handleNameChange}>
-              <option value="">This isn't me</option>
-              {userMap && Object.keys(userMap)
-                .sort((a, b) => {
-                  const nameA = `${userMap[a].FirstName} ${userMap[a].LastName}`.toUpperCase();
-                  const nameB = `${userMap[b].FirstName} ${userMap[b].LastName}`.toUpperCase();
-                  if (nameA < nameB) {
-                    return -1;
-                  }
-                  if (nameA > nameB) {
-                    return 1;
-                  }
-                  return 0;
-                })
-                .map((key, index) => (
-                  <option key={index} value={key}>
-                    {userMap[key].FirstName} {userMap[key].LastName}
-                  </option>
-                ))}
-            </select>
-          </div>
+        <h1 className="title">Welcome back, <strong>{getNameById(selectedID)}</strong>. <br /> </h1>
+        <h2 className="subtitle">You are <strong>{getDrawNumberAndYear(selectedID)}</strong>. {myRoom} <br />Click on any room you'd like to change!</h2>
 
+        <div style={{ display: 'flex', justifyContent: 'center' }}>
+          <select className="select" onChange={handleNameChange}>
+            <option value="">This isn't me</option>
+            {userMap && Object.keys(userMap)
+              .sort((a, b) => {
+                const nameA = `${userMap[a].FirstName} ${userMap[a].LastName}`.toUpperCase();
+                const nameB = `${userMap[b].FirstName} ${userMap[b].LastName}`.toUpperCase();
+                if (nameA < nameB) {
+                  return -1;
+                }
+                if (nameA > nameB) {
+                  return 1;
+                }
+                return 0;
+              })
+              .map((key, index) => (
+                <option key={index} value={key}>
+                  {userMap[key].FirstName} {userMap[key].LastName}
+                </option>
+              ))}
+          </select>
         </div>
 
-      </section>
+      </div>
 
-      {currPage === "Home" && <section class="section">
-        <label className="checkbox" style={{ display: 'flex', alignItems: 'center' }}>
-          <input
-            type="checkbox"
-            checked={onlyShowBumpableRooms}
-            onChange={() => setOnlyShowBumpableRooms(!onlyShowBumpableRooms)}
-          />
-          <span style={{ marginLeft: '0.5rem' }}>Darken rooms I can't pull</span>
-        </label>
+    </section>}
 
-        <div className="tabs is-centered">
-          <ul>
+    {(credentials && currPage === "Home") && <section class="section">
+      <label className="checkbox" style={{ display: 'flex', alignItems: 'center' }}>
+        <input
+          type="checkbox"
+          checked={onlyShowBumpableRooms}
+          onChange={() => setOnlyShowBumpableRooms(!onlyShowBumpableRooms)}
+        />
+        <span style={{ marginLeft: '0.5rem' }}>Darken rooms I can't pull</span>
+      </label>
 
-            {gridData.map((dorm) => (
-              <li
-                key={dorm.dormName}
-                className={activeTab === dorm.dormName ? 'is-active' : ''}
-                onClick={() => handleTabClick(dorm.dormName)}
-              >
+      <div className="tabs is-centered">
+        <ul>
 
-                <a>{dorm.dormName}</a>
-              </li>
-            ))}
-          </ul>
-        </div>
+          {gridData.map((dorm) => (
+            <li
+              key={dorm.dormName}
+              className={activeTab === dorm.dormName ? 'is-active' : ''}
+              onClick={() => handleTabClick(dorm.dormName)}
+            >
 
-        {/* Left column is room draw, right side is tips */}
-        <div class="columns">
+              <a>{dorm.dormName}</a>
+            </li>
+          ))}
+        </ul>
+      </div>
 
-          <FloorColumn gridData={gridData} filterCondition={(floorNumber) => floorNumber === 0} />
-          <FloorColumn gridData={gridData} filterCondition={(floorNumber) => floorNumber === 1} />
-          <FloorColumn gridData={gridData} filterCondition={(floorNumber) => floorNumber === 2} />
+      {/* Left column is room draw, right side is tips */}
+      <div class="columns">
+
+        <FloorColumn gridData={gridData} filterCondition={(floorNumber) => floorNumber === 0} />
+        <FloorColumn gridData={gridData} filterCondition={(floorNumber) => floorNumber === 1} />
+        <FloorColumn gridData={gridData} filterCondition={(floorNumber) => floorNumber === 2} />
 
 
-        </div>
+      </div>
 
 
-      </section>}
+    </section>}
       {currPage === "Recommendations" && <section class="section">
         <Recommendations gridData={gridData} setCurrPage={setCurrPage} />
       </section>}

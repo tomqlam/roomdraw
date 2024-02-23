@@ -18,7 +18,7 @@ export const MyContextProvider = ({ children }) => {
     const [selectedSuiteObject, setSelectedSuiteObject] = useState(null); // json object for current suite
     const [refreshKey, setRefreshKey] = useState(0); // key, when incremented, refreshes the main page
     const [pullError, setPullError] = useState("There was an unknown error. Please try again."); // text of error showig up when you can't pull
-    const [credemtials, setCredentials] = useState(null); // jwt token for user
+    const [credentials, setCredentials] = useState(null); // jwt token for user
 
     const [selectedID, setSelectedID] = useState(() => {
         const selectedID = localStorage.getItem('selectedID');
@@ -51,7 +51,7 @@ export const MyContextProvider = ({ children }) => {
 
     useEffect(() => {
         // Pulls all necessary data
-        if (refreshKey !== 0 || jwt !== null) {
+        if (refreshKey !== 0 || credentials !== null) {
             fetchUserMap();
             // getting the main page floor grid data
             fetchRoomsForDorms(["Atwood", "East", "Drinkward", "Linde", "North", "South", "Sontag", "West", "Case"]);
@@ -66,7 +66,7 @@ export const MyContextProvider = ({ children }) => {
             // return () => clearTimeout(timer);
         }
 
-    }, [refreshKey, jwt]);
+    }, [refreshKey, credentials]);
 
     // debug print function
     function print(text) {
@@ -202,8 +202,8 @@ export const MyContextProvider = ({ children }) => {
         print,
         isSuiteNoteModalOpen,
         setIsSuiteNoteModalOpen,
-        jwt,
-        setJwt
+        credentials,
+        setCredentials
     };
 
     return (

@@ -133,7 +133,6 @@ function FloorGrid({ gridData }) {
 
 
       if (room) {
-        print(room);
         if (room.hasFrosh) {
           return "Frosh!!!";
         }
