@@ -25,14 +25,15 @@ function App() {
     setSelectedID,
     rooms,
     isSuiteNoteModalOpen,
+    jwt,
+    setJwt
   } = useContext(MyContext);
 
   // const [showNotification, setShowNotification] = useState(false);
   const [myRoom, setMyRoom] = useState("You are not in a room yet."); // to show what room current user is in
-  const [credentials, setCredentials] = useState(null);
 
   useEffect(() => {
-    // updates room that the current user is in every time the selected user or the room data changes
+    // updates room that thei current user is in every time the selected user or the room data changes
     if (!rooms) {
       return "";
     }
@@ -166,19 +167,19 @@ function App() {
           <div class="navbar-end">
             <div class="navbar-item">
               <div class="buttons">
-                {!credentials && <GoogleLogin auto_select={true}
+                {!jwt && <GoogleLogin auto_select={true}
                   onSuccess={credentialResponse => {
                     const decoded = jwtDecode(credentialResponse?.credential);
+                    setJwt(credentialResponse?.credential);
                     console.log(decoded);
                     console.log("hello");
-                    setCredentials(decoded);
                   }}
                   onError={() => {
                     console.log('Login Failed');
                   }}
                 />}
-                {credentials && <a class="button is-primary">
-                  <strong>Welcome, {credentials?.given_name}</strong>
+                {jwt && <a class="button is-primary">
+                  <strong>Welcome, PLACEHOLDER</strong> 
                 </a>}
               </div>
             </div>

@@ -1,4 +1,5 @@
 import React, { createContext, useState, useEffect } from 'react';
+import { jwtDecode } from "jwt-decode";
 
 
 export const MyContext = createContext();
@@ -18,6 +19,8 @@ export const MyContextProvider = ({ children }) => {
     const [selectedSuiteObject, setSelectedSuiteObject] = useState(null); // json object for current suite
     const [refreshKey, setRefreshKey] = useState(0); // key, when incremented, refreshes the main page
     const [pullError, setPullError] = useState("There was an unknown error. Please try again."); // text of error showig up when you can't pull
+    const [jwt, setJwt] = useState(null); // jwt token for user
+
     const [selectedID, setSelectedID] = useState(() => {
         const selectedID = localStorage.getItem('selectedID');
         return selectedID !== null ? selectedID : '8'; //TODO 
@@ -25,18 +28,18 @@ export const MyContextProvider = ({ children }) => {
     const [isSuiteNoteModalOpen, setIsSuiteNoteModalOpen] = useState(false); // If suite note modal 
 
     // Refresh the page every minute if the the page is visibl 
-    useEffect(() => {
-        const intervalId = setInterval(() => {
-            if (!document.hidden) {
-                setRefreshKey(prevKey => prevKey + 1);
-            }
-        }, 60000); // 60000 milliseconds = 1 minute
+    // useEffect(() => {
+    //     const intervalId = setInterval(() => {
+    //         if (!document.hidden) {
+    //             setRefreshKey(prevKey => prevKey + 1);
+    //         }
+    //     }, 60000); // 60000 milliseconds = 1 minute
 
-        // Cleanup function to clear the interval when the component unmounts
-        return () => {
-            clearInterval(intervalId);
-        };
-    }, []);
+    //     // Cleanup function to clear the interval when the component unmounts
+    //     return () => {
+    //         clearInterval(intervalId);
+    //     };
+    // }, []);
 
     // Save state to localStorage whenever it changes
     useEffect(() => {
@@ -49,19 +52,22 @@ export const MyContextProvider = ({ children }) => {
 
     useEffect(() => {
         // Pulls all necessary data
-        fetchUserMap();
-        // getting the main page floor grid data
-        fetchRoomsForDorms(["Atwood", "East", "Drinkward", "Linde", "North", "South", "Sontag", "West", "Case"]);
-        // getting the room data for uuid mapping
-        fetchRoomsWithUUIDs();
+        if (refreshKey !== 0 || jwt !== null) {
+            fetchUserMap();
+            // getting the main page floor grid data
+            fetchRoomsForDorms(["Atwood", "East", "Drinkward", "Linde", "North", "South", "Sontag", "West", "Case"]);
+            // getting the room data for uuid mapping
+            fetchRoomsWithUUIDs();
 
-        // const timer = setTimeout(() => {
+            // const timer = setTimeout(() => {
 
-        // }, 0);  // Delay of 1 second
+            // }, 0);  // Delay of 1 second
 
-        // Clean up function
-        // return () => clearTimeout(timer);
-    }, [refreshKey]);
+            // Clean up function
+            // return () => clearTimeout(timer);
+        }
+
+    }, [refreshKey, jwt]);
 
     // debug print function
     function print(text) {
@@ -83,7 +89,12 @@ export const MyContextProvider = ({ children }) => {
             })
     }
     function fetchRoomsWithUUIDs() {
-        fetch('/rooms')
+        print(jwtDecode(jwt));
+        fetch('/rooms', {
+            headers: {
+                'Authorization': `Bearer ${jwt}`
+            }
+        })
             .then(res => {
                 return res.json();  // Parse the response data as JSON
             })
@@ -92,6 +103,7 @@ export const MyContextProvider = ({ children }) => {
             })
             .catch(err => {
                 console.log(err);
+                console.log(err.error);
             })
     }
 
@@ -190,7 +202,9 @@ export const MyContextProvider = ({ children }) => {
         setSelectedSuiteObject,
         print,
         isSuiteNoteModalOpen,
-        setIsSuiteNoteModalOpen
+        setIsSuiteNoteModalOpen,
+        jwt,
+        setJwt
     };
 
     return (
