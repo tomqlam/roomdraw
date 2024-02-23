@@ -9,9 +9,6 @@ import { jwtDecode } from "jwt-decode";
 import  SuiteNoteModal  from './SuiteNoteModal';
 import { googleLogout } from '@react-oauth/google';
 
-
-
-
 function App() {
   const {
     currPage,
@@ -33,22 +30,36 @@ function App() {
 
   // const [showNotification, setShowNotification] = useState(false);
   const [myRoom, setMyRoom] = useState("You are not in a room yet."); // to show what room current user is in
-  const { /* useContext values */ } = useContext(MyContext);
 
   useEffect(() => {
-    // Check for stored credentials on component mount
     const storedCredentials = localStorage.getItem('jwt');
     if (storedCredentials) {
-      // If credentials exist, decode and set them
-      const decoded = jwtDecode(storedCredentials);
-      setCredentials(decoded);
+      console.log("use effect");
+      console.log(storedCredentials);
+      console.log("end use efect");
+      setCredentials(storedCredentials);
     }
   }, []);
 
+  // useEffect(() => {
+  //   // Check for stored credentials on component mount
+  //   const storedCredentials = localStorage.getItem('jwt');
+  //   if (storedCredentials) {
+  //     // If credentials exist, decode and set them
+  //     setCredentials(storedCredentials);
+  //   }
+  // }, []);
+
   const handleSuccess = (credentialResponse) => {
-    setCredentials(credentialResponse);
-    localStorage.setItem('jwt', credentialResponse.credential); // Store credential for future sessions
-    console.log(jwtDecode(credentialResponse.credential));
+    // decode the credential
+
+    // const decoded = jwtDecode(credentialResponse.credential);
+    // console.log(decoded.given_name);
+
+    setCredentials(credentialResponse.credential);
+    localStorage.setItem('jwt', credentialResponse.credential); // originally stored credentialREsponse
+    // localStorage.setItem('jwt', credentials); // originally stored credentialREsponse
+    console.log(typeof credentialResponse.credential);
   };
 
   const handleError = () => {
@@ -191,11 +202,11 @@ function App() {
                   onSuccess={handleSuccess}
                   onError={handleError}
                 />}
-                {credentials && <a class="button is-primary">
-                  <strong>Welcome, {} </strong> 
+                {credentials && <a class="button is-secondary">
+                  <strong>Welcome, {jwtDecode(credentials).given_name} </strong> 
                 </a>}
-                {credentials && <a class="button is-primary" onClick={handleLogout}>
-                  <strong>LogOut</strong> 
+                {credentials && <a class="button is-danger" onClick={handleLogout}>
+                  <strong>Log Out</strong> 
                 </a>}
               </div>
             </div>
@@ -214,7 +225,7 @@ function App() {
     {credentials && <section class="section">
       <div style={{ textAlign: 'center' }}>
 
-        <h1 className="title">Welcome back, <strong>{getNameById(selectedID)}</strong>. <br /> </h1>
+        <h1 className="title">You're viewing DigiDraw as {getNameById(selectedID)}. <br /> </h1>
         <h2 className="subtitle">You are <strong>{getDrawNumberAndYear(selectedID)}</strong>. {myRoom} <br />Click on any room you'd like to change!</h2>
 
         <div style={{ display: 'flex', justifyContent: 'center' }}>

@@ -5,20 +5,28 @@ function SuiteNoteModal() {
 
     const {
         selectedSuiteObject,
+        print,
+        setIsSuiteNoteModalOpen,
+        credentials,
+
     } = useContext(MyContext);
 
     const [suiteNotes, setSuiteNotes] = useState('');
 
 
     const updateSuiteNotes = () => {
-        fetch('/suites/notes', {
+        print(suiteNotes);
+        print(selectedSuiteObject.suiteUUID);
+        print(credentials);
+        fetch('/suites/design', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                SuiteDesign: suiteNotes,
-                SuiteUUID: selectedSuiteObject.uuid,
+                suiteDesign: suiteNotes,
+                suiteUUID: selectedSuiteObject.suiteUUID,
+                userJWT: credentials,
             }),
         })
             .then(response => response.json())
@@ -37,7 +45,7 @@ function SuiteNoteModal() {
             <div className="modal-card">
                 <header className="modal-card-head">
                     <p className="modal-card-title">Update suite notes</p>
-                    <button className="delete" aria-label="close" ></button>
+                    <button className="delete" aria-label="close" onClick={() => setIsSuiteNoteModalOpen(false)}></button>
                 </header>
                 <section className="modal-card-body">
                     <textarea
