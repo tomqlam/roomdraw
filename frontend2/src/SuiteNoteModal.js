@@ -18,7 +18,7 @@ function SuiteNoteModal() {
         print(suiteNotes);
         print(selectedSuiteObject.suiteUUID);
         print(credentials);
-        fetch(`https://www.cs.hmc.edu/~tlam/roomdraw/api/suites/design`, {
+        fetch(`https://www.cs.hmc.edu/~tlam/digitaldraw/api/suites/design`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
