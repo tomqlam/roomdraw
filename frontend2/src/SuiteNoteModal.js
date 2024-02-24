@@ -18,7 +18,7 @@ function SuiteNoteModal() {
         print(suiteNotes);
         print(selectedSuiteObject.suiteUUID);
         print(credentials);
-        fetch('/suites/design', {
+        fetch(`${process.env.REACT_APP_BACKEND_URL}/suites/design`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

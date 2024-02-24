@@ -79,7 +79,7 @@ export const MyContextProvider = ({ children }) => {
 
 
     function fetchUserMap() {
-        fetch('/users/idmap')
+        fetch(`${process.env.REACT_APP_BACKEND_URL}/users/idmap`)
             .then(res => {
                 return res.json();
             })
@@ -93,7 +93,7 @@ export const MyContextProvider = ({ children }) => {
     }
     function fetchRoomsWithUUIDs() {
         if (localStorage.getItem('jwt')) {
-            fetch('/rooms', {
+            fetch(`${process.env.REACT_APP_BACKEND_URL}/rooms`, {
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('jwt')}`
                 }
@@ -116,7 +116,7 @@ export const MyContextProvider = ({ children }) => {
         }
     }
     function fetchRoomsForOneDorm(dorm) {
-        fetch(`/rooms/simple/${dorm}`)
+        fetch(`${process.env.REACT_APP_BACKEND_URL}/rooms/simple/${dorm}`)
             .then(res => res.json())  // Parse the response data as JSON
             .then(data => {
                 setGridData(prevGridData => prevGridData.map(item => item.dormName === dorm ? data : item));
@@ -130,7 +130,7 @@ export const MyContextProvider = ({ children }) => {
 
     function fetchRoomsForDorms(dorms) {
         const promises = dorms.map(dorm => {
-            return fetch(`/rooms/simple/${dorm}`)
+            return fetch(`${process.env.REACT_APP_BACKEND_URL}/rooms/simple/${dorm}`)
                 .then(res => res.json())  // Parse the response data as JSON
                 .catch(err => {
                     console.error(`Error fetching rooms for ${dorm}:`, err);

@@ -113,7 +113,7 @@ function BumpModal() {
 
   const performRoomAction = (pullType, pullLeaderRoom = null) => {
     return new Promise((resolve) => {
-      fetch(`/rooms/${selectedRoomObject.roomUUID}`, {
+      fetch(`${process.env.REACT_APP_BACKEND_URL}/rooms/${selectedRoomObject.roomUUID}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -159,7 +159,7 @@ function BumpModal() {
 
   const handleClearRoom = (roomUUID, closeModalBool) => {
     return new Promise((resolve) => {
-      fetch(`/rooms/${roomUUID}`, {
+      fetch(`${process.env.REACT_APP_BACKEND_URL}/rooms/${roomUUID}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
