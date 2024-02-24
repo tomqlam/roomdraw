@@ -79,7 +79,7 @@ export const MyContextProvider = ({ children }) => {
 
 
     function fetchUserMap() {
-        fetch(`https://www.cs.hmc.edu/~tlam/roomdraw/users/idmap`)
+        fetch(`${process.env.REACT_APP_BACKEND_URL}/users/idmap`)
             .then(res => {
                 return res.json();
             })
