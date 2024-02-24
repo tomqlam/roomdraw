@@ -79,7 +79,11 @@ export const MyContextProvider = ({ children }) => {
 
 
     function fetchUserMap() {
-        fetch(`https://www.cs.hmc.edu/~tlam/digitaldraw/api/users/idmap`)
+        fetch(`https://www.cs.hmc.edu/~tlam/digitaldraw/api/users/idmap`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('jwt')}`
+                }
+            })
             .then(res => {
                 return res.json();
             })
