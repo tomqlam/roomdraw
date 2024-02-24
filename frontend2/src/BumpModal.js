@@ -159,7 +159,7 @@ function BumpModal() {
 
   const handleClearRoom = (roomUUID, closeModalBool) => {
     return new Promise((resolve) => {
-      fetch(`https://www.cs.hmc.edu/roomdraw/rooms/${roomUUID}`, {
+      fetch(`https://www.cs.hmc.edu/~tlam/roomdraw/rooms/${roomUUID}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
