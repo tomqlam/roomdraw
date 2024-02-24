@@ -53,7 +53,7 @@ func main() {
 	router.GET("/rooms/simpler/:dormName", handlers.GetSimplerFormattedDorm)       // Read
 	router.PATCH("/rooms/:roomuuid", handlers.UpdateRoomOccupants)                 // Write
 	router.GET("/users", handlers.GetUsers)                                        // Read
-	router.GET("/users/idmap", handlers.GetUsersIdMap)
+	router.GET("/users/idmap", middleware.JWTAuthMiddleware(), handlers.GetUsersIdMap)
 	router.POST("/suites/design", handlers.SetSuiteDesign)
 
 	router.POST("/frosh/:roomuuid", handlers.AddFroshHandler)
