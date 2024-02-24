@@ -113,7 +113,7 @@ function BumpModal() {
 
   const performRoomAction = (pullType, pullLeaderRoom = null) => {
     return new Promise((resolve) => {
-      fetch(`${process.env.REACT_APP_BACKEND_URL}/rooms/${selectedRoomObject.roomUUID}`, {
+      fetch(`https://www.cs.hmc.edu/~tlam/roomdraw/api/rooms/${selectedRoomObject.roomUUID}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',

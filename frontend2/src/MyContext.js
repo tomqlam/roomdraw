@@ -79,7 +79,7 @@ export const MyContextProvider = ({ children }) => {
 
 
     function fetchUserMap() {
-        fetch(`${process.env.REACT_APP_BACKEND_URL}/users/idmap`)
+        fetch(`https://www.cs.hmc.edu/~tlam/roomdraw/api/users/idmap`)
             .then(res => {
                 return res.json();
             })
@@ -93,7 +93,7 @@ export const MyContextProvider = ({ children }) => {
     }
     function fetchRoomsWithUUIDs() {
         if (localStorage.getItem('jwt')) {
-            fetch(`${process.env.REACT_APP_BACKEND_URL}/rooms`, {
+            fetch(`https://www.cs.hmc.edu/~tlam/roomdraw/api/rooms`, {
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('jwt')}`
                 }
@@ -116,7 +116,7 @@ export const MyContextProvider = ({ children }) => {
         }
     }
     function fetchRoomsForOneDorm(dorm) {
-        fetch(`${process.env.REACT_APP_BACKEND_URL}/rooms/simple/${dorm}`)
+        fetch(`https://www.cs.hmc.edu/~tlam/roomdraw/api/rooms/simple/${dorm}`)
             .then(res => res.json())  // Parse the response data as JSON
             .then(data => {
                 setGridData(prevGridData => prevGridData.map(item => item.dormName === dorm ? data : item));
@@ -130,7 +130,7 @@ export const MyContextProvider = ({ children }) => {
 
     function fetchRoomsForDorms(dorms) {
         const promises = dorms.map(dorm => {
-            return fetch(`${process.env.REACT_APP_BACKEND_URL}/rooms/simple/${dorm}`)
+            return fetch(`https://www.cs.hmc.edu/~tlam/roomdraw/api/rooms/simple/${dorm}`)
                 .then(res => res.json())  // Parse the response data as JSON
                 .catch(err => {
                     console.error(`Error fetching rooms for ${dorm}:`, err);
