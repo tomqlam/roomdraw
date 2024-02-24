@@ -56,7 +56,7 @@ function FloorGrid({ gridData }) {
     textAlign: 'center',
     fontSize: '14px',
     color: '#000000',
-    overflow: 'scroll', 
+    overflow: 'auto', 
 
   };
 
