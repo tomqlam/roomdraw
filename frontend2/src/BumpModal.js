@@ -159,7 +159,7 @@ function BumpModal() {
 
   const handleClearRoom = (roomUUID, closeModalBool) => {
     return new Promise((resolve) => {
-      fetch(`https://www.cs.hmc.edu/~tlam/digitaldraw/rooms/${roomUUID}`, {
+      fetch(`https://www.cs.hmc.edu/~tlam/digitaldraw/api/rooms/${roomUUID}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
