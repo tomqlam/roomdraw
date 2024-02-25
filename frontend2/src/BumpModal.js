@@ -114,7 +114,7 @@ function BumpModal() {
   const performRoomAction = (pullType, pullLeaderRoom = null) => {
     return new Promise((resolve) => {
       fetch(`https://www.cs.hmc.edu/~tlam/digitaldraw/api/rooms/${selectedRoomObject.roomUUID}`, {
-        method: 'PUT',
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -160,7 +160,7 @@ function BumpModal() {
   const handleClearRoom = (roomUUID, closeModalBool) => {
     return new Promise((resolve) => {
       fetch(`https://www.cs.hmc.edu/~tlam/digitaldraw/rooms/${roomUUID}`, {
-        method: 'PUT',
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },

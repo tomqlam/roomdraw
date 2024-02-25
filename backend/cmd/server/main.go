@@ -51,7 +51,7 @@ func main() {
 	router.GET("/rooms", middleware.JWTAuthMiddleware(), handlers.GetRoomsHandler) // Read
 	router.GET("/rooms/simple/:dormName", handlers.GetSimpleFormattedDorm)         // Read
 	router.GET("/rooms/simpler/:dormName", handlers.GetSimplerFormattedDorm)       // Read
-	router.PUT("/rooms/:roomuuid", handlers.UpdateRoomOccupants)                   // Write
+	router.POST("/rooms/:roomuuid", handlers.UpdateRoomOccupants)                  // Write
 	router.GET("/users", handlers.GetUsers)                                        // Read
 	router.GET("/users/idmap", middleware.JWTAuthMiddleware(), handlers.GetUsersIdMap)
 	router.POST("/suites/design", handlers.SetSuiteDesign)
