@@ -53,7 +53,7 @@ func main() {
 	router.POST("/rooms/:roomuuid", middleware.JWTAuthMiddleware(), handlers.UpdateRoomOccupants)            // Write
 	router.GET("/users", middleware.JWTAuthMiddleware(), handlers.GetUsers)                                  // Read
 	router.GET("/users/idmap", middleware.JWTAuthMiddleware(), handlers.GetUsersIdMap)
-	router.POST("/suites/design", middleware.JWTAuthMiddleware(), handlers.SetSuiteDesign)
+	router.POST("/suites/design/:suiteuuid", middleware.JWTAuthMiddleware(), handlers.SetSuiteDesign)
 
 	router.POST("/frosh/:roomuuid", middleware.JWTAuthMiddleware(), handlers.AddFroshHandler)
 	router.DELETE("/frosh/:roomuuid", middleware.JWTAuthMiddleware(), handlers.RemoveFroshHandler)
