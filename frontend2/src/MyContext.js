@@ -58,13 +58,13 @@ export const MyContextProvider = ({ children }) => {
 
     useEffect(() => {
         // Pulls all necessary data if never done before
-        if (gridData.length !== 9 && credentials !== null) {
+        if (gridData.length !== 9 && credentials) {
             fetchUserMap();
             // getting the main page floor grid data
             fetchRoomsForDorms(["Atwood", "East", "Drinkward", "Linde", "North", "South", "Sontag", "West", "Case"]);
             // getting the room data for uuid mapping
             fetchRoomsWithUUIDs();
-        } else {
+        } else if (credentials) {
             fetchRoomsForOneDorm(activeTab);
             fetchRoomsWithUUIDs();
             fetchUserMap();
@@ -79,21 +79,25 @@ export const MyContextProvider = ({ children }) => {
 
 
     function fetchUserMap() {
-        fetch(`https://www.cs.hmc.edu/~tlam/digitaldraw/api/users/idmap`, {
+        if (localStorage.getItem('jwt')){
+            fetch('https://www.cs.hmc.edu/~tlam/digitaldraw/api/users/idmap', {
+                method: 'GET',
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('jwt')}`
-                }
-            })
-            .then(res => {
-                return res.json();
-            })
-            .then(data => {
-
-                setUserMap(data);
-            })
-            .catch(err => {
-                console.log(err);
-            })
+                  'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
+                },
+              })
+                .then(res => {
+                    return res.json();
+                })
+                .then(data => {
+    
+                    setUserMap(data);
+                })
+                .catch(err => {
+                    console.log(err);
+                })
+        }
+        
     }
     function fetchRoomsWithUUIDs() {
         if (localStorage.getItem('jwt')) {
@@ -121,7 +125,12 @@ export const MyContextProvider = ({ children }) => {
         }
     }
     function fetchRoomsForOneDorm(dorm) {
-        fetch(`https://www.cs.hmc.edu/~tlam/digitaldraw/api/rooms/simple/${dorm}`)
+        fetch(`https://www.cs.hmc.edu/~tlam/digitaldraw/api/rooms/simple/${dorm}`, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
+            },
+          })
             .then(res => res.json())  // Parse the response data as JSON
             .then(data => {
                 setGridData(prevGridData => prevGridData.map(item => item.dormName === dorm ? data : item));
@@ -135,7 +144,12 @@ export const MyContextProvider = ({ children }) => {
 
     function fetchRoomsForDorms(dorms) {
         const promises = dorms.map(dorm => {
-            return fetch(`https://www.cs.hmc.edu/~tlam/digitaldraw/api/rooms/simple/${dorm}`)
+            return fetch(`https://www.cs.hmc.edu/~tlam/digitaldraw/api/rooms/simple/${dorm}`, {
+                method: 'GET',
+                headers: {
+                  'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
+                },
+              })
                 .then(res => res.json())  // Parse the response data as JSON
                 .catch(err => {
                     console.error(`Error fetching rooms for ${dorm}:`, err);
