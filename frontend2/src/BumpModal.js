@@ -41,6 +41,17 @@ function BumpModal() {
     }
   }, [selectedSuiteObject, selectedItem]);
 
+  function postToFrosh(roomObject) {
+    fetch(`/frosh/${roomObject.roomUUID}`, {
+        method: 'POST',
+    })
+    .then(response => response.json())
+    .then(data => console.log(data))
+    .catch((error) => {
+        console.error('Error:', error);
+    });
+}
+
   const getRoomUUIDFromUserID = (userID) => {
     if (rooms) {
       for (let room of rooms) {
@@ -206,6 +217,7 @@ function BumpModal() {
         </header>
         <section className="modal-card-body">
 
+        <button onClick={() => postToFrosh(selectedRoomObject)}>Add Frosh</button>
 
           <label className="label">{`Reassign Occupant${selectedRoomObject.maxOccupancy > 1 ? "s" : ""}`}</label>
 
