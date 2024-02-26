@@ -205,7 +205,6 @@ func CORSMiddleware() gin.HandlerFunc {
 // JWTAuthMiddleware checks if the JWT token is present and valid
 func JWTAuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		log.Println("JWTAuthMiddleware")
 		const BEARER_SCHEMA = "Bearer "
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
@@ -213,8 +212,6 @@ func JWTAuthMiddleware() gin.HandlerFunc {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Authorization header missing"})
 			return
 		}
-
-		log.Println("authHeader:", authHeader)
 
 		tokenString := strings.TrimPrefix(authHeader, BEARER_SCHEMA)
 		token, err := jwt.Parse(tokenString, getGooglePublicKey)
