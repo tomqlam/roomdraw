@@ -131,6 +131,7 @@ function BumpModal() {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
         },
         body: JSON.stringify({
           proposedOccupants: selectedOccupants.map(Number).filter(num => num !== 0),
@@ -177,6 +178,7 @@ function BumpModal() {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('jwt')}`
         },
         body: JSON.stringify({
           proposedOccupants: [],
