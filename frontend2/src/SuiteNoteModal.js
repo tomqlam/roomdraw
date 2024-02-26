@@ -25,9 +25,7 @@ function SuiteNoteModal() {
                 'Authorization': `Bearer ${localStorage.getItem('jwt')}`
             },
             body: JSON.stringify({
-                suiteDesign: suiteNotes,
-                suiteUUID: selectedSuiteObject.suiteUUID,
-                userJWT: credentials,
+                SuiteDesign: suiteNotes,
             }),
         })
             .then(response => response.json())
