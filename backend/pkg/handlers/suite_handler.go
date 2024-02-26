@@ -9,6 +9,8 @@ import (
 )
 
 func SetSuiteDesign(c *gin.Context) {
+	suiteUUID := c.Param("suiteuuid")
+
 	var suiteDesignUpdateReq models.SuiteDesignUpdateRequest
 	if err := c.ShouldBindJSON(&suiteDesignUpdateReq); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -34,7 +36,7 @@ func SetSuiteDesign(c *gin.Context) {
 	}()
 
 	// Replace the suite design
-	_, err = tx.Exec("UPDATE suite_designs SET design = $1 WHERE id = $2", suiteDesignUpdateReq.SuiteDesign, suiteDesignUpdateReq.SuiteUUID)
+	_, err = tx.Exec("UPDATE suite_designs SET design = $1 WHERE id = $2", suiteDesignUpdateReq.SuiteDesign, suiteUUID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update suite design"})
 		return
