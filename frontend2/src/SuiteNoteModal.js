@@ -18,11 +18,7 @@ function SuiteNoteModal() {
         print(suiteNotes);
         print(selectedSuiteObject.suiteUUID);
         print(credentials);
-<<<<<<< HEAD
-        fetch(`https://www.cs.hmc.edu/~tlam/digitaldraw/api/suites/design`, {
-=======
         fetch(`https://www.cs.hmc.edu/~tlam/digitaldraw/api/suites/design/${selectedSuiteObject.suiteUUID}`, {
->>>>>>> origin/main
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
