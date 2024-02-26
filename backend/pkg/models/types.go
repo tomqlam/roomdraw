@@ -232,7 +232,6 @@ type OccupantUpdateRequest struct {
 
 type SuiteDesignUpdateRequest struct {
 	SuiteDesign string `json:"suiteDesign"`
-	SuiteUUID   string `json:"suiteUUID"`
 	UserJWT     string `json:"userJWT"`
 }
 
