@@ -36,7 +36,7 @@ func SetSuiteDesign(c *gin.Context) {
 	}()
 
 	// Replace the suite design
-	_, err = tx.Exec("UPDATE suite_designs SET suite_design = $1 WHERE suite_uuid = $2", suiteDesignUpdateReq.SuiteDesign, suiteUUID)
+	_, err = tx.Exec("UPDATE suites SET suite_design = $1 WHERE suite_uuid = $2", suiteDesignUpdateReq.SuiteDesign, suiteUUID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update suite design"})
 		return
