@@ -24,13 +24,13 @@ func main() {
 
 	// Configure CORS middleware options
 	corsConfig := cors.Config{
-		AllowOrigins:     []string{"http://localhost:3000"},
+		AllowOrigins:     []string{"http://localhost:3000", "http://localhost:8081", "https://www.cs.hmc.edu"},
 		AllowMethods:     []string{"PUT", "PATCH", "GET", "POST", "DELETE"},
 		AllowHeaders:     []string{"Origin", "Authorization", "Content-Type"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
 		AllowOriginFunc: func(origin string) bool {
-			return origin == "http://localhost:3000"
+			return origin == "http://localhost:3000" || origin == "http://localhost:8081" || origin == "https://www.cs.hmc.edu"
 		},
 		MaxAge: 12 * time.Hour,
 	}
@@ -47,18 +47,17 @@ func main() {
 	router.Use(cors.New(corsConfig))
 
 	// Define your routes
-	// router.GET("/rooms", handlers.GetRoomsHandler) // Read
-	router.GET("/rooms", middleware.JWTAuthMiddleware(), handlers.GetRoomsHandler) // Read
-	router.GET("/rooms/simple/:dormName", handlers.GetSimpleFormattedDorm)         // Read
-	router.GET("/rooms/simpler/:dormName", handlers.GetSimplerFormattedDorm)       // Read
-	router.PATCH("/rooms/:roomuuid", handlers.UpdateRoomOccupants)                 // Write
-	router.GET("/users", handlers.GetUsers)                                        // Read
-	router.GET("/users/idmap", handlers.GetUsersIdMap)
-	router.POST("/suites/design", handlers.SetSuiteDesign)
+	router.GET("/rooms", middleware.JWTAuthMiddleware(), handlers.GetRoomsHandler)                           // Read
+	router.GET("/rooms/simple/:dormName", middleware.JWTAuthMiddleware(), handlers.GetSimpleFormattedDorm)   // Read
+	router.GET("/rooms/simpler/:dormName", middleware.JWTAuthMiddleware(), handlers.GetSimplerFormattedDorm) // Read
+	router.POST("/rooms/:roomuuid", middleware.JWTAuthMiddleware(), handlers.UpdateRoomOccupants)            // Write
+	router.GET("/users", middleware.JWTAuthMiddleware(), handlers.GetUsers)                                  // Read
+	router.GET("/users/idmap", middleware.JWTAuthMiddleware(), handlers.GetUsersIdMap)
+	router.POST("/suites/design/:suiteuuid", middleware.JWTAuthMiddleware(), handlers.SetSuiteDesign)
 
-	router.POST("/frosh/:roomuuid", handlers.AddFroshHandler)
-	router.DELETE("/frosh/:roomuuid", handlers.RemoveFroshHandler)
-	router.PATCH("/frosh/:roomuuid", handlers.BumpFroshHandler)
+	router.POST("/frosh/:roomuuid", middleware.JWTAuthMiddleware(), handlers.AddFroshHandler)
+	router.DELETE("/frosh/:roomuuid", middleware.JWTAuthMiddleware(), handlers.RemoveFroshHandler)
+	router.POST("/frosh/bump/:roomuuid", middleware.JWTAuthMiddleware(), handlers.BumpFroshHandler)
 
 	// Start the server
 	router.Run(config.ServerAddress)
