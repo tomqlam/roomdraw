@@ -43,14 +43,17 @@ function BumpModal() {
 
   function postToFrosh(roomObject) {
     fetch(`/frosh/${roomObject.roomUUID}`, {
-        method: 'POST',
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
+      },
     })
     .then(response => response.json())
     .then(data => console.log(data))
     .catch((error) => {
-        console.error('Error:', error);
+      console.error('Error:', error);
     });
-}
+  }
 
   const getRoomUUIDFromUserID = (userID) => {
     if (rooms) {

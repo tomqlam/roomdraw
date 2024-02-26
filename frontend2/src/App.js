@@ -119,9 +119,7 @@ function App() {
     // ex: given 2, returns Sophomore 46
     if (!userMap) {
       return "Loading...";
-    }
-
-    if (userMap[id].InDorm && userMap[id].InDorm !== 0) {
+    } else if (userMap[id].InDorm && userMap[id].InDorm !== 0) {
       // has in dorm
       return `${userMap[id].Year.charAt(0).toUpperCase() + userMap[id].Year.slice(1)} ${userMap[id].DrawNumber} ${dormMapping[userMap[id].InDorm]}`;
     }
@@ -294,7 +292,7 @@ function App() {
 
     </section>}
       {currPage === "Recommendations" && <section class="section">
-        <Recommendations gridData={gridData} setCurrPage={setCurrPage} />
+        {/* <Recommendations gridData={gridData} setCurrPage={setCurrPage} /> */}
       </section>}
 
 
