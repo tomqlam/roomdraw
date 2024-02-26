@@ -107,6 +107,7 @@ export const MyContextProvider = ({ children }) => {
                 })
                 .then(data => {
                     setRooms(data);
+                    console.log(data);
                     if (data.error) {
                         print("There was an error printing rooms");
                         setCredentials(null); // nullify the credentials if there was an error, they're probably failing
