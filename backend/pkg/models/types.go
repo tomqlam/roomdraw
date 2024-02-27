@@ -130,9 +130,10 @@ type FloorSimpler struct {
 }
 
 type SuiteSimple struct {
-	Rooms       []RoomSimple `json:"rooms"`
-	SuiteDesign string       `json:"suiteDesign"`
-	SuiteUUID   uuid.UUID    `json:"suiteUUID"`
+	Rooms           []RoomSimple `json:"rooms"`
+	SuiteDesign     string       `json:"suiteDesign"`
+	SuiteUUID       uuid.UUID    `json:"suiteUUID"`
+	AlternativePull bool         `json:"alternative_pull"`
 }
 
 type SuiteSimpler struct {

@@ -56,7 +56,7 @@ function FloorGrid({ gridData }) {
     textAlign: 'center',
     fontSize: '14px',
     color: '#000000',
-    overflow: 'auto', 
+    overflow: 'auto',
 
   };
 
@@ -166,7 +166,7 @@ function FloorGrid({ gridData }) {
   }
 
   const checkBumpable = (pullPriority) => {
-    if (!userMap[selectedID]){
+    if (!userMap[selectedID]) {
       return false; // catching case where the screen hasnt loaded yet
     }
     if (!pullPriority.valid) {
@@ -190,7 +190,7 @@ function FloorGrid({ gridData }) {
       "junior": 3,
       "senior": 4
     };
-    
+
     if (yearMapping[userMap[selectedID].Year] < pullPriority.year) {
       return false;
     } else if (yearMapping[userMap[selectedID].Year] > pullPriority.year) {
@@ -217,7 +217,11 @@ function FloorGrid({ gridData }) {
       <div style={roomNumberStyle}><strong>Occupant 3</strong></div>
       <div style={roomNumberStyle}><strong>Occupant 4</strong></div>
 
-      {gridData.suites.map((suite, suiteIndex) => (
+      {[...gridData.suites].sort((a, b) => {
+          const firstRoomNumberA = a.rooms[0].roomNumber;
+          const firstRoomNumberB = b.rooms[0].roomNumber;
+          return firstRoomNumberA.localeCompare(firstRoomNumberB);
+      }).map((suite, suiteIndex) => (
         suite.rooms.sort((a, b) => String(a.roomNumber).localeCompare(String(b.roomNumber)))
           .map((room, roomIndex) => (
             <React.Fragment key={roomIndex}>
@@ -234,13 +238,13 @@ function FloorGrid({ gridData }) {
                   ...pullMethodStyle, gridRow: `span ${suite.rooms.length}`, backgroundColor: suiteIndex % 2 === 0
                     ? cellColors.evenSuite // color for even suiteIndex
                     : cellColors.oddSuite
-                }} onClick={() => updateSuiteNotes(room.roomNumber)}>Insert suite name</div>
+                }} onClick={() => updateSuiteNotes(room.roomNumber)}>{suite.suiteDesign}</div>
 
-            }
-            <div style={getGridItemStyle(room, room.maxOccupancy, 1, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{getNameById(room.occupant1)}</div>
-            <div style={getGridItemStyle(room, room.maxOccupancy, 2, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{getNameById(room.occupant2)}</div>
-            <div style={getGridItemStyle(room, room.maxOccupancy, 3, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{getNameById(room.occupant3)}</div>
-            <div style={getGridItemStyle(room, room.maxOccupancy, 4, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{getNameById(room.occupant4)}</div>
+              }
+              <div style={getGridItemStyle(room, room.maxOccupancy, 1, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{getNameById(room.occupant1)}</div>
+              <div style={getGridItemStyle(room, room.maxOccupancy, 2, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{getNameById(room.occupant2)}</div>
+              <div style={getGridItemStyle(room, room.maxOccupancy, 3, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{getNameById(room.occupant3)}</div>
+              <div style={getGridItemStyle(room, room.maxOccupancy, 4, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{getNameById(room.occupant4)}</div>
 
             </React.Fragment>
           ))

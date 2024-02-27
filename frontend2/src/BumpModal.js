@@ -21,6 +21,8 @@ function BumpModal() {
     pullError,
     setPullError,
     rooms,
+    setCredentials,
+    handleErrorFromTokenExpiry
   } = useContext(MyContext);
 
   // List of arrays with two elements, where the first element is the occupant ID and the second element is the room UUID
@@ -49,7 +51,12 @@ function BumpModal() {
       },
     })
     .then(response => response.json())
-    .then(data => console.log(data))
+    .then(data => {
+      console.log(data);
+      if (handleErrorFromTokenExpiry(data)) {
+        return;
+      };
+    })
     .catch((error) => {
       console.error('Error:', error);
     });
@@ -142,6 +149,9 @@ function BumpModal() {
         .then(response => response.json())
         .then(data => {
           if (data.error) {
+            if (handleErrorFromTokenExpiry(data)) {
+              return;
+            };
             if (data.error === "One or more of the proposed occupants is already in a room") {
               console.log("Someone's already there rrror");
               setPeopleAlreadyInRoom(data.occupants);
@@ -188,12 +198,17 @@ function BumpModal() {
         .then(response => response.json())
         .then(data => {
           if (data.error) {
+            if (handleErrorFromTokenExpiry(data)) {
+              return;
+            };
             setPullError(data.error);
             setIsModalOpen(true);
             setShowModalError(true);
             resolve(false);
+            
 
           }
+
         })
         .catch((error) => {
           setRefreshKey(refreshKey + 1);

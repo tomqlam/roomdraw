@@ -33,6 +33,14 @@ export const MyContextProvider = ({ children }) => {
     });
     const [isSuiteNoteModalOpen, setIsSuiteNoteModalOpen] = useState(false); // If suite note modal 
 
+    const handleErrorFromTokenExpiry = (data) => {
+        if (data.error === "Invalid token") {
+            setCredentials(null);
+            localStorage.removeItem('jwt');
+            return true;
+        }
+        return false;
+    }
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -90,7 +98,9 @@ export const MyContextProvider = ({ children }) => {
                     return res.json();
                 })
                 .then(data => {
-    
+                    if (handleErrorFromTokenExpiry(data)) {
+                        return;
+                      };
                     setUserMap(data);
                 })
                 .catch(err => {
@@ -110,6 +120,9 @@ export const MyContextProvider = ({ children }) => {
                     return res.json();  // Parse the response data as JSON
                 })
                 .then(data => {
+                    if (handleErrorFromTokenExpiry(data)) {
+                        return;
+                    };
                     setRooms(data);
                     console.log(data);
                     if (data.error) {
@@ -133,6 +146,10 @@ export const MyContextProvider = ({ children }) => {
           })
             .then(res => res.json())  // Parse the response data as JSON
             .then(data => {
+                if (handleErrorFromTokenExpiry(data)) {
+                    return;
+                };
+                console.log("Fetch rooms from one dorm");
                 setGridData(prevGridData => prevGridData.map(item => item.dormName === dorm ? data : item));
                 console.log(data);
             })
@@ -151,6 +168,12 @@ export const MyContextProvider = ({ children }) => {
                 },
               })
                 .then(res => res.json())  // Parse the response data as JSON
+                .then(data => {
+                    if (handleErrorFromTokenExpiry(data)) {
+                        return;
+                      };
+                    return data;
+                })
                 .catch(err => {
                     console.error(`Error fetching rooms for ${dorm}:`, err);
                 });
@@ -158,8 +181,13 @@ export const MyContextProvider = ({ children }) => {
 
         Promise.all(promises)
             .then(dataArray => {
-                setGridData(dataArray);
-                console.log(gridData);
+                if (dataArray[0] && dataArray.length === 9) {
+                    print(dataArray);
+                    print("fetching roosm for dorms");
+                    setGridData(dataArray);
+                    console.log(gridData);
+                }
+                
             })
             .catch(err => {
                 console.error("Error in Promise.all:", err);
@@ -249,6 +277,7 @@ export const MyContextProvider = ({ children }) => {
         setLastRefreshedTime,
         activeTab,
         setActiveTab,
+        handleErrorFromTokenExpiry
     };
 
     return (
