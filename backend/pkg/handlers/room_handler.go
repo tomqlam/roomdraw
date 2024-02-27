@@ -165,9 +165,10 @@ func GetSimpleFormattedDorm(c *gin.Context) {
 		suiteUUIDString := s.SuiteUUID.String()
 		floor := suiteUUIDToFloorMap[s.SuiteUUID]
 		suite := models.SuiteSimple{
-			Rooms:       suiteToRoomMap[suiteUUIDString],
-			SuiteDesign: s.SuiteDesign,
-			SuiteUUID:   s.SuiteUUID,
+			Rooms:           suiteToRoomMap[suiteUUIDString],
+			SuiteDesign:     s.SuiteDesign,
+			SuiteUUID:       s.SuiteUUID,
+			AlternativePull: s.AlternativePull,
 		}
 
 		floorMap[floor] = append(floorMap[floor], suite)
@@ -869,6 +870,38 @@ func UpdateRoomOccupants(c *gin.Context) {
 			}
 		} else {
 			log.Println("Pull leader is in a suite group")
+
+			// first check that the room in in south and that the number of rooms in the suite is 3
+			var suiteInfo models.SuiteRaw
+			err = tx.QueryRow("SELECT suite_uuid, dorm, dorm_name, floor, room_count, rooms, alternative_pull FROM suites WHERE suite_uuid = $1", currentRoomInfo.SuiteUUID).Scan(
+				&suiteInfo.SuiteUUID,
+				&suiteInfo.Dorm,
+				&suiteInfo.DormName,
+				&suiteInfo.Floor,
+				&suiteInfo.RoomCount,
+				&suiteInfo.Rooms,
+				&suiteInfo.AlternativePull,
+			)
+
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to query suite info from suites table"})
+				return
+			}
+
+			if suiteInfo.Dorm != 3 {
+				if suiteInfo.RoomCount != 3 {
+					c.JSON(http.StatusBadRequest, gin.H{"error": "You can only pull two suitemates in South in a suite with three rooms"})
+					err = errors.New("you can only pull two suitemates in South in a suite with three rooms")
+					tx.Rollback()
+					return
+				}
+
+				c.JSON(http.StatusBadRequest, gin.H{"error": "You can only pull two suitemates in South"})
+				err = errors.New("you can only pull two suitemates in South")
+				tx.Rollback()
+				return
+			}
+
 			// check if the pull leader is the leader of the suite group by checking if the suite group's pull priority is the same as the pull leader's pull priority
 			var pullLeaderSuiteGroupPriority models.PullPriority
 			err = tx.QueryRow("SELECT pull_priority FROM suitegroups WHERE sgroup_uuid = $1", pullLeaderSuiteGroupUUID).Scan(&pullLeaderSuiteGroupPriority)
