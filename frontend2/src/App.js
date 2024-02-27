@@ -6,7 +6,7 @@ import Recommendations from './Recommendations';
 import { MyContext } from './MyContext';
 import { GoogleLogin } from '@react-oauth/google';
 import { jwtDecode } from "jwt-decode";
-import  SuiteNoteModal  from './SuiteNoteModal';
+import SuiteNoteModal from './SuiteNoteModal';
 import { googleLogout } from '@react-oauth/google';
 
 function App() {
@@ -34,7 +34,7 @@ function App() {
 
   // const [showNotification, setShowNotification] = useState(false);
   const [myRoom, setMyRoom] = useState("You are not in a room yet."); // to show what room current user is in
-
+  
   useEffect(() => {
     const storedCredentials = localStorage.getItem('jwt');
     if (storedCredentials) {
@@ -130,7 +130,7 @@ function App() {
   // Component for each floor, to show even and odd floors separately
   const FloorColumn = ({ gridData, filterCondition }) => (
     <div class="column">
-      {gridData.map((dorm) => (
+      {gridData.map((dorm) => ( 
         <div key={dorm.dormName} className={activeTab === dorm.dormName ? '' : 'is-hidden'}>
           {dorm.floors
             .filter((floor) => filterCondition(floor.floorNumber))
@@ -195,16 +195,16 @@ function App() {
           <div class="navbar-end">
             <div class="navbar-item">
               <div class="buttons">
-                {!credentials && 
+                {!credentials &&
                   <GoogleLogin auto_select={true}
-                  onSuccess={handleSuccess}
-                  onError={handleError}
-                />}
+                    onSuccess={handleSuccess}
+                    onError={handleError}
+                  />}
                 {credentials && <a class="button is-secondary">
-                  <strong>Welcome, {jwtDecode(credentials).given_name} </strong> 
+                  <strong>Welcome, {jwtDecode(credentials).given_name} </strong>
                 </a>}
                 {credentials && <a class="button is-danger" onClick={handleLogout}>
-                  <strong>Log Out</strong> 
+                  <strong>Log Out</strong>
                 </a>}
               </div>
             </div>
@@ -214,83 +214,84 @@ function App() {
       {isModalOpen && <BumpModal />}
       {isSuiteNoteModalOpen && <SuiteNoteModal />}
 
-    {!credentials && <section class="section">
-      <div style={{ textAlign: 'center' }}>
-        <h1 className="title">Welcome to Digital Draw!</h1>
-        <h2 className="subtitle">Please log in with your HMC email to continue.</h2>
-      </div>
-    </section>}
-    {credentials && <section class="section">
-      <div style={{ textAlign: 'center' }}>
+      {!credentials && <section class="section">
+        <div style={{ textAlign: 'center' }}>
+          <h1 className="title">Welcome to Digital Draw!</h1>
+          <h2 className="subtitle">Please log in with your HMC email to continue.</h2>
+        </div>
+      </section>}
+      {credentials && <section class="section">
+        <div style={{ textAlign: 'center' }}>
 
-        <h1 className="title">You're viewing DigiDraw as {getNameById(selectedID)}. <br /> </h1>
-        <h2 className="subtitle">You are <strong>{getDrawNumberAndYear(selectedID)}</strong>. {myRoom} <br />Click on any room you'd like to change! <br/>Last refreshed at {lastRefreshedTime.toLocaleTimeString()}.</h2>
+          <h1 className="title">You're viewing DigiDraw as {getNameById(selectedID)}. <br /> </h1>
+          <h2 className="subtitle">You are <strong>{getDrawNumberAndYear(selectedID)}</strong>. {myRoom} <br />Click on any room you'd like to change! <br />Last refreshed at {lastRefreshedTime.toLocaleTimeString()}.</h2>
 
-        <div style={{ display: 'flex', justifyContent: 'center' }}>
-          <select className="select" onChange={handleNameChange}>
-            <option value="">This isn't me</option>
-            {userMap && Object.keys(userMap)
-              .sort((a, b) => {
-                const nameA = `${userMap[a].FirstName} ${userMap[a].LastName}`.toUpperCase();
-                const nameB = `${userMap[b].FirstName} ${userMap[b].LastName}`.toUpperCase();
-                if (nameA < nameB) {
-                  return -1;
-                }
-                if (nameA > nameB) {
-                  return 1;
-                }
-                return 0;
-              })
-              .map((key, index) => (
-                <option key={index} value={key}>
-                  {userMap[key].FirstName} {userMap[key].LastName}
-                </option>
-              ))}
-          </select>
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <select className="select" onChange={handleNameChange}>
+              <option value="">This isn't me</option>
+              {userMap && Object.keys(userMap)
+                .sort((a, b) => {
+                  const nameA = `${userMap[a].FirstName} ${userMap[a].LastName}`.toUpperCase();
+                  const nameB = `${userMap[b].FirstName} ${userMap[b].LastName}`.toUpperCase();
+                  if (nameA < nameB) {
+                    return -1;
+                  }
+                  if (nameA > nameB) {
+                    return 1;
+                  }
+                  return 0;
+                })
+                .map((key, index) => (
+                  <option key={index} value={key}>
+                    {userMap[key].FirstName} {userMap[key].LastName}
+                  </option>
+                ))}
+            </select>
+          </div>
+
         </div>
 
-      </div>
+      </section>}
 
-    </section>}
+      {(credentials && currPage === "Home") && <section class="section">
+        <label className="checkbox" style={{ display: 'flex', alignItems: 'center' }}>
+          <input
+            type="checkbox"
+            checked={onlyShowBumpableRooms}
+            onChange={() => setOnlyShowBumpableRooms(!onlyShowBumpableRooms)}
+          />
+          <span style={{ marginLeft: '0.5rem' }}>Darken rooms I can't pull</span>
+        </label>
 
-    {(credentials && currPage === "Home") && <section class="section">
-      <label className="checkbox" style={{ display: 'flex', alignItems: 'center' }}>
-        <input
-          type="checkbox"
-          checked={onlyShowBumpableRooms}
-          onChange={() => setOnlyShowBumpableRooms(!onlyShowBumpableRooms)}
-        />
-        <span style={{ marginLeft: '0.5rem' }}>Darken rooms I can't pull</span>
-      </label>
+        <div className="tabs is-centered">
+          <ul>
 
-      <div className="tabs is-centered">
-        <ul>
+            {gridData.length === 9 && gridData.map((dorm) => (
+              (
+                <li
+                  key={dorm.dormName}
+                  className={activeTab === dorm.dormName ? 'is-active' : ''}
+                  onClick={() => handleTabClick(dorm.dormName)}
+                >
+                  <a>{dorm.dormName}</a>
+                </li>
+              )
+            ))}
+          </ul>
+        </div>
 
-          {gridData.map((dorm) => (
-            <li
-              key={dorm.dormName}
-              className={activeTab === dorm.dormName ? 'is-active' : ''}
-              onClick={() => handleTabClick(dorm.dormName)}
-            >
+        {/* Left column is room draw, right side is tips */}
+        <div class="columns">
 
-              <a>{dorm.dormName}</a>
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      {/* Left column is room draw, right side is tips */}
-      <div class="columns">
-
-        <FloorColumn gridData={gridData} filterCondition={(floorNumber) => floorNumber === 0} />
-        <FloorColumn gridData={gridData} filterCondition={(floorNumber) => floorNumber === 1} />
-        <FloorColumn gridData={gridData} filterCondition={(floorNumber) => floorNumber === 2} />
-
-
-      </div>
+          <FloorColumn gridData={gridData} filterCondition={(floorNumber) => floorNumber === 0} />
+          <FloorColumn gridData={gridData} filterCondition={(floorNumber) => floorNumber === 1} />
+          <FloorColumn gridData={gridData} filterCondition={(floorNumber) => floorNumber === 2} />
 
 
-    </section>}
+        </div>
+
+
+      </section>}
       {currPage === "Recommendations" && <section class="section">
         {/* <Recommendations gridData={gridData} setCurrPage={setCurrPage} /> */}
       </section>}

@@ -238,7 +238,7 @@ function FloorGrid({ gridData }) {
                   ...pullMethodStyle, gridRow: `span ${suite.rooms.length}`, backgroundColor: suiteIndex % 2 === 0
                     ? cellColors.evenSuite // color for even suiteIndex
                     : cellColors.oddSuite
-                }} onClick={() => updateSuiteNotes(room.roomNumber)}>Insert suite name</div>
+                }} onClick={() => updateSuiteNotes(room.roomNumber)}>{suite.suiteDesign}</div>
 
               }
               <div style={getGridItemStyle(room, room.maxOccupancy, 1, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{getNameById(room.occupant1)}</div>

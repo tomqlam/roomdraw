@@ -8,6 +8,7 @@ function SuiteNoteModal() {
         print,
         setIsSuiteNoteModalOpen,
         credentials,
+        setRefreshKey,
 
     } = useContext(MyContext);
 
@@ -32,6 +33,11 @@ function SuiteNoteModal() {
             .then(data => {
                 if (data.error) {
                     console.log(data.error);
+                } else {
+                    // updated suite successfully 
+                    setIsSuiteNoteModalOpen(false);
+                    setRefreshKey(prevKey => prevKey + 1);
+
                 }
             })
             .catch((error) => {
