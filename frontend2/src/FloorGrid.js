@@ -142,7 +142,7 @@ function FloorGrid({ gridData }) {
         }
         var pullPriority = room.pullPriority;
         var finalString = "";
-        if (pullPriority.pullType === 2) {
+        if (pullPriority.pullType === 2 || pullPriority.pullType === 4) {
           pullPriority = pullPriority.inherited;
         }
         if (pullPriority.isPreplaced) {
@@ -157,7 +157,7 @@ function FloorGrid({ gridData }) {
 
         }
 
-        return finalString += `${room.pullPriority.pullType === 2 ? " Pull" : ''}`;
+        return finalString += `${room.pullPriority.pullType === 2 || room.pullPriority.pullType === 4 ? " Pull" : ''}`;
       }
     }
 
@@ -178,6 +178,10 @@ function FloorGrid({ gridData }) {
       print("preplaced");
 
       return false;
+    }
+    // if inherited, use that pullPriority instead
+    if (pullPriority.inherited.valid) {
+      pullPriority = pullPriority.inherited;
     }
     if (pullPriority.hasInDorm) {
       if (!userMap[selectedID].InDorm) {

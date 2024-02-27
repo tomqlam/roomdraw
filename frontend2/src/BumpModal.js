@@ -28,7 +28,7 @@ function BumpModal() {
   // List of arrays with two elements, where the first element is the occupant ID and the second element is the room UUID
   const [peopleWhoCanPull, setPeopleWhoCanPull] = useState([["Example ID", "Example Room UUID"]]);
   const [peopleAlreadyInRoom, setPeopleAlreadyInRoom] = useState([]); // list of numeric IDs of people already in the Room
-
+console.log(selectedSuiteObject.alternative_pull);
   useEffect(() => {
     // If the selected suite or room changes, change the people who can pull 
     if (selectedSuiteObject) {
@@ -84,6 +84,7 @@ function BumpModal() {
   };
   const closeModal = () => {
     setShowModalError(false);
+    setPullError("");
     setIsModalOpen(false);
   };
   const handleDropdownChange = (index, value) => {
@@ -93,6 +94,7 @@ function BumpModal() {
     setSelectedOccupants(updatedselectedOccupants);
     setPeopleAlreadyInRoom([]);
     setShowModalError(false);
+    setPullError("");
 
   };
 
@@ -113,6 +115,14 @@ function BumpModal() {
       // lock pulled 
       if (await canILockPull()) {  // Wait for canIBePulled to complete
         print("This room was successfully lock pulled");
+        closeModal();
+      } else {
+        setShowModalError(true);
+      }
+    } else if (pullMethod === "Alternate Pull"){
+      // Pulled with 2nd best number of this suite
+      if (await canIAlternatePull()) {  // Wait for canIBePulled to complete
+        print("This room was successfully pulled with 2nd best number of this suite");
         closeModal();
       } else {
         setShowModalError(true);
@@ -153,7 +163,8 @@ function BumpModal() {
               return;
             };
             if (data.error === "One or more of the proposed occupants is already in a room") {
-              console.log("Someone's already there rrror");
+              console.log("Someone's already there rrror:");
+              console.log(data.occupants);
               setPeopleAlreadyInRoom(data.occupants);
               const names = data.occupants.map(getNameById).join(', ');
               setPullError("Please remove " + names + " from their existing room");
@@ -181,6 +192,16 @@ function BumpModal() {
   const canIBump = () => performRoomAction(1);
   const canIBePulled = () => performRoomAction(2, peopleWhoCanPull.find(person => person[0] === Number(pullMethod))[1]);
   const canILockPull = () => performRoomAction(3);
+  const canIAlternatePull = () => {
+    const otherRoomInSuite = selectedSuiteObject.rooms.find(room => room.roomUUID !== selectedRoomObject.roomUUID);
+    if (otherRoomInSuite) {
+      console.log("Successfully found other room");
+      return performRoomAction(4, otherRoomInSuite.roomUUID);
+    } else {
+      console.log("No other room in suite, can't alternate pull");
+      return false;
+    }
+  };
 
   const handleClearRoom = (roomUUID, closeModalBool) => {
     return new Promise((resolve) => {
@@ -219,6 +240,7 @@ function BumpModal() {
             // On tap action for clearing other room
             // Also clear the error and the button 
             setShowModalError(false);
+            setPullError("");
             setPeopleAlreadyInRoom([]);
           }
 
@@ -281,6 +303,7 @@ function BumpModal() {
                   Pulled by {getNameById(item[0])}
                 </option>
               ))}
+              {selectedSuiteObject.alternative_pull && <option value="Alternate Pull">Pull with 2nd best number of this suite</option>}
               <option value="Lock Pull">Lock Pull</option>
             </select>
           </div>
