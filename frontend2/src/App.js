@@ -34,7 +34,7 @@ function App() {
 
   // const [showNotification, setShowNotification] = useState(false);
   const [myRoom, setMyRoom] = useState("You are not in a room yet."); // to show what room current user is in
-  
+
   useEffect(() => {
     const storedCredentials = localStorage.getItem('jwt');
     if (storedCredentials) {
@@ -130,7 +130,7 @@ function App() {
   // Component for each floor, to show even and odd floors separately
   const FloorColumn = ({ gridData, filterCondition }) => (
     <div class="column">
-      {gridData.map((dorm) => ( 
+      {gridData.map((dorm) => (
         <div key={dorm.dormName} className={activeTab === dorm.dormName ? '' : 'is-hidden'}>
           {dorm.floors
             .filter((floor) => filterCondition(floor.floorNumber))
@@ -280,15 +280,14 @@ function App() {
           </ul>
         </div>
 
-        {/* Left column is room draw, right side is tips */}
         <div class="columns">
-
-          <FloorColumn gridData={gridData} filterCondition={(floorNumber) => floorNumber === 0} />
-          <FloorColumn gridData={gridData} filterCondition={(floorNumber) => floorNumber === 1} />
-          <FloorColumn gridData={gridData} filterCondition={(floorNumber) => floorNumber === 2} />
-
-
-        </div>
+        {gridData
+          .filter(dorm => dorm.dormName === activeTab)
+          .flatMap(dorm => dorm.floors)
+          .map((_, floorIndex) => (
+            <FloorColumn gridData={gridData} filterCondition={(floorNumber) => floorNumber === floorIndex} />
+          ))}
+          </div>
 
 
       </section>}
