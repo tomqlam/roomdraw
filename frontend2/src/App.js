@@ -57,8 +57,8 @@ function App() {
   const handleSuccess = (credentialResponse) => {
     // decode the credential
 
-    // const decoded = jwtDecode(credentialResponse.credential);
-    // console.log(decoded.given_name);
+    const decoded = jwtDecode(credentialResponse.credential);
+    console.log(decoded);
 
     setCredentials(credentialResponse.credential);
     localStorage.setItem('jwt', credentialResponse.credential); // originally stored credentialREsponse

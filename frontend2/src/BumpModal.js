@@ -21,6 +21,7 @@ function BumpModal() {
     pullError,
     setPullError,
     rooms,
+    setCredentials
   } = useContext(MyContext);
 
   // List of arrays with two elements, where the first element is the occupant ID and the second element is the room UUID
@@ -128,7 +129,7 @@ function BumpModal() {
   const performRoomAction = (pullType, pullLeaderRoom = null) => {
     return new Promise((resolve) => {
       fetch(`/rooms/${selectedRoomObject.roomUUID}`, {
-        method: 'PATCH',
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
@@ -175,7 +176,7 @@ function BumpModal() {
   const handleClearRoom = (roomUUID, closeModalBool) => {
     return new Promise((resolve) => {
       fetch(`/rooms/${roomUUID}`, {
-        method: 'PATCH',
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('jwt')}`
@@ -192,6 +193,12 @@ function BumpModal() {
             setIsModalOpen(true);
             setShowModalError(true);
             resolve(false);
+            if (data.error === "Invalid token") {
+              localStorage.removeItem('jwt');
+              setCredentials(null);
+              setIsModalOpen(false);
+
+            }
 
           }
         })
