@@ -13,6 +13,8 @@ function SuiteNoteModal() {
     } = useContext(MyContext);
 
     const [suiteNotes, setSuiteNotes] = useState('');
+    const [loadingSubmit, setLoadingSubmit] = useState(false);
+    const [loadingClearNotes, setLoadingClearNotes] = useState(false);
 
     useEffect(() => {
         if (selectedSuiteObject) {
@@ -67,8 +69,12 @@ function SuiteNoteModal() {
                     />
                 </section>
                 <footer className="modal-card-foot" style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <button className="button is-primary" onClick={() => updateSuiteNotes(suiteNotes)}>Submit</button>
-                    <button className="button is-danger" onClick={() => {
+                    <button className={`button is-primary ${loadingSubmit && "is-loading"}`} onClick={() => {
+                        setLoadingSubmit(true);
+                        updateSuiteNotes(suiteNotes);
+                        }}>Submit</button>
+                    <button className={`button is-danger ${loadingClearNotes && "is-loading"}`} onClick={() => {
+                        setLoadingClearNotes(true);
                         setSuiteNotes('');
                         updateSuiteNotes('');
                     }}>Delete all notes</button>
