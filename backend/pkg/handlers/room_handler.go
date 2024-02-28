@@ -591,7 +591,7 @@ func UpdateRoomOccupants(c *gin.Context) {
 		}
 
 		for _, roomInSuite := range roomsInSuite {
-			if roomInSuite.CurrentOccupancy < roomInSuite.MaxOccupancy {
+			if roomInSuite.CurrentOccupancy < roomInSuite.MaxOccupancy && roomInSuite.RoomUUID != currentRoomInfo.RoomUUID {
 				c.JSON(http.StatusBadRequest, gin.H{"error": "One or more rooms in the suite are not full"})
 				tx.Rollback()
 				return
