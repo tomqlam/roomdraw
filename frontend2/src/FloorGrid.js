@@ -72,8 +72,9 @@ function FloorGrid({ gridData }) {
   }
 
   const updateSuiteNotes = (room) => {
-    setIsSuiteNoteModalOpen(true);
     getOccupantsByRoomNumber(room);
+    setIsSuiteNoteModalOpen(true);
+    
 
   }
   // given parameters, return grid item style with correct background color shading

@@ -34,6 +34,7 @@ function App() {
 
   // const [showNotification, setShowNotification] = useState(false);
   const [myRoom, setMyRoom] = useState("You are not in a room yet."); // to show what room current user is in
+  const [showFloorplans, setShowFloorplans] = useState(false);
 
   useEffect(() => {
     const storedCredentials = localStorage.getItem('jwt');
@@ -128,8 +129,8 @@ function App() {
 
 
   // Component for each floor, to show even and odd floors separately
-  const FloorColumn = ({ gridData, filterCondition }) => (
-    <div class="column">
+  const FloorDisplay = ({ gridData, filterCondition }) => (
+    <div>
       {gridData.map((dorm) => (
         <div key={dorm.dormName} className={activeTab === dorm.dormName ? '' : 'is-hidden'}>
           {dorm.floors
@@ -263,6 +264,15 @@ function App() {
           <span style={{ marginLeft: '0.5rem' }}>Darken rooms I can't pull</span>
         </label>
 
+        <label className="checkbox">
+          <input
+            type="checkbox"
+            checked={showFloorplans}
+            onChange={() => setShowFloorplans(!showFloorplans)}
+          />
+          <span style={{ marginLeft: '0.5rem' }}>Show floorplans</span>
+        </label>
+
         <div className="tabs is-centered">
           <ul>
 
@@ -281,16 +291,32 @@ function App() {
         </div>
 
         <div class="columns">
-        {gridData
-          .filter(dorm => dorm.dormName === activeTab)
-          .flatMap(dorm => dorm.floors)
-          .map((_, floorIndex) => (
-            <FloorColumn gridData={gridData} filterCondition={(floorNumber) => floorNumber === floorIndex} />
-          ))}
-          </div>
+          {!showFloorplans && gridData
+            .filter(dorm => dorm.dormName === activeTab)
+            .flatMap(dorm => dorm.floors)
+            .map((_, floorIndex) => (
+              <div class="column" key={floorIndex}>
+                <FloorDisplay gridData={gridData} filterCondition={(floorNumber) => floorNumber === floorIndex} />
+              </div>
+            ))}
+            {showFloorplans && (
+  <div style={{ display: 'flex', flexDirection: 'column' }}>
+    {gridData
+      .filter(dorm => dorm.dormName === activeTab)
+      .flatMap(dorm => dorm.floors)
+      .map((_, floorIndex) => (
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <FloorDisplay gridData={gridData} filterCondition={(floorNumber) => floorNumber === floorIndex} />
+          <img src={`/Floorplans/floorplans_${activeTab.toLowerCase()}_${floorIndex + 1}.png`} alt={`Floorplan for floor ${floorIndex}`} />
+        </div>
+      ))}
+  </div>
+)}
+        </div>
 
 
       </section>}
+
       {currPage === "Recommendations" && <section class="section">
         {/* <Recommendations gridData={gridData} setCurrPage={setCurrPage} /> */}
       </section>}
