@@ -8,9 +8,6 @@ import { GoogleLogin } from '@react-oauth/google';
 import { jwtDecode } from "jwt-decode";
 import SuiteNoteModal from './SuiteNoteModal';
 import { googleLogout } from '@react-oauth/google';
-import 'react-dropdown/style.css';
-import Dropdown from 'react-dropdown';
-import Select from 'react-dropdown-select';
 
 function App() {
   const options = [
