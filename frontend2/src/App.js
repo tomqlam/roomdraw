@@ -8,8 +8,16 @@ import { GoogleLogin } from '@react-oauth/google';
 import { jwtDecode } from "jwt-decode";
 import SuiteNoteModal from './SuiteNoteModal';
 import { googleLogout } from '@react-oauth/google';
+import 'react-dropdown/style.css';
+import Dropdown from 'react-dropdown';
+import Select from 'react-dropdown-select';
 
 function App() {
+  const options = [
+    'one', 'two', 'three'
+  ];
+  const defaultOption = options[0];
+
   const {
     currPage,
     setCurrPage,
@@ -35,6 +43,7 @@ function App() {
   // const [showNotification, setShowNotification] = useState(false);
   const [myRoom, setMyRoom] = useState("You are not in a room yet."); // to show what room current user is in
   const [showFloorplans, setShowFloorplans] = useState(false);
+  const [isBurgerClicked, setIsBurgerClicked] = useState(false);
 
   useEffect(() => {
     const storedCredentials = localStorage.getItem('jwt');
@@ -148,17 +157,19 @@ function App() {
   );
   return (
     <div>
-
       <nav class="navbar" role="navigation" aria-label="main navigation">
         <div class="navbar-brand">
           <a class="navbar-item" href="https://ibb.co/c3D21bJ"><img src="https://i.ibb.co/SyRVPQN/Screenshot-2023-12-26-at-10-14-31-PM.png" alt="Screenshot-2023-12-26-at-10-14-31-PM" border="0" /></a>
 
-          <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarBasicExample">
+          <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarBasicExample" onClick={() => setIsBurgerClicked(true)}>
             <span aria-hidden="true"></span>
             <span aria-hidden="true"></span>
             <span aria-hidden="true"></span>
           </a>
+          {isBurgerClicked && <a class="button">Hello</a>}
         </div>
+        
+
 
         <div id="navbarBasicExample" class="navbar-menu">
           <div class="navbar-start">
@@ -214,6 +225,7 @@ function App() {
       </nav>
       {isModalOpen && <BumpModal />}
       {isSuiteNoteModalOpen && <SuiteNoteModal />}
+      
 
       {!credentials && <section class="section">
         <div style={{ textAlign: 'center' }}>

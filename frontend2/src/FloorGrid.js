@@ -135,7 +135,7 @@ function FloorGrid({ gridData }) {
 
       if (room) {
         if (room.hasFrosh) {
-          return "Frosh!!!";
+          return "Frosh";
         }
 
         if (room.pullPriority.pullType === 3) {
@@ -158,7 +158,7 @@ function FloorGrid({ gridData }) {
 
         }
 
-        return finalString += `${room.pullPriority.pullType === 2 || room.pullPriority.pullType === 4 ? " Pull" : ''}`;
+        return finalString += `${room.pullPriority.pullType === 2 ? " Pull" : ''}`;
       }
     }
 
