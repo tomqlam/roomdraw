@@ -28,7 +28,10 @@ function BumpModal() {
   // List of arrays with two elements, where the first element is the occupant ID and the second element is the room UUID
   const [peopleWhoCanPull, setPeopleWhoCanPull] = useState([["Example ID", "Example Room UUID"]]);
   const [peopleAlreadyInRoom, setPeopleAlreadyInRoom] = useState([]); // list of numeric IDs of people already in the Room
-
+  const [loadingSubmit, setLoadingSubmit] = useState(false);
+  const [loadingClearPerson, setLoadingClearPerson] = useState(false);
+  const [loadingClearRoom, setLoadingClearRoom] = useState(false);
+console.log(selectedSuiteObject.alternative_pull);
   useEffect(() => {
     // If the selected suite or room changes, change the people who can pull 
     if (selectedSuiteObject) {
@@ -83,7 +86,11 @@ function BumpModal() {
     setPullMethod(e.target.value);
   };
   const closeModal = () => {
+    setLoadingSubmit(false);
+    setLoadingClearPerson(false);
+    setLoadingClearRoom(false);
     setShowModalError(false);
+    setPullError("");
     setIsModalOpen(false);
   };
   const handleDropdownChange = (index, value) => {
@@ -93,11 +100,13 @@ function BumpModal() {
     setSelectedOccupants(updatedselectedOccupants);
     setPeopleAlreadyInRoom([]);
     setShowModalError(false);
+    setPullError("");
 
   };
 
   const handleSubmit = async (e) => {  // Declare handleSubmit as async
     // Handle form submission logic here
+    setLoadingSubmit(true);
     e.preventDefault();
 
     if (/^\d+$/.test(pullMethod)) {
@@ -107,6 +116,7 @@ function BumpModal() {
         print("This room was successfully pulled by someone else in the suite");
         closeModal();
       } else {
+        setLoadingSubmit(false);
         setShowModalError(true);
       }
     } else if (pullMethod === "Lock Pull") {
@@ -115,6 +125,16 @@ function BumpModal() {
         print("This room was successfully lock pulled");
         closeModal();
       } else {
+        setLoadingSubmit(false);
+        setShowModalError(true);
+      }
+    } else if (pullMethod === "Alternate Pull"){
+      // Pulled with 2nd best number of this suite
+      if (await canIAlternatePull()) {  // Wait for canIBePulled to complete
+        print("This room was successfully pulled with 2nd best number of this suite");
+        closeModal();
+      } else {
+        setLoadingSubmit(false);
         setShowModalError(true);
       }
     } else {
@@ -124,6 +144,7 @@ function BumpModal() {
         print("This room pulled themselves");
         closeModal();
       } else {
+        setLoadingSubmit(false);
         setShowModalError(true);
       }
 
@@ -153,7 +174,8 @@ function BumpModal() {
               return;
             };
             if (data.error === "One or more of the proposed occupants is already in a room") {
-              console.log("Someone's already there rrror");
+              console.log("Someone's already there rrror:");
+              console.log(data.occupants);
               setPeopleAlreadyInRoom(data.occupants);
               const names = data.occupants.map(getNameById).join(', ');
               setPullError("Please remove " + names + " from their existing room");
@@ -161,7 +183,6 @@ function BumpModal() {
             } else {
               setPullError(data.error);
             }
-            
             setIsModalOpen(true);
             setShowModalError(true);
             resolve(false);
@@ -181,6 +202,16 @@ function BumpModal() {
   const canIBump = () => performRoomAction(1);
   const canIBePulled = () => performRoomAction(2, peopleWhoCanPull.find(person => person[0] === Number(pullMethod))[1]);
   const canILockPull = () => performRoomAction(3);
+  const canIAlternatePull = () => {
+    const otherRoomInSuite = selectedSuiteObject.rooms.find(room => room.roomUUID !== selectedRoomObject.roomUUID);
+    if (otherRoomInSuite) {
+      console.log("Successfully found other room");
+      return performRoomAction(4, otherRoomInSuite.roomUUID);
+    } else {
+      console.log("No other room in suite, can't alternate pull");
+      return false;
+    }
+  };
 
   const handleClearRoom = (roomUUID, closeModalBool) => {
     return new Promise((resolve) => {
@@ -219,6 +250,7 @@ function BumpModal() {
             // On tap action for clearing other room
             // Also clear the error and the button 
             setShowModalError(false);
+            setPullError("");
             setPeopleAlreadyInRoom([]);
           }
 
@@ -281,6 +313,7 @@ function BumpModal() {
                   Pulled by {getNameById(item[0])}
                 </option>
               ))}
+              {selectedSuiteObject.alternative_pull && <option value="Alternate Pull">Pull with 2nd best number of this suite</option>}
               <option value="Lock Pull">Lock Pull</option>
             </select>
           </div>
@@ -291,14 +324,20 @@ function BumpModal() {
           {showModalError && (<p class="help is-danger">{pullError}</p>)}
           {peopleAlreadyInRoom.map((person, index) => (
             <div key={index} style={{ marginTop: '5px' }} className="field">
-            <button className="button is-danger" onClick={() => handleClearRoom(getRoomUUIDFromUserID(person), false)}>Clear {getNameById(person)}'s existing room</button>
+            <button className={`button is-danger ${loadingClearPerson ? 'is-loading' : ''}`} onClick={() => {
+              setLoadingClearPerson(true);
+              handleClearRoom(getRoomUUIDFromUserID(person), false);
+              }}>Clear {getNameById(person)}'s existing room</button>
             </div>
           ))}
 
         </section>
         <footer className="modal-card-foot" style={{ display: 'flex', justifyContent: 'space-between' }}>
-          <button className="button is-primary" onClick={handleSubmit}>Update room</button>
-          <button className="button is-danger" onClick={() => handleClearRoom(selectedRoomObject.roomUUID, true)}>Clear room</button>
+          <button className={`button is-primary ${loadingSubmit ? 'is-loading' : ''}`} onClick={handleSubmit}>Update room</button>
+          <button className={`button is-danger ${loadingClearRoom ? 'is-loading' : ''}`} onClick={() => {
+            setLoadingClearRoom(true);
+            handleClearRoom(selectedRoomObject.roomUUID, true);
+            }}>Clear room</button>
         </footer>
       </div>
     </div>

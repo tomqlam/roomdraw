@@ -72,8 +72,9 @@ function FloorGrid({ gridData }) {
   }
 
   const updateSuiteNotes = (room) => {
-    setIsSuiteNoteModalOpen(true);
     getOccupantsByRoomNumber(room);
+    setIsSuiteNoteModalOpen(true);
+    
 
   }
   // given parameters, return grid item style with correct background color shading
@@ -134,7 +135,7 @@ function FloorGrid({ gridData }) {
 
       if (room) {
         if (room.hasFrosh) {
-          return "Frosh!!!";
+          return "Frosh";
         }
 
         if (room.pullPriority.pullType === 3) {
@@ -142,7 +143,7 @@ function FloorGrid({ gridData }) {
         }
         var pullPriority = room.pullPriority;
         var finalString = "";
-        if (pullPriority.pullType === 2) {
+        if (pullPriority.pullType === 2 || pullPriority.pullType === 4) {
           pullPriority = pullPriority.inherited;
         }
         if (pullPriority.isPreplaced) {
@@ -178,6 +179,10 @@ function FloorGrid({ gridData }) {
       print("preplaced");
 
       return false;
+    }
+    // if inherited, use that pullPriority instead
+    if (pullPriority.inherited.valid) {
+      pullPriority = pullPriority.inherited;
     }
     if (pullPriority.hasInDorm) {
       if (!userMap[selectedID].InDorm) {

@@ -13,6 +13,14 @@ function SuiteNoteModal() {
     } = useContext(MyContext);
 
     const [suiteNotes, setSuiteNotes] = useState('');
+    const [loadingSubmit, setLoadingSubmit] = useState(false);
+    const [loadingClearNotes, setLoadingClearNotes] = useState(false);
+
+    useEffect(() => {
+        if (selectedSuiteObject) {
+            setSuiteNotes(selectedSuiteObject.suiteDesign);
+        }
+    }, []);
 
 
     const updateSuiteNotes = () => {
@@ -26,7 +34,7 @@ function SuiteNoteModal() {
                 'Authorization': `Bearer ${localStorage.getItem('jwt')}`
             },
             body: JSON.stringify({
-                SuiteDesign: suiteNotes,
+                SuiteDesign: notes,
             }),
         })
             .then(response => response.json())
@@ -37,6 +45,7 @@ function SuiteNoteModal() {
                     // updated suite successfully 
                     setIsSuiteNoteModalOpen(false);
                     setRefreshKey(prevKey => prevKey + 1);
+                    console.log("refreshing");
 
                 }
             })
@@ -63,8 +72,15 @@ function SuiteNoteModal() {
                     />
                 </section>
                 <footer className="modal-card-foot" style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <button className="button is-primary" onClick={updateSuiteNotes}>Submit</button>
-                    <button className="button is-danger" >Delete all notes</button>
+                    <button className={`button is-primary ${loadingSubmit && "is-loading"}`} onClick={() => {
+                        setLoadingSubmit(true);
+                        updateSuiteNotes(suiteNotes);
+                        }}>Submit</button>
+                    <button className={`button is-danger ${loadingClearNotes && "is-loading"}`} onClick={() => {
+                        setLoadingClearNotes(true);
+                        setSuiteNotes('');
+                        updateSuiteNotes('');
+                    }}>Delete all notes</button>
                 </footer>
             </div>
         </div>

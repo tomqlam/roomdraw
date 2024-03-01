@@ -8,8 +8,16 @@ import { GoogleLogin } from '@react-oauth/google';
 import { jwtDecode } from "jwt-decode";
 import SuiteNoteModal from './SuiteNoteModal';
 import { googleLogout } from '@react-oauth/google';
+import 'react-dropdown/style.css';
+import Dropdown from 'react-dropdown';
+import Select from 'react-dropdown-select';
 
 function App() {
+  const options = [
+    'one', 'two', 'three'
+  ];
+  const defaultOption = options[0];
+
   const {
     currPage,
     setCurrPage,
@@ -34,6 +42,8 @@ function App() {
 
   // const [showNotification, setShowNotification] = useState(false);
   const [myRoom, setMyRoom] = useState("You are not in a room yet."); // to show what room current user is in
+  const [showFloorplans, setShowFloorplans] = useState(false);
+  const [isBurgerClicked, setIsBurgerClicked] = useState(false);
 
   useEffect(() => {
     const storedCredentials = localStorage.getItem('jwt');
@@ -128,8 +138,8 @@ function App() {
 
 
   // Component for each floor, to show even and odd floors separately
-  const FloorColumn = ({ gridData, filterCondition }) => (
-    <div class="column">
+  const FloorDisplay = ({ gridData, filterCondition }) => (
+    <div>
       {gridData.map((dorm) => (
         <div key={dorm.dormName} className={activeTab === dorm.dormName ? '' : 'is-hidden'}>
           {dorm.floors
@@ -147,17 +157,19 @@ function App() {
   );
   return (
     <div>
-
       <nav class="navbar" role="navigation" aria-label="main navigation">
         <div class="navbar-brand">
           <a class="navbar-item" href="https://ibb.co/c3D21bJ"><img src="https://i.ibb.co/SyRVPQN/Screenshot-2023-12-26-at-10-14-31-PM.png" alt="Screenshot-2023-12-26-at-10-14-31-PM" border="0" /></a>
 
-          <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarBasicExample">
+          <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarBasicExample" onClick={() => setIsBurgerClicked(true)}>
             <span aria-hidden="true"></span>
             <span aria-hidden="true"></span>
             <span aria-hidden="true"></span>
           </a>
+          {isBurgerClicked && <a class="button">Hello</a>}
         </div>
+        
+
 
         <div id="navbarBasicExample" class="navbar-menu">
           <div class="navbar-start">
@@ -213,6 +225,7 @@ function App() {
       </nav>
       {isModalOpen && <BumpModal />}
       {isSuiteNoteModalOpen && <SuiteNoteModal />}
+      
 
       {!credentials && <section class="section">
         <div style={{ textAlign: 'center' }}>
@@ -263,6 +276,15 @@ function App() {
           <span style={{ marginLeft: '0.5rem' }}>Darken rooms I can't pull</span>
         </label>
 
+        <label className="checkbox">
+          <input
+            type="checkbox"
+            checked={showFloorplans}
+            onChange={() => setShowFloorplans(!showFloorplans)}
+          />
+          <span style={{ marginLeft: '0.5rem' }}>Show floorplans</span>
+        </label>
+
         <div className="tabs is-centered">
           <ul>
 
@@ -281,16 +303,32 @@ function App() {
         </div>
 
         <div class="columns">
-        {gridData
-          .filter(dorm => dorm.dormName === activeTab)
-          .flatMap(dorm => dorm.floors)
-          .map((_, floorIndex) => (
-            <FloorColumn gridData={gridData} filterCondition={(floorNumber) => floorNumber === floorIndex} />
-          ))}
-          </div>
+          {!showFloorplans && gridData
+            .filter(dorm => dorm.dormName === activeTab)
+            .flatMap(dorm => dorm.floors)
+            .map((_, floorIndex) => (
+              <div class="column" key={floorIndex}>
+                <FloorDisplay gridData={gridData} filterCondition={(floorNumber) => floorNumber === floorIndex} />
+              </div>
+            ))}
+            {showFloorplans && (
+  <div style={{ display: 'flex', flexDirection: 'column' }}>
+    {gridData
+      .filter(dorm => dorm.dormName === activeTab)
+      .flatMap(dorm => dorm.floors)
+      .map((_, floorIndex) => (
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <FloorDisplay gridData={gridData} filterCondition={(floorNumber) => floorNumber === floorIndex} />
+          <img src={`/Floorplans/floorplans_${activeTab.toLowerCase()}_${floorIndex + 1}.png`} alt={`Floorplan for floor ${floorIndex}`} />
+        </div>
+      ))}
+  </div>
+)}
+        </div>
 
 
       </section>}
+
       {currPage === "Recommendations" && <section class="section">
         {/* <Recommendations gridData={gridData} setCurrPage={setCurrPage} /> */}
       </section>}
