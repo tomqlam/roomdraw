@@ -158,12 +158,19 @@ function App() {
         <div class="navbar-brand">
           <a class="navbar-item" href="https://ibb.co/c3D21bJ"><img src="https://i.ibb.co/SyRVPQN/Screenshot-2023-12-26-at-10-14-31-PM.png" alt="Screenshot-2023-12-26-at-10-14-31-PM" border="0" /></a>
 
-          <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarBasicExample" onClick={() => setIsBurgerClicked(true)}>
+          {/* <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarBasicExample" onClick={() => setIsBurgerClicked(true)}>
             <span aria-hidden="true"></span>
             <span aria-hidden="true"></span>
             <span aria-hidden="true"></span>
-          </a>
-          {isBurgerClicked && <a class="button">Hello</a>}
+          </a> */}
+          {(!credentials &&  window.innerWidth <= 768) && 
+                  <GoogleLogin auto_select={true}
+                    onSuccess={handleSuccess}
+                    onError={handleError}
+                  />}
+          {(credentials && window.innerWidth <= 768) && <a class="button is-danger" onClick={handleLogout}>
+                  <strong>Log Out</strong>
+                </a>}
         </div>
         
 
