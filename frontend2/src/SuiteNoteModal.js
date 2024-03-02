@@ -24,7 +24,10 @@ function SuiteNoteModal() {
 
 
     const updateSuiteNotes = (notes) => {
-        fetch(`/suites/design/${selectedSuiteObject.suiteUUID}`, {
+        print(suiteNotes);
+        print(selectedSuiteObject.suiteUUID);
+        print(credentials);
+        fetch(`https://www.cs.hmc.edu/~tlam/digitaldraw/api/suites/design/${selectedSuiteObject.suiteUUID}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

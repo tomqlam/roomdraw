@@ -155,7 +155,7 @@ console.log(selectedSuiteObject.alternative_pull);
 
   const performRoomAction = (pullType, pullLeaderRoom = null) => {
     return new Promise((resolve) => {
-      fetch(`/rooms/${selectedRoomObject.roomUUID}`, {
+      fetch(`https://www.cs.hmc.edu/~tlam/digitaldraw/api/rooms/${selectedRoomObject.roomUUID}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -215,7 +215,7 @@ console.log(selectedSuiteObject.alternative_pull);
 
   const handleClearRoom = (roomUUID, closeModalBool) => {
     return new Promise((resolve) => {
-      fetch(`/rooms/${roomUUID}`, {
+      fetch(`https://www.cs.hmc.edu/~tlam/digitaldraw/api/rooms/${roomUUID}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

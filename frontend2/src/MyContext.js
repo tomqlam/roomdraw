@@ -88,7 +88,7 @@ export const MyContextProvider = ({ children }) => {
 
     function fetchUserMap() {
         if (localStorage.getItem('jwt')){
-            fetch('/users/idmap', {
+            fetch('https://www.cs.hmc.edu/~tlam/digitaldraw/api/users/idmap', {
                 method: 'GET',
                 headers: {
                   'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
@@ -111,7 +111,7 @@ export const MyContextProvider = ({ children }) => {
     }
     function fetchRoomsWithUUIDs() {
         if (localStorage.getItem('jwt')) {
-            fetch('/rooms', {
+            fetch(`https://www.cs.hmc.edu/~tlam/digitaldraw/api/rooms`, {
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('jwt')}`
                 }
@@ -138,7 +138,7 @@ export const MyContextProvider = ({ children }) => {
         }
     }
     function fetchRoomsForOneDorm(dorm) {
-        fetch(`/rooms/simple/${dorm}`, {
+        fetch(`https://www.cs.hmc.edu/~tlam/digitaldraw/api/rooms/simple/${dorm}`, {
             method: 'GET',
             headers: {
               'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
@@ -161,7 +161,7 @@ export const MyContextProvider = ({ children }) => {
 
     function fetchRoomsForDorms(dorms) {
         const promises = dorms.map(dorm => {
-            return fetch(`/rooms/simple/${dorm}`, {
+            return fetch(`https://www.cs.hmc.edu/~tlam/digitaldraw/api/rooms/simple/${dorm}`, {
                 method: 'GET',
                 headers: {
                   'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
