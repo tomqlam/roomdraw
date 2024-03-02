@@ -19,6 +19,7 @@ function FloorGrid({ gridData }) {
     onlyShowBumpableRooms,
     userMap,
     setIsSuiteNoteModalOpen,
+    activeTab
   } = useContext(MyContext);
 
 
@@ -43,15 +44,15 @@ function FloorGrid({ gridData }) {
   // entire collection of cells
   const gridContainerStyle = {
     display: 'grid',
-    gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr 1fr 1fr', // this must scale with the number of columns
-    gap: '5px',
+    gridTemplateColumns: `1fr 1fr 1fr 1fr 1fr ${(activeTab === 'Atwood' || (activeTab === 'Drinkward' || activeTab === 'Case'))? '1fr' : ''} ${activeTab === 'Case' ? '1fr' : ''}`,
+    gap: '3px',
     maxWidth: '800px', // Set the maximum width of the grid container
     margin: '0 auto', // Center the grid container horizontally
 
   };
   // each cell in floorgrid
   const gridItemStyle = {
-    borderRadius: '3px',
+    borderRadius: '2px',
     padding: '1.5px',
     textAlign: 'center',
     fontSize: '14px',
@@ -219,9 +220,9 @@ function FloorGrid({ gridData }) {
       <div style={roomNumberStyle}><strong>Suite</strong></div>
       <div style={roomNumberStyle}><strong>Occupant 1</strong></div>
       <div style={roomNumberStyle}><strong>Occupant 2</strong></div>
-      <div style={roomNumberStyle}><strong>Occupant 3</strong></div>
-      <div style={roomNumberStyle}><strong>Occupant 4</strong></div>
-
+      {((activeTab === 'Atwood' || activeTab === 'Drinkward') || activeTab === 'Case') && <div style={roomNumberStyle}><strong>Occupant 3</strong></div>}
+{      activeTab === 'Case' && <div style={roomNumberStyle}><strong>Occupant 4</strong></div>
+}
       {[...gridData.suites].sort((a, b) => {
           const firstRoomNumberA = a.rooms[0].roomNumber;
           const firstRoomNumberB = b.rooms[0].roomNumber;
@@ -248,8 +249,8 @@ function FloorGrid({ gridData }) {
               }
               <div style={getGridItemStyle(room, room.maxOccupancy, 1, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{getNameById(room.occupant1)}</div>
               <div style={getGridItemStyle(room, room.maxOccupancy, 2, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{getNameById(room.occupant2)}</div>
-              <div style={getGridItemStyle(room, room.maxOccupancy, 3, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{getNameById(room.occupant3)}</div>
-              <div style={getGridItemStyle(room, room.maxOccupancy, 4, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{getNameById(room.occupant4)}</div>
+              {((activeTab === 'Atwood' || activeTab === 'Drinkward')|| activeTab === 'Case') && <div style={getGridItemStyle(room, room.maxOccupancy, 3, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{getNameById(room.occupant3)}</div>}
+              {activeTab === "Case" && <div style={getGridItemStyle(room, room.maxOccupancy, 4, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{getNameById(room.occupant4)}</div>}
 
             </React.Fragment>
           ))

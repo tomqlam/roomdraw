@@ -5,6 +5,10 @@ import App from './App';
 import reportWebVitals from './reportWebVitals';
 import { MyContextProvider } from './MyContext';
 import { GoogleOAuthProvider } from '@react-oauth/google';
+import { registerLicense } from '@syncfusion/ej2-base';
+
+registerLicense('Ngo9BigBOggjHTQxAR8/V1NAaF1cVWhKYVB3WmFZfVpgdV9FZFZVQmYuP1ZhSXxXdkZjWH9fdXVUQGJcWUU=');
+
 
 
 const root = ReactDOM.createRoot(document.getElementById('root'));

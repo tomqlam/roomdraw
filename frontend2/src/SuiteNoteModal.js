@@ -1,5 +1,11 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { MyContext } from './MyContext';
+import { SketchPicker } from 'react-color';
+import { HtmlEditor, Image, Inject, Link, QuickToolbar, RichTextEditorComponent, Toolbar } from '@syncfusion/ej2-react-richtexteditor';
+import { ImageEditorComponent } from '@syncfusion/ej2-react-image-editor';
+
+import './App.css';
+
 
 function SuiteNoteModal() {
 
@@ -15,6 +21,7 @@ function SuiteNoteModal() {
     const [suiteNotes, setSuiteNotes] = useState('');
     const [loadingSubmit, setLoadingSubmit] = useState(false);
     const [loadingClearNotes, setLoadingClearNotes] = useState(false);
+    const [color, setColor] = useState('#fff');
 
     useEffect(() => {
         if (selectedSuiteObject) {
@@ -51,6 +58,10 @@ function SuiteNoteModal() {
             });
     }
 
+    const handleChangeComplete = (color) => {
+        setColor({ background: color.hex });
+    };
+
 
     return (
         <div className="modal is-active">
@@ -68,11 +79,16 @@ function SuiteNoteModal() {
                         onChange={event => setSuiteNotes(event.target.value)}
                     />
                 </section>
+
+
+                {/* <SketchPicker
+                    color={color.background} onChangeComplete={handleChangeComplete} /> */}
+
                 <footer className="modal-card-foot" style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <button className={`button is-primary ${loadingSubmit && "is-loading"}`} onClick={() => {
                         setLoadingSubmit(true);
                         updateSuiteNotes(suiteNotes);
-                        }}>Submit</button>
+                    }}>Submit</button>
                     <button className={`button is-danger ${loadingClearNotes && "is-loading"}`} onClick={() => {
                         setLoadingClearNotes(true);
                         setSuiteNotes('');

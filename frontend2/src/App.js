@@ -8,14 +8,27 @@ import { GoogleLogin } from '@react-oauth/google';
 import { jwtDecode } from "jwt-decode";
 import SuiteNoteModal from './SuiteNoteModal';
 import { googleLogout } from '@react-oauth/google';
-import 'react-dropdown/style.css';
-import Dropdown from 'react-dropdown';
-import Select from 'react-dropdown-select';
+import { HtmlEditor, Image, Inject, Link, QuickToolbar, RichTextEditorComponent, Toolbar } from '@syncfusion/ej2-react-richtexteditor';
+import { ImageEditorComponent } from '@syncfusion/ej2-react-image-editor';
+
+import './App.css';
 
 function App() {
   const options = [
     'one', 'two', 'three'
   ];
+
+  const fontFamily = {
+    default: "Noto Sans",
+    items: [
+        { text: "Segoe UI", value: "Segoe UI", class: "e-segoe-ui", command: "Font", subCommand: "FontName" },
+        { text: "Roboto", value: "Roboto", command: "Font", subCommand: "FontName" },
+        { text: "Great vibes", value: "Great Vibes,cursive", command: "Font", subCommand: "FontName" },
+        { text: "Noto Sans", value: "Noto Sans", command: "Font", subCommand: "FontName" },
+        { text: "Impact", value: "Impact,Charcoal,sans-serif", class: "e-impact", command: "Font", subCommand: "FontName" },
+        { text: "Tahoma", value: "Tahoma,Geneva,sans-serif", class: "e-tahoma", command: "Font", subCommand: "FontName" },
+    ]
+};
   const defaultOption = options[0];
 
   const {
@@ -139,7 +152,7 @@ function App() {
 
   // Component for each floor, to show even and odd floors separately
   const FloorDisplay = ({ gridData, filterCondition }) => (
-    <div>
+    <div style={showFloorplans ? { width: '50vw' } : {}}>
       {gridData.map((dorm) => (
         <div key={dorm.dormName} className={activeTab === dorm.dormName ? '' : 'is-hidden'}>
           {dorm.floors
@@ -232,8 +245,15 @@ function App() {
           <h1 className="title">Welcome to Digital Draw!</h1>
           <h2 className="subtitle">Please log in with your HMC email to continue.</h2>
         </div>
+
       </section>}
       {credentials && <section class="section">
+      <div id="wrapperDiv" style={{height:"400px"}}>
+      <ImageEditorComponent
+  id='imageeditor'
+  fontFamily={fontFamily}
+/>
+                </div>
         <div style={{ textAlign: 'center' }}>
 
           <h1 className="title">You're viewing DigiDraw as {getNameById(selectedID)}. <br /> </h1>
@@ -314,15 +334,19 @@ function App() {
             {showFloorplans && (
   <div style={{ display: 'flex', flexDirection: 'column' }}>
     {gridData
-      .filter(dorm => dorm.dormName === activeTab)
-      .flatMap(dorm => dorm.floors)
-      .map((_, floorIndex) => (
-        <div style={{ display: 'flex', alignItems: 'center' }}>
-          <FloorDisplay gridData={gridData} filterCondition={(floorNumber) => floorNumber === floorIndex} />
-          <img src={`/Floorplans/floorplans_${activeTab.toLowerCase()}_${floorIndex + 1}.png`} alt={`Floorplan for floor ${floorIndex}`} />
-        </div>
-      ))}
-  </div>
+  .filter(dorm => dorm.dormName === activeTab)
+  .flatMap(dorm => dorm.floors)
+  .map((_, floorIndex) => (
+    <div style={{ display: 'flex', alignItems: 'center' }}>
+      <FloorDisplay  gridData={gridData} filterCondition={(floorNumber) => floorNumber === floorIndex} />
+      <img 
+        src={`/Floorplans/floorplans_${activeTab.toLowerCase()}_${floorIndex + 1}.png`} 
+        alt={`Floorplan for floor ${floorIndex}`} 
+        style={{maxWidth: '40vw' }} // Add this line
+      />
+    </div>
+  ))}
+</div>
 )}
         </div>
 
