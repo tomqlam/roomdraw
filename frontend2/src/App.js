@@ -316,7 +316,7 @@ function App() {
       .map((_, floorIndex) => (
         <div style={{ display: 'flex', alignItems: 'center' }}>
           <FloorDisplay gridData={gridData} filterCondition={(floorNumber) => floorNumber === floorIndex} />
-          <img src={`/Floorplans/floorplans_${activeTab.toLowerCase()}_${floorIndex + 1}.png`} alt={`Floorplan for floor ${floorIndex}`} />
+          <img src={`https://www.cs.hmc.edu/~tlam/digitaldraw/Floorplans/floorplans_${activeTab.toLowerCase()}_${floorIndex + 1}.png`} alt={`Floorplan for floor ${floorIndex}`} />
         </div>
       ))}
   </div>
