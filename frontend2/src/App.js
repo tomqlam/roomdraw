@@ -8,10 +8,6 @@ import { GoogleLogin } from '@react-oauth/google';
 import { jwtDecode } from "jwt-decode";
 import SuiteNoteModal from './SuiteNoteModal';
 import { googleLogout } from '@react-oauth/google';
-import { HtmlEditor, Image, Inject, Link, QuickToolbar, RichTextEditorComponent, Toolbar } from '@syncfusion/ej2-react-richtexteditor';
-import { ImageEditorComponent } from '@syncfusion/ej2-react-image-editor';
-
-import './App.css';
 
 function App() {
   const options = [
@@ -174,47 +170,28 @@ function App() {
         <div class="navbar-brand">
           <a class="navbar-item" href="https://ibb.co/c3D21bJ"><img src="https://i.ibb.co/SyRVPQN/Screenshot-2023-12-26-at-10-14-31-PM.png" alt="Screenshot-2023-12-26-at-10-14-31-PM" border="0" /></a>
 
-          <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarBasicExample" onClick={() => setIsBurgerClicked(true)}>
+          {/* <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarBasicExample" onClick={() => setIsBurgerClicked(true)}>
             <span aria-hidden="true"></span>
             <span aria-hidden="true"></span>
             <span aria-hidden="true"></span>
-          </a>
-          {isBurgerClicked && <a class="button">Hello</a>}
+          </a> */}
+          {(!credentials &&  window.innerWidth <= 768) && 
+                  <GoogleLogin auto_select={true}
+                    onSuccess={handleSuccess}
+                    onError={handleError}
+                  />}
+          {(credentials && window.innerWidth <= 768) && <a class="button is-danger" onClick={handleLogout}>
+                  <strong>Log Out</strong>
+                </a>}
         </div>
         
 
 
         <div id="navbarBasicExample" class="navbar-menu">
           <div class="navbar-start">
-            <a class="navbar-item" onClick={() => setCurrPage("Home")}>
-              Home
-            </a>
+            
 
-            <a class="navbar-item" onClick={() => setCurrPage("Recommendations")}>
-              Recommendations
-            </a>
-
-            <div class="navbar-item has-dropdown is-hoverable">
-              <a class="navbar-link">
-                More
-              </a>
-
-              <div class="navbar-dropdown">
-                <a class="navbar-item">
-                  About
-                </a>
-                <a class="navbar-item">
-                  Jobs
-                </a>
-                <a class="navbar-item">
-                  Contact
-                </a>
-
-                <a class="navbar-item">
-                  Report an issue
-                </a>
-              </div>
-            </div>
+            
           </div>
 
           <div class="navbar-end">
