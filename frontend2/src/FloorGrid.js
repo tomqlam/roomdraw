@@ -18,6 +18,7 @@ function FloorGrid({ gridData }) {
     selectedID,
     onlyShowBumpableRooms,
     userMap,
+    dormMapping,
     setIsSuiteNoteModalOpen,
   } = useContext(MyContext);
 

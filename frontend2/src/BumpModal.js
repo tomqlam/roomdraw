@@ -20,9 +20,11 @@ function BumpModal() {
     selectedSuiteObject,
     pullError,
     setPullError,
+    activeTab,
     rooms,
     setCredentials,
-    handleErrorFromTokenExpiry
+    handleErrorFromTokenExpiry,
+    dormMapping
   } = useContext(MyContext);
 
   // List of arrays with two elements, where the first element is the occupant ID and the second element is the room UUID
@@ -32,9 +34,11 @@ function BumpModal() {
   const [loadingSubmit, setLoadingSubmit] = useState(false);
   const [loadingClearPerson, setLoadingClearPerson] = useState(false);
   const [loadingClearRoom, setLoadingClearRoom] = useState(false);
-console.log(selectedSuiteObject.alternative_pull);
+
   useEffect(() => {
     // If the selected suite or room changes, change the people who can pull 
+    console.log(selectedRoomObject.froshRoomType);
+    console.log(rooms);
     if (selectedSuiteObject) {
       const otherRooms = selectedSuiteObject.rooms;
       const otherOccupants = [];
@@ -46,7 +50,7 @@ console.log(selectedSuiteObject.alternative_pull);
         if (selectedRoomObject.maxOccupancy === 2 && room.roomNumber !== selectedItem && room.maxOccupancy === 2) {
           otherRoomsWhoCanAlternatePull.push([room.roomNumber, room.roomUUID]);
         }
-      
+
       }
       //console.log(otherRoomsWhoCanAlternatePull);
       setRoomsWhoCanAlternatePull(otherRoomsWhoCanAlternatePull);
@@ -61,16 +65,17 @@ console.log(selectedSuiteObject.alternative_pull);
         'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
       },
     })
-    .then(response => response.json())
-    .then(data => {
-      console.log(data);
-      if (handleErrorFromTokenExpiry(data)) {
-        return;
-      };
-    })
-    .catch((error) => {
-      console.error('Error:', error);
-    });
+      .then(response => response.json())
+      .then(data => {
+        console.log(data);
+        setRefreshKey(refreshKey + 1);
+        if (handleErrorFromTokenExpiry(data)) {
+          return;
+        };
+      })
+      .catch((error) => {
+        console.error('Error:', error);
+      });
   }
 
   const getRoomUUIDFromUserID = (userID) => {
@@ -145,7 +150,7 @@ console.log(selectedSuiteObject.alternative_pull);
         setLoadingSubmit(false);
         setShowModalError(true);
       }
-    } else if (pullMethod === "Alternate Pull"){
+    } else if (pullMethod === "Alternate Pull") {
       // Pulled with 2nd best number of this suite
       // if (await canIAlternatePull()) {  // Wait for canIBePulled to complete
       //   print("This room was successfully pulled with 2nd best number of this suite");
@@ -254,7 +259,7 @@ console.log(selectedSuiteObject.alternative_pull);
             setIsModalOpen(true);
             setShowModalError(true);
             resolve(false);
-            
+
 
           }
 
@@ -262,8 +267,8 @@ console.log(selectedSuiteObject.alternative_pull);
         .catch((error) => {
           setRefreshKey(refreshKey + 1);
           resolve(true);
-          if (closeModalBool) { 
-          closeModal();
+          if (closeModalBool) {
+            closeModal();
           } else {
             // On tap action for clearing other room
             // Also clear the error and the button 
@@ -287,66 +292,89 @@ console.log(selectedSuiteObject.alternative_pull);
         </header>
         <section className="modal-card-body">
 
-        <button onClick={() => postToFrosh(selectedRoomObject)}>Add Frosh</button>
-
-          <label className="label">{`Reassign Occupant${selectedRoomObject.maxOccupancy > 1 ? "s" : ""}`}</label>
+          <button onClick={() => postToFrosh(selectedRoomObject)}>Add Frosh</button>
 
 
+          {selectedRoomObject.hasFrosh && (
+            <div>
+              <label className="label">Bump these frosh to room:</label>
+              <div className="select" style={{ marginRight: "10px" }}>
+                <select value={selectedRoomObject} onChange={() => console.log("lol")}>
+                  <option value="">Select a room to bump frosh to</option>
+                  {rooms && rooms
+                    .filter(room => !room.HasFrosh && room.FroshRoomType === selectedRoomObject.froshRoomType && dormMapping[room.Dorm] === activeTab)
+                    .map((room, index) => (
+                      <option key={index} value={room.RoomID}>Room {room.RoomID}</option>
+                    ))
+                  }
+                </select>
+              </div>
+            </div>
+          )}
 
-          {[1, 2, 3, 4].slice(0, selectedRoomObject.maxOccupancy).map((index) => (
-            <div className="field" key={index}>
-              <div className="control">
-                <div className="select" style={{ marginRight: "10px" }}>
-                  <select value={selectedOccupants[index - 1]} onChange={(e) => handleDropdownChange(index, e.target.value)}>
+          {!selectedRoomObject.hasFrosh && <div>
+            <div>
+              <label className="label">{`Reassign Occupant${selectedRoomObject.maxOccupancy > 1 ? "s" : ""}`}</label>
 
-                    <option value="">No occupant</option>
+              {[1, 2, 3, 4].slice(0, selectedRoomObject.maxOccupancy).map((index) => (
+                <div className="field" key={index}>
+                  <div className="control">
+                    <div className="select" style={{ marginRight: "10px" }}>
+                      <select value={selectedOccupants[index - 1]} onChange={(e) => handleDropdownChange(index, e.target.value)}>
 
-                    {userMap && Object.keys(userMap)
-                      .sort((a, b) => {
-                        const nameA = `${userMap[a].FirstName} ${userMap[a].LastName}`;
-                        const nameB = `${userMap[b].FirstName} ${userMap[b].LastName}`;
-                        return nameA.localeCompare(nameB);
-                      })
-                      .map((key, index) => (
-                        <option key={index} value={key}>
-                          {userMap[key].FirstName} {userMap[key].LastName}
-                        </option>
-                      ))}
+                        <option value="">No occupant</option>
 
-                  </select>
+                        {userMap && Object.keys(userMap)
+                          .sort((a, b) => {
+                            const nameA = `${userMap[a].FirstName} ${userMap[a].LastName}`;
+                            const nameB = `${userMap[b].FirstName} ${userMap[b].LastName}`;
+                            return nameA.localeCompare(nameB);
+                          })
+                          .map((key, index) => (
+                            <option key={index} value={key}>
+                              {userMap[key].FirstName} {userMap[key].LastName}
+                            </option>
+                          ))}
+
+                      </select>
+                    </div>
+
+
+                  </div>
+
                 </div>
 
-
-              </div>
-
-            </div>
-
-          ))}
-          <label className="label" >How did they pull this room?</label>
-          <div className="select">
-            <select value={pullMethod} onChange={handlePullMethodChange}>
-              <option value="Pulled themselves">Pulled themselves</option>
-              {selectedRoomObject.maxOccupancy === 1 && peopleWhoCanPullSingle.map((item, index) => (
-                <option key={index} value={item[0]}>
-                  Pulled by {getNameById(item[0])}
-                </option>
               ))}
-              {selectedSuiteObject.alternative_pull && roomsWhoCanAlternatePull.map((room, index) => (
-  <option key={index} value={`Alt Pull ${room[1]}`}>Pull w/ 2nd best of {selectedRoomObject.roomNumber} and {room[0]}</option>
-))}
-              <option value="Lock Pull">Lock Pull</option>
-            </select>
-          </div>
+            </div>
+            <div>
+              <label className="label" >How did they pull this room?</label>
+              <div className="select">
+                <select value={pullMethod} onChange={handlePullMethodChange}>
+                  <option value="Pulled themselves">Pulled themselves</option>
+                  {selectedRoomObject.maxOccupancy === 1 && peopleWhoCanPullSingle.map((item, index) => (
+                    <option key={index} value={item[0]}>
+                      Pulled by {getNameById(item[0])}
+                    </option>
+                  ))}
+                  {selectedSuiteObject.alternative_pull && roomsWhoCanAlternatePull.map((room, index) => (
+                    <option key={index} value={`Alt Pull ${room[1]}`}>Pull w/ 2nd best of {selectedRoomObject.roomNumber} and {room[0]}</option>
+                  ))}
+                  <option value="Lock Pull">Lock Pull</option>
+                </select>
+              </div>
+            </div>
+          </div>}
+
 
           {/* Add your modal content here */}
 
-          
+
           {showModalError && (<p class="help is-danger">{pullError}</p>)}
           {peopleAlreadyInRoom.map((person, index) => (
             <div key={index} style={{ marginTop: '5px' }} className="field">
-            <button className={`button is-danger ${loadingClearPerson ? 'is-loading' : ''}`} onClick={() => {
-              setLoadingClearPerson(true);
-              handleClearRoom(getRoomUUIDFromUserID(person), false);
+              <button className={`button is-danger ${loadingClearPerson ? 'is-loading' : ''}`} onClick={() => {
+                setLoadingClearPerson(true);
+                handleClearRoom(getRoomUUIDFromUserID(person), false);
               }}>Clear {getNameById(person)}'s existing room</button>
             </div>
           ))}
@@ -357,7 +385,7 @@ console.log(selectedSuiteObject.alternative_pull);
           <button className={`button is-danger ${loadingClearRoom ? 'is-loading' : ''}`} onClick={() => {
             setLoadingClearRoom(true);
             handleClearRoom(selectedRoomObject.roomUUID, true);
-            }}>Clear room</button>
+          }}>Clear room</button>
         </footer>
       </div>
     </div>
