@@ -136,11 +136,12 @@ func GetSimpleFormattedDorm(c *gin.Context) {
 	for _, r := range rooms {
 		suiteUUIDString := r.SuiteUUID.String()
 		room := models.RoomSimple{
-			RoomNumber:   r.RoomID,
-			PullPriority: r.PullPriority,
-			MaxOccupancy: r.MaxOccupancy,
-			RoomUUID:     r.RoomUUID,
-			HasFrosh:     r.HasFrosh,
+			RoomNumber:    r.RoomID,
+			PullPriority:  r.PullPriority,
+			MaxOccupancy:  r.MaxOccupancy,
+			RoomUUID:      r.RoomUUID,
+			HasFrosh:      r.HasFrosh,
+			FroshRoomType: r.FroshRoomType,
 		}
 
 		if len(r.Occupants) >= 1 {

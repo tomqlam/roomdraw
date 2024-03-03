@@ -142,15 +142,16 @@ type SuiteSimpler struct {
 }
 
 type RoomSimple struct {
-	RoomNumber   string       `json:"roomNumber"`
-	MaxOccupancy int          `json:"maxOccupancy"`
-	PullPriority PullPriority `json:"pullPriority"`
-	RoomUUID     uuid.UUID    `json:"roomUUID"`
-	Occupant1    int          `json:"occupant1"`
-	Occupant2    int          `json:"occupant2"`
-	Occupant3    int          `json:"occupant3"`
-	Occupant4    int          `json:"occupant4"`
-	HasFrosh     bool         `json:"hasFrosh"`
+	RoomNumber    string       `json:"roomNumber"`
+	MaxOccupancy  int          `json:"maxOccupancy"`
+	PullPriority  PullPriority `json:"pullPriority"`
+	RoomUUID      uuid.UUID    `json:"roomUUID"`
+	Occupant1     int          `json:"occupant1"`
+	Occupant2     int          `json:"occupant2"`
+	Occupant3     int          `json:"occupant3"`
+	Occupant4     int          `json:"occupant4"`
+	HasFrosh      bool         `json:"hasFrosh"`
+	FroshRoomType int          `json:"froshRoomType"`
 }
 
 type RoomSimpler struct {
