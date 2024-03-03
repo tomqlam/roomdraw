@@ -26,7 +26,8 @@ function BumpModal() {
   } = useContext(MyContext);
 
   // List of arrays with two elements, where the first element is the occupant ID and the second element is the room UUID
-  const [peopleWhoCanPull, setPeopleWhoCanPull] = useState([["Example ID", "Example Room UUID"]]);
+  const [peopleWhoCanPullSingle, setPeopleWhoCanPullSingle] = useState([["Example ID", "Example Room UUID"]]);
+  const [roomsWhoCanAlternatePull, setRoomsWhoCanAlternatePull] = useState([["Example Room Number", "Example Room UUID"]]);
   const [peopleAlreadyInRoom, setPeopleAlreadyInRoom] = useState([]); // list of numeric IDs of people already in the Room
   const [loadingSubmit, setLoadingSubmit] = useState(false);
   const [loadingClearPerson, setLoadingClearPerson] = useState(false);
@@ -37,12 +38,19 @@ console.log(selectedSuiteObject.alternative_pull);
     if (selectedSuiteObject) {
       const otherRooms = selectedSuiteObject.rooms;
       const otherOccupants = [];
+      const otherRoomsWhoCanAlternatePull = [];
       for (let room of otherRooms) {
         if (room.roomNumber !== selectedItem && room.maxOccupancy === 1 && room.occupant1 !== 0 && room.pullPriority.pullType === 1) {
           otherOccupants.push([room.occupant1, room.roomUUID]);
         }
+        if (selectedRoomObject.maxOccupancy === 2 && room.roomNumber !== selectedItem && room.maxOccupancy === 2) {
+          otherRoomsWhoCanAlternatePull.push([room.roomNumber, room.roomUUID]);
+        }
+      
       }
-      setPeopleWhoCanPull(otherOccupants);
+      //console.log(otherRoomsWhoCanAlternatePull);
+      setRoomsWhoCanAlternatePull(otherRoomsWhoCanAlternatePull);
+      setPeopleWhoCanPullSingle(otherOccupants);
     }
   }, [selectedSuiteObject, selectedItem]);
 
@@ -108,8 +116,17 @@ console.log(selectedSuiteObject.alternative_pull);
     // Handle form submission logic here
     setLoadingSubmit(true);
     e.preventDefault();
-
-    if (/^\d+$/.test(pullMethod)) {
+    if (pullMethod.startsWith("Alt Pull")) {
+      let roomUUID = pullMethod.slice("Alt Pull ".length).trim();
+      if (await canIAlternatePull(roomUUID)) {  // Wait for canIBePulled to complete
+        print("This room was successfully pulled by someone else in the suite");
+        closeModal();
+      } else {
+        setLoadingSubmit(false);
+        setShowModalError(true);
+      }
+    }
+    else if (/^\d+$/.test(pullMethod)) {
       console.log("Pull method is a number");
       // pullMethod only includes number, implying that you were pulled by someone else
       if (await canIBePulled()) {  // Wait for canIBePulled to complete
@@ -130,13 +147,13 @@ console.log(selectedSuiteObject.alternative_pull);
       }
     } else if (pullMethod === "Alternate Pull"){
       // Pulled with 2nd best number of this suite
-      if (await canIAlternatePull()) {  // Wait for canIBePulled to complete
-        print("This room was successfully pulled with 2nd best number of this suite");
-        closeModal();
-      } else {
-        setLoadingSubmit(false);
-        setShowModalError(true);
-      }
+      // if (await canIAlternatePull()) {  // Wait for canIBePulled to complete
+      //   print("This room was successfully pulled with 2nd best number of this suite");
+      //   closeModal();
+      // } else {
+      //   setLoadingSubmit(false);
+      //   setShowModalError(true);
+      // }
     } else {
       // pullMethod is either Lock Pull or Pulled themselves 
       if (await canIBump()) {  // Wait for canIBePulled to complete
@@ -200,17 +217,18 @@ console.log(selectedSuiteObject.alternative_pull);
   }
 
   const canIBump = () => performRoomAction(1);
-  const canIBePulled = () => performRoomAction(2, peopleWhoCanPull.find(person => person[0] === Number(pullMethod))[1]);
+  const canIBePulled = () => performRoomAction(2, peopleWhoCanPullSingle.find(person => person[0] === Number(pullMethod))[1]);
   const canILockPull = () => performRoomAction(3);
-  const canIAlternatePull = () => {
-    const otherRoomInSuite = selectedSuiteObject.rooms.find(room => room.roomUUID !== selectedRoomObject.roomUUID);
-    if (otherRoomInSuite) {
-      console.log("Successfully found other room");
-      return performRoomAction(4, otherRoomInSuite.roomUUID);
-    } else {
-      console.log("No other room in suite, can't alternate pull");
-      return false;
-    }
+  const canIAlternatePull = (roomUUID) => {
+    // const otherRoomInSuite = selectedSuiteObject.rooms.find(room => room.roomUUID !== selectedRoomObject.roomUUID);
+    return performRoomAction(4, roomUUID);
+    // if (otherRoomInSuite) {
+    //   console.log("Successfully found other room");
+    //   return performRoomAction(4, otherRoomInSuite.roomUUID);
+    // } else {
+    //   console.log("No other room in suite, can't alternate pull");
+    //   return false;
+    // }
   };
 
   const handleClearRoom = (roomUUID, closeModalBool) => {
@@ -308,12 +326,14 @@ console.log(selectedSuiteObject.alternative_pull);
           <div className="select">
             <select value={pullMethod} onChange={handlePullMethodChange}>
               <option value="Pulled themselves">Pulled themselves</option>
-              {selectedRoomObject.maxOccupancy === 1 && peopleWhoCanPull.map((item, index) => (
+              {selectedRoomObject.maxOccupancy === 1 && peopleWhoCanPullSingle.map((item, index) => (
                 <option key={index} value={item[0]}>
                   Pulled by {getNameById(item[0])}
                 </option>
               ))}
-              {selectedSuiteObject.alternative_pull && <option value="Alternate Pull">Pull with 2nd best number of this suite</option>}
+              {selectedSuiteObject.alternative_pull && roomsWhoCanAlternatePull.map((room, index) => (
+  <option key={index} value={`Alt Pull ${room[1]}`}>Pull w/ 2nd best of {selectedRoomObject.roomNumber} and {room[0]}</option>
+))}
               <option value="Lock Pull">Lock Pull</option>
             </select>
           </div>

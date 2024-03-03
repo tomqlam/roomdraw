@@ -157,6 +157,9 @@ function FloorGrid({ gridData }) {
           finalString += `${yearMapping[pullPriority.year]} ${pullPriority.drawNumber !== 0 ? pullPriority.drawNumber : ''}`;
 
         }
+        if (room.pullPriority.pullType === 4) {
+          return finalString += " (2nd best #)";
+        }
 
         return finalString += `${room.pullPriority.pullType === 2 ? " Pull" : ''}`;
       }
