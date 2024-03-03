@@ -37,7 +37,7 @@ func GetRoomsHandler(c *gin.Context) {
 	}()
 
 	// Example SQL query
-	rows, err := tx.Query("SELECT room_uuid, dorm, dorm_name, room_id, suite_uuid, max_occupancy, current_occupancy, occupants, pull_priority, sgroup_uuid FROM rooms")
+	rows, err := tx.Query("SELECT room_uuid, dorm, dorm_name, room_id, suite_uuid, max_occupancy, current_occupancy, occupants, pull_priority, sgroup_uuid, has_frosh, frosh_room_type FROM rooms")
 	if err != nil {
 		// Handle query error
 		// print the error to the console
@@ -49,7 +49,7 @@ func GetRoomsHandler(c *gin.Context) {
 	var rooms []models.RoomRaw
 	for rows.Next() {
 		var d models.RoomRaw
-		if err := rows.Scan(&d.RoomUUID, &d.Dorm, &d.DormName, &d.RoomID, &d.SuiteUUID, &d.MaxOccupancy, &d.CurrentOccupancy, &d.Occupants, &d.PullPriority, &d.SGroupUUID); err != nil {
+		if err := rows.Scan(&d.RoomUUID, &d.Dorm, &d.DormName, &d.RoomID, &d.SuiteUUID, &d.MaxOccupancy, &d.CurrentOccupancy, &d.Occupants, &d.PullPriority, &d.SGroupUUID, &d.HasFrosh, &d.FroshRoomType); err != nil {
 			// Handle scan error
 			log.Println(err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Database scan failed"})
