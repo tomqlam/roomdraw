@@ -83,7 +83,7 @@ func GetSimpleFormattedDorm(c *gin.Context) {
 		}
 	}()
 
-	rows, err := tx.Query("SELECT room_uuid, dorm, dorm_name, room_id, suite_uuid, max_occupancy, current_occupancy, occupants, pull_priority, has_frosh FROM rooms WHERE UPPER(dorm_name) = UPPER($1)", dormNameParam)
+	rows, err := tx.Query("SELECT room_uuid, dorm, dorm_name, room_id, suite_uuid, max_occupancy, current_occupancy, occupants, pull_priority, has_frosh, frosh_room_type FROM rooms WHERE UPPER(dorm_name) = UPPER($1)", dormNameParam)
 	if err != nil {
 		// Handle query error
 		// print the error to the console
@@ -95,7 +95,7 @@ func GetSimpleFormattedDorm(c *gin.Context) {
 	var rooms []models.RoomRaw
 	for rows.Next() {
 		var d models.RoomRaw
-		if err := rows.Scan(&d.RoomUUID, &d.Dorm, &d.DormName, &d.RoomID, &d.SuiteUUID, &d.MaxOccupancy, &d.CurrentOccupancy, &d.Occupants, &d.PullPriority, &d.HasFrosh); err != nil {
+		if err := rows.Scan(&d.RoomUUID, &d.Dorm, &d.DormName, &d.RoomID, &d.SuiteUUID, &d.MaxOccupancy, &d.CurrentOccupancy, &d.Occupants, &d.PullPriority, &d.HasFrosh, &d.FroshRoomType); err != nil {
 			log.Println(err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Database scan failed on rooms"})
 			return
