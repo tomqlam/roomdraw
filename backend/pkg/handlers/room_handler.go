@@ -996,14 +996,18 @@ func UpdateRoomOccupants(c *gin.Context) {
 		_, err = tx.Exec(`
 			UPDATE Rooms
 			SET pull_priority = jsonb_set(
-				pull_priority,
-				'{inherited}',
-				jsonb_build_object(
-					'year', $1::int,
-					'valid', $2::bool,
-					'drawNumber', $3::float,
-					'hasInDorm', $4::bool
-				)
+				jsonb_set(
+					pull_priority,
+					'{inherited}',
+					jsonb_build_object(
+						'year', $1::int,
+						'valid', $2::bool,
+						'drawNumber', $3::float,
+						'hasInDorm', $4::bool
+					)
+				),
+				'{pullType}',
+				'4'::jsonb
 			)
 			WHERE room_uuid = $5`,
 			alternativeGroupPriority.Year,
