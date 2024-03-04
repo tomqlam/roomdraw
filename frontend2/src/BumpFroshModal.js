@@ -62,7 +62,7 @@ const BumpFroshModal = () => {
             <div className="modal-card">
                 <header className="modal-card-head">
                     <p className="modal-card-title">Edit Room {selectedItem}</p>
-                    <button className="delete" aria-label="close" ></button>
+                    <button className="delete" aria-label="close" onClick={() => setIsFroshModalOpen(false)}></button>
                 </header>
                 <section className="modal-card-body">
                     <label className="label">Bump these frosh to a new room</label>
