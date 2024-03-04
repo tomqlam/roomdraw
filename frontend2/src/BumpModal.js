@@ -1,9 +1,12 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { MyContext } from './MyContext';
+import { jwtDecode } from "jwt-decode";
+
 
 function BumpModal() {
   const {
     selectedItem,
+    credentials,
     print,
     setIsModalOpen,
     selectedOccupants,
@@ -24,7 +27,8 @@ function BumpModal() {
     rooms,
     setCredentials,
     handleErrorFromTokenExpiry,
-    dormMapping
+    dormMapping,
+
   } = useContext(MyContext);
 
   // List of arrays with two elements, where the first element is the occupant ID and the second element is the room UUID
@@ -68,6 +72,7 @@ function BumpModal() {
       .then(response => response.json())
       .then(data => {
         console.log(data);
+        setIsModalOpen(false);
         setRefreshKey(refreshKey + 1);
         if (handleErrorFromTokenExpiry(data)) {
           return;
@@ -293,7 +298,7 @@ function BumpModal() {
         </header>
         <section className="modal-card-body">
 
-          <button onClick={() => postToFrosh(selectedRoomObject)}>Add Frosh</button>
+          {((jwtDecode(credentials).email == "tlam@g.hmc.edu") || (jwtDecode(credentials).email == "smao@g.hmc.edu")) && <button onClick={() => postToFrosh(selectedRoomObject)}>Add Frosh</button>}
 
           {<div>
             <div>
