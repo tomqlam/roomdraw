@@ -233,7 +233,8 @@ type OccupantUpdateRequest struct {
 }
 
 type SuiteDesignUpdateRequest struct {
-	UserJWT string `json:"userJWT"`
+	SuiteDesign string `json:"suiteDesign"`
+	UserJWT     string `json:"userJWT"`
 }
 
 type BumpFroshRequest struct {
