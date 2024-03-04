@@ -63,7 +63,7 @@ function BumpModal() {
   }, [selectedSuiteObject, selectedItem]);
 
   function postToFrosh(roomObject) {
-    fetch(`/frosh/${roomObject.roomUUID}`, {
+    fetch(`https://www.cs.hmc.edu/~tlam/digitaldraw/api/frosh/${roomObject.roomUUID}`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('jwt')}`,

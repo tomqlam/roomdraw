@@ -29,7 +29,7 @@ const BumpFroshModal = () => {
         console.log("Bumping frosh to room " + targetRoom + "from room " + selectedRoomObject.roomUUID);
         // make an api call to bump the frosh to the target room
         if (localStorage.getItem('jwt')) {
-            fetch(`/frosh/bump/${selectedRoomObject.roomUUID}`, {
+            fetch(`https://www.cs.hmc.edu/~tlam/digitaldraw/api/frosh/bump/${selectedRoomObject.roomUUID}`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
