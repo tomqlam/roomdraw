@@ -138,7 +138,7 @@ function App() {
 
   // Component for each floor, to show even and odd floors separately
   const FloorDisplay = ({ gridData, filterCondition }) => (
-    <div>
+    <div style={showFloorplans ? { width: '50vw' } : {}}>
       {gridData.map((dorm) => (
         <div key={dorm.dormName} className={activeTab === dorm.dormName ? '' : 'is-hidden'}>
           {dorm.floors
@@ -296,15 +296,19 @@ function App() {
             {showFloorplans && (
   <div style={{ display: 'flex', flexDirection: 'column' }}>
     {gridData
-      .filter(dorm => dorm.dormName === activeTab)
-      .flatMap(dorm => dorm.floors)
-      .map((_, floorIndex) => (
-        <div style={{ display: 'flex', alignItems: 'center' }}>
-          <FloorDisplay gridData={gridData} filterCondition={(floorNumber) => floorNumber === floorIndex} />
-          <img src={`/Floorplans/floorplans_${activeTab.toLowerCase()}_${floorIndex + 1}.png`} alt={`Floorplan for floor ${floorIndex}`} />
-        </div>
-      ))}
-  </div>
+  .filter(dorm => dorm.dormName === activeTab)
+  .flatMap(dorm => dorm.floors)
+  .map((_, floorIndex) => (
+    <div style={{ display: 'flex', alignItems: 'center' }}>
+      <FloorDisplay  gridData={gridData} filterCondition={(floorNumber) => floorNumber === floorIndex} />
+      <img 
+        src={`/Floorplans/floorplans_${activeTab.toLowerCase()}_${floorIndex + 1}.png`} 
+        alt={`Floorplan for floor ${floorIndex}`} 
+        style={{maxWidth: '40vw' }} // Add this line
+      />
+    </div>
+  ))}
+</div>
 )}
         </div>
 
