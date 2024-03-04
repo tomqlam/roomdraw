@@ -170,6 +170,14 @@ func comparePullPriority(priority1 models.PullPriority, priority2 models.PullPri
 		p2EffectiveYear = 5
 	}
 
+	if priority1.PullType == 3 {
+		p1EffectiveYear = 6
+	}
+
+	if priority2.PullType == 3 {
+		p2EffectiveYear = 6
+	}
+
 	if p1EffectiveYear > p2EffectiveYear {
 		return true
 	} else if p1EffectiveYear < p2EffectiveYear {
