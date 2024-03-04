@@ -34,8 +34,14 @@ func main() {
 		MaxAge: 12 * time.Hour,
 	}
 
+	// Initialize the RWMutex and request queue
+	requestQueue := make(chan *gin.Context)
+
 	// Apply the middleware globally
 	router.Use(cors.New(corsConfig))
+
+	// Start the request processor goroutine for write requests
+	go middleware.RequestProcessor(requestQueue)
 
 	// Group routes by read and write operations
 	readGroup := router.Group("/").Use(middleware.JWTAuthMiddleware(false))
@@ -48,11 +54,8 @@ func main() {
 		readGroup.GET("/users/idmap", handlers.GetUsersIdMap)
 	}
 
-	// Initialize the RWMutex and request queue
-	requestQueue := make(chan *gin.Context)
-
 	// For write operations, use a separate group and apply the queue middleware
-	writeGroup := router.Group("/").Use(middleware.QueueMiddleware(requestQueue), middleware.JWTAuthMiddleware(false))
+	writeGroup := router.Group("/").Use(middleware.JWTAuthMiddleware(false), middleware.QueueMiddleware(requestQueue))
 	{
 		// Define write routes here
 		writeGroup.POST("/rooms/:roomuuid", handlers.UpdateRoomOccupants)
@@ -61,9 +64,6 @@ func main() {
 		writeGroup.DELETE("/frosh/:roomuuid", handlers.RemoveFroshHandler)
 		writeGroup.POST("/frosh/bump/:roomuuid", handlers.BumpFroshHandler)
 	}
-
-	// Start the request processor goroutine for write requests
-	go middleware.RequestProcessor(requestQueue)
 
 	// Start the server
 	router.Run(config.ServerAddress)
