@@ -10,6 +10,11 @@ require (
 )
 
 require (
+	git.sr.ht/~jamesponddotco/bunnystorage-go v0.3.0 // indirect
+	git.sr.ht/~jamesponddotco/httpx-go v0.0.0-20230427215504-7c26a7f028e7 // indirect
+	git.sr.ht/~jamesponddotco/pagecache-go v0.0.0-20230411150210-54b704d32088 // indirect
+	git.sr.ht/~jamesponddotco/recache-go v1.0.1 // indirect
+	git.sr.ht/~jamesponddotco/xstd-go v0.0.0-20230709232003-22489c0e7382 // indirect
 	github.com/bytedance/sonic v1.10.2 // indirect
 	github.com/chenzhuoyu/base64x v0.0.0-20230717121745-296ad89f973d // indirect
 	github.com/chenzhuoyu/iasm v0.9.1 // indirect
@@ -22,6 +27,7 @@ require (
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	golang.org/x/arch v0.7.0 // indirect
 	golang.org/x/net v0.20.0 // indirect
+	golang.org/x/time v0.3.0 // indirect
 	google.golang.org/protobuf v1.32.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
