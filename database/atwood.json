@@ -35,7 +35,8 @@
                             "frosh_room_type": 1
                         }
                     ],
-                    "alternative_pull": false
+                    "alternative_pull": false,
+                    "can_lock_pull": true
                 },
                 {
                     "rooms": [
@@ -70,7 +71,8 @@
                             "frosh_room_type": 1
                         }
                     ],
-                    "alternative_pull": false
+                    "alternative_pull": false,
+                    "can_lock_pull": true
                 },
                 {
                     "rooms": [
@@ -85,7 +87,8 @@
                             "frosh_room_type": 0
                         }
                     ],
-                    "alternative_pull": true
+                    "alternative_pull": true,
+                    "can_lock_pull": false
                 },
                 {
                     "rooms": [
@@ -120,7 +123,8 @@
                             "frosh_room_type": 0
                         }
                     ],
-                    "alternative_pull": false
+                    "alternative_pull": false,
+                    "can_lock_pull": true
                 },
                 {
                     "rooms": [
@@ -130,7 +134,8 @@
                             "frosh_room_type": 0
                         }
                     ],
-                    "alternative_pull": false
+                    "alternative_pull": false,
+                    "can_lock_pull": false
                 },
                 {
                     "rooms": [
@@ -140,7 +145,8 @@
                             "frosh_room_type": 0
                         }
                     ],
-                    "alternative_pull": false
+                    "alternative_pull": false,
+                    "can_lock_pull": false
                 },
                 {
                     "rooms": [
@@ -175,7 +181,8 @@
                             "frosh_room_type": 0
                         }
                     ],
-                    "alternative_pull": false
+                    "alternative_pull": false,
+                    "can_lock_pull": true
                 }
             ]
         },
@@ -214,7 +221,8 @@
                             "frosh_room_type": 4
                         }
                     ],
-                    "alternative_pull": false
+                    "alternative_pull": false,
+                    "can_lock_pull": true
                 },
                 {
                     "rooms": [
@@ -249,7 +257,8 @@
                             "frosh_room_type": 3
                         }
                     ],
-                    "alternative_pull": false
+                    "alternative_pull": false,
+                    "can_lock_pull": true
                 },
                 {
                     "rooms": [
@@ -264,7 +273,8 @@
                             "frosh_room_type": 0
                         }
                     ],
-                    "alternative_pull": true
+                    "alternative_pull": true,
+                    "can_lock_pull": false
                 },
                 {
                     "rooms": [
@@ -299,7 +309,8 @@
                             "frosh_room_type": 0
                         }
                     ],
-                    "alternative_pull": false
+                    "alternative_pull": false,
+                    "can_lock_pull": true
                 },
                 {
                     "rooms": [
@@ -309,7 +320,8 @@
                             "frosh_room_type": 0
                         }
                     ],
-                    "alternative_pull": false
+                    "alternative_pull": false,
+                    "can_lock_pull": false
                 },
                 {
                     "rooms": [
@@ -319,7 +331,8 @@
                             "frosh_room_type": 0
                         }
                     ],
-                    "alternative_pull": false
+                    "alternative_pull": false,
+                    "can_lock_pull": false
                 },
                 {
                     "rooms": [
@@ -354,7 +367,8 @@
                             "frosh_room_type": 0
                         }
                     ],
-                    "alternative_pull": false
+                    "alternative_pull": false,
+                    "can_lock_pull": true
                 }
             ]
         },
@@ -393,7 +407,8 @@
                             "frosh_room_type": 5
                         }
                     ],
-                    "alternative_pull": false
+                    "alternative_pull": false,
+                    "can_lock_pull": true
                 },
                 {
                     "rooms": [
@@ -428,7 +443,8 @@
                             "frosh_room_type": 5
                         }
                     ],
-                    "alternative_pull": false
+                    "alternative_pull": false,
+                    "can_lock_pull": true
                 },
                 {
                     "rooms": [
@@ -463,7 +479,8 @@
                             "frosh_room_type": 0
                         }
                     ],
-                    "alternative_pull": false
+                    "alternative_pull": false,
+                    "can_lock_pull": true
                 },
                 {
                     "rooms": [
@@ -473,7 +490,8 @@
                             "frosh_room_type": 0
                         }
                     ],
-                    "alternative_pull": false
+                    "alternative_pull": false,
+                    "can_lock_pull": false
                 },
                 {
                     "rooms": [
@@ -483,7 +501,8 @@
                             "frosh_room_type": 0
                         }
                     ],
-                    "alternative_pull": false
+                    "alternative_pull": false,
+                    "can_lock_pull": false
                 },
                 {
                     "rooms": [
@@ -518,7 +537,8 @@
                             "frosh_room_type": 0
                         }
                     ],
-                    "alternative_pull": false
+                    "alternative_pull": false,
+                    "can_lock_pull": true
                 }
             ]
         }

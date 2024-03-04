@@ -48,7 +48,7 @@ def populate_using_json(dorm_id: int, dorm_name: str, json_file: str):
                 for suite in data["floors"][floor]["suites"]:
                     # generate a uuid for the suite
                     suite_uuid = uuid4()
-                    query = f"INSERT INTO Suites (suite_uuid, dorm, dorm_name, room_count, floor, alternative_pull) VALUES ('{suite_uuid}' ,{dorm_id}, '{dorm_name}', {len(suite['rooms'])}, {floor}, {suite['alternative_pull']}) RETURNING suite_uuid;"
+                    query = f"INSERT INTO Suites (suite_uuid, dorm, dorm_name, room_count, floor, alternative_pull, can_lock_pull) VALUES ('{suite_uuid}' ,{dorm_id}, '{dorm_name}', {len(suite['rooms'])}, {floor}, {suite['alternative_pull']}, {suite['can_lock_pull']}) RETURNING suite_uuid;"
                     result = connection.execute(text(query))
                     suite_uuid = result.fetchone()[0]
                     # connection.commit()
