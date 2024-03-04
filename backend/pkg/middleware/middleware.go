@@ -58,8 +58,6 @@ func FetchGooglePublicKeys() error {
 	}
 	defer resp.Body.Close()
 
-	log.Println("YO")
-
 	var certs GooglePublicKeysResponse
 	if err := json.NewDecoder(resp.Body).Decode(&certs); err != nil {
 		log.Println("Response:", resp)
@@ -136,7 +134,6 @@ func QueueMiddleware(requestQueue chan<- *gin.Context) gin.HandlerFunc {
 
 func RequestProcessor(requestQueue <-chan *gin.Context) {
 	for c := range requestQueue {
-		// log.Print("Start processing request +", c.Request.URL.Path)
 		c.Next() // Process the request
 
 		// Wait for the request to be processed
@@ -146,8 +143,17 @@ func RequestProcessor(requestQueue <-chan *gin.Context) {
 			continue
 		}
 
+		// set timeout time to 10 seconds
+		timeout := time.After(10 * time.Second)
+
 		// Wait for the doneChan to receive a signal
-		<-doneChan.(chan bool)
+		select {
+		case <-doneChan.(chan bool):
+			log.Print("Request processed +", c.Request.URL.Path)
+		case <-timeout:
+			log.Print("Request processing timed out +", c.Request.URL.Path)
+			close(doneChan.(chan bool))
+		}
 		// log.Print("Finished processing request +", c.Request.URL.Path)
 
 		// log.Print("Sleeping for 10 seconds")
