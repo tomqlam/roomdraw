@@ -16,6 +16,7 @@ const BumpFroshModal = () => {
     } = useContext(MyContext);
 
     const [targetRoom, setTargetRoom] = useState("NONE");
+    const [froshBumpLoading, setFroshBumpLoading] = useState(false);
 
 
     const handleSelectChange = (event) => {
@@ -24,6 +25,7 @@ const BumpFroshModal = () => {
     };
 
     const handleBumpFrosh = () => {
+        setFroshBumpLoading(true);
         console.log("Bumping frosh to room " + targetRoom + "from room " + selectedRoomObject.roomUUID);
         // make an api call to bump the frosh to the target room
         if (localStorage.getItem('jwt')) {
@@ -42,6 +44,7 @@ const BumpFroshModal = () => {
                 .then(data => {
                     console.log(data);
                     setIsFroshModalOpen(false);
+                    setFroshBumpLoading(false);
                     setRefreshKey(prevKey => prevKey + 1);
                     if (handleErrorFromTokenExpiry(data)) {
                         return;
@@ -78,7 +81,7 @@ const BumpFroshModal = () => {
 
                 </section>
                 <footer className="modal-card-foot" style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <button className={`button is-primary `} onClick={handleBumpFrosh}>Bump these frosh!</button>
+                    <button className={`button is-primary ${froshBumpLoading ? "is-loading" : ""}`} onClick={handleBumpFrosh}>Bump these frosh!</button>
 
                 </footer>
             </div>
