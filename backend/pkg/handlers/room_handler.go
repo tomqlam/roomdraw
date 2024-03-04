@@ -532,6 +532,15 @@ func UpdateRoomOccupants(c *gin.Context) {
 
 			sortedOccupants := sortUsersByPriority(occupantsInfo, currentRoomInfo.Dorm)
 
+			for _, occupant := range sortedOccupants {
+				// if the pull leader has indorm and the proposed occupants do not, it is invalid
+				if pullLeaderPriority.HasInDorm && !(generateUserPriority(occupant, currentRoomInfo.Dorm).HasInDorm) {
+					c.JSON(http.StatusBadRequest, gin.H{"error": "Pull leader has in dorm and at least one of the proposed occupants do not"})
+					tx.Rollback()
+					return
+				}
+			}
+
 			proposedPullPriority = generateUserPriority(sortedOccupants[0], currentRoomInfo.Dorm)
 			proposedPullPriority.Valid = true
 			proposedPullPriority.PullType = 2
