@@ -429,6 +429,7 @@ func UpdateRoomOccupants(c *gin.Context) {
 				// print the error to the console
 				log.Println(err)
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Database query failed on users for pull priority"})
+				tx.Rollback()
 				return
 			}
 			for rows.Next() {
@@ -437,6 +438,7 @@ func UpdateRoomOccupants(c *gin.Context) {
 					// Handle scan error
 					log.Println(err)
 					c.JSON(http.StatusInternalServerError, gin.H{"error": "Database scan failed on users for pull priority"})
+					tx.Rollback()
 					return
 				}
 				occupantsInfo = append(occupantsInfo, u)
@@ -453,6 +455,7 @@ func UpdateRoomOccupants(c *gin.Context) {
 			if err != nil {
 				log.Println(err)
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to clear room"})
+				tx.Rollback()
 			}
 			return
 		}
@@ -637,6 +640,7 @@ func UpdateRoomOccupants(c *gin.Context) {
 			// print the error to the console
 			log.Println(err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Database query failed on users for pull priority"})
+			tx.Rollback()
 			return
 		}
 		for rows.Next() {
@@ -645,6 +649,7 @@ func UpdateRoomOccupants(c *gin.Context) {
 				// Handle scan error
 				log.Println(err)
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Database scan failed on users for pull priority"})
+				tx.Rollback()
 				return
 			}
 			occupantsInfo = append(occupantsInfo, u)
@@ -791,11 +796,19 @@ func UpdateRoomOccupants(c *gin.Context) {
 	default:
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid pull type: " + string(rune(request.PullType))})
 		err = errors.New("invalid pull type")
+		tx.Rollback()
 		return
 	}
 
 	log.Println(proposedPullPriority)
 	log.Print(currentRoomInfo.PullPriority)
+
+	if currentRoomInfo.PullPriority.PullType == 3 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Cannot bump a lock pulled room"})
+		err = errors.New("cannot bump a lock pulled room")
+		tx.Rollback()
+		return
+	}
 
 	if !comparePullPriority(proposedPullPriority, currentRoomInfo.PullPriority) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Proposed occupants do not have higher priority than current occupants"})

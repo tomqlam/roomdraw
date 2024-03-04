@@ -270,6 +270,7 @@ function BumpModal() {
             // no error 
             setRefreshKey(refreshKey + 1);
             resolve(true);
+            setLoadingClearPerson(false);
 
           }
 
