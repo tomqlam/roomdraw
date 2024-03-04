@@ -22,7 +22,7 @@ export const MyContextProvider = ({ children }) => {
     const [lastRefreshedTime, setLastRefreshedTime] = useState(new Date()); // last time the page was refreshed
     const [isSuiteNoteModalOpen, setIsSuiteNoteModalOpen] = useState(false); // If suite note modal 
     const [isFroshModalOpen, setIsFroshModalOpen] = useState(false); // If frosh modal is open
-    
+
     // Initialize active tab state from localStorage or default to 'Atwood'
     const [activeTab, setActiveTab] = useState(() => {
         const savedTab = localStorage.getItem('activeTab');
@@ -92,23 +92,23 @@ export const MyContextProvider = ({ children }) => {
             fetch('https://www.cs.hmc.edu/~tlam/digitaldraw/api/users/idmap', {
                 method: 'GET',
                 headers: {
-                  'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
+                    'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
                 },
-              })
+            })
                 .then(res => {
                     return res.json();
                 })
                 .then(data => {
                     if (handleErrorFromTokenExpiry(data)) {
                         return;
-                      };
+                    };
                     setUserMap(data);
                 })
                 .catch(err => {
                     console.log(err);
                 })
         }
-        
+
     }
     function fetchRoomsWithUUIDs() {
         if (localStorage.getItem('jwt')) {
@@ -142,15 +142,32 @@ export const MyContextProvider = ({ children }) => {
         fetch(`https://www.cs.hmc.edu/~tlam/digitaldraw/api/rooms/simple/${dorm}`, {
             method: 'GET',
             headers: {
-              'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
+                'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
             },
-          })
+        })
             .then(res => res.json())  // Parse the response data as JSON
             .then(data => {
                 if (handleErrorFromTokenExpiry(data)) {
                     return;
                 };
-                console.log("Fetch rooms from one dorm");
+
+                if (Array.isArray(data.floors[0].suites)) {
+                    data.floors.forEach(floor => {
+                        if (Array.isArray(floor.suites)) {
+                            floor.suites.sort((a, b) => {
+                                const firstRoomNumberA = a.rooms[0].roomNumber;
+                                const firstRoomNumberB = b.rooms[0].roomNumber;
+                                return firstRoomNumberA.localeCompare(firstRoomNumberB);
+                            });
+                        } else {
+                            console.error("floor.suites is not an array:", floor.suites);
+                        }
+                    });
+                } else {
+                    console.error("data is not an array:", data);
+                }
+
+
                 setGridData(prevGridData => prevGridData.map(item => item.dormName === dorm ? data : item));
                 console.log(data);
             })
@@ -165,14 +182,14 @@ export const MyContextProvider = ({ children }) => {
             return fetch(`https://www.cs.hmc.edu/~tlam/digitaldraw/api/rooms/simple/${dorm}`, {
                 method: 'GET',
                 headers: {
-                  'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
+                    'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
                 },
-              })
+            })
                 .then(res => res.json())  // Parse the response data as JSON
                 .then(data => {
                     if (handleErrorFromTokenExpiry(data)) {
                         return;
-                      };
+                    };
                     return data;
                 })
                 .catch(err => {
@@ -188,7 +205,7 @@ export const MyContextProvider = ({ children }) => {
                     setGridData(dataArray);
                     console.log(gridData);
                 }
-                
+
             })
             .catch(err => {
                 console.error("Error in Promise.all:", err);
