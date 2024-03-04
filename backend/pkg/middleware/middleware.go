@@ -7,6 +7,7 @@ import (
 	"log"
 	"math/big"
 	"net/http"
+	"roomdraw/backend/pkg/handlers"
 	"strings"
 	"sync"
 	"time"
@@ -41,6 +42,25 @@ var (
 	cacheMutex    = &sync.RWMutex{}
 	keysCacheTime time.Time
 )
+
+type HandlerMapping struct {
+	Method  string
+	Path    string
+	Handler gin.HandlerFunc
+}
+
+var handlerMappings = map[string]gin.HandlerFunc{
+	"GET_/rooms":                     handlers.GetRoomsHandler,
+	"GET_/rooms/simple/:dormName":    handlers.GetSimpleFormattedDorm, // Note: dynamic segments need special handling
+	"GET_/rooms/simpler/:dormName":   handlers.GetSimplerFormattedDorm,
+	"POST_/rooms/:roomuuid":          handlers.UpdateRoomOccupants,
+	"GET_/users":                     handlers.GetUsers,
+	"GET_/users/idmap":               handlers.GetUsersIdMap,
+	"POST_/suites/design/:suiteuuid": handlers.SetSuiteDesign,
+	"POST_/frosh/:roomuuid":          handlers.AddFroshHandler,
+	"DELETE_/frosh/:roomuuid":        handlers.RemoveFroshHandler,
+	"POST_/frosh/bump/:roomuuid":     handlers.BumpFroshHandler,
+}
 
 // FetchGooglePublicKeys fetches and caches Google's public keys for JWT validation.
 func FetchGooglePublicKeys() error {
@@ -124,64 +144,50 @@ func getGooglePublicKey(token *jwt.Token) (interface{}, error) {
 	return getKeyFunc(token)
 }
 
-func QueueMiddleware(rwMutex *sync.RWMutex) gin.HandlerFunc {
+func QueueMiddleware(requestQueue chan<- *gin.Context) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Determine whether the request is a read or write operation
-		// This could be based on the HTTP method or specific routes
-		isRead := c.Request.Method == "GET" || c.Request.Method == "HEAD" // Add other read methods as needed
-
-		// Store this information in the context
-		c.Set("isRead", isRead)
-
-		// If it's a read operation, we can allow it to proceed in parallel with other reads
+		isRead := c.Request.Method == "GET" || c.Request.Method == "HEAD"
 		if isRead {
-			rwMutex.RLock()
 			c.Next()
-			rwMutex.RUnlock()
 		} else {
-			// If it's a write operation, it must be processed sequentially
-			// So we send it to the request processor
-			c.Set("rwMutex", rwMutex) // Pass the mutex for the processor to use
-			c.Next()                  // The actual locking and unlocking for writes will be handled in the processor
+			doneChan := make(chan bool, 1) // Channel to signal completion of request processing
+			c.Set("doneChan", doneChan)    // Pass the channel along with the context
+			requestQueue <- c              // Enqueue the context
+			<-doneChan                     // Wait for processing to complete
 		}
 	}
 }
 
+func determineHandlerFunc(c *gin.Context) (gin.HandlerFunc, bool) {
+	key := c.Request.Method + "_" + c.Request.URL.Path
+
+	if handler, exists := handlerMappings[key]; exists {
+		return handler, true
+	}
+	return nil, false // Handler not found
+}
+
 func RequestProcessor(requestQueue <-chan *gin.Context) {
 	for c := range requestQueue {
-		// Retrieve the mutex from the context
-		val, exists := c.Get("rwMutex")
-		if !exists {
-			// handle the error, the mutex was not found
-			continue
-		}
-		rwMutex, ok := val.(*sync.RWMutex)
-		if !ok {
-			// handle the error, the type assertion was not successful
+		// Assuming you can directly call the appropriate handler based on some context information
+		// For simplicity, let's pretend we have a way to determine this
+		handlerFunc, found := determineHandlerFunc(c)
+
+		if !found {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Handler not found"})
 			continue
 		}
 
-		// Retrieve the request type (read/write) from the context
-		val, exists = c.Get("isRead")
-		if !exists {
-			// handle the error, the request type was not found
-			continue
-		}
-		isRead, ok := val.(bool)
-		if !ok {
-			// handle the error, the type assertion was not successful
-			continue
-		}
+		handlerFunc(c) // Execute the handler
 
-		if isRead {
-			// It's a read request, already handled in the middleware
-			// You might want to put some logic here if needed
-		} else {
-			// It's a write request, so we lock for writing
-			rwMutex.Lock()
-			// The actual processing logic goes here...
-			// ... (handle the request)
-			rwMutex.Unlock()
+		time.Sleep(3 * time.Second) // Add a 3 second delay here to simulate processing time
+
+		// Signal that processing is complete
+		if doneChan, exists := c.Get("doneChan"); exists {
+			if dc, ok := doneChan.(chan bool); ok {
+				dc <- true // Signal completion
+				close(dc)  // Close the channel
+			}
 		}
 	}
 }

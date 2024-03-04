@@ -5,7 +5,6 @@ import (
 	"roomdraw/backend/pkg/database"
 	"roomdraw/backend/pkg/handlers"
 	"roomdraw/backend/pkg/middleware"
-	"sync"
 
 	"time"
 
@@ -36,14 +35,13 @@ func main() {
 	}
 
 	// Initialize the RWMutex and request queue
-	rwMutex := &sync.RWMutex{}
 	requestQueue := make(chan *gin.Context)
 
 	// Start the request processor goroutine for write requests
 	go middleware.RequestProcessor(requestQueue)
 
 	// Apply the middleware globally
-	router.Use(middleware.QueueMiddleware(rwMutex))
+	// router.Use(middleware.QueueMiddleware(requestQueue))
 	router.Use(cors.New(corsConfig))
 
 	// Define your routes
