@@ -34,28 +34,36 @@ func main() {
 		MaxAge: 12 * time.Hour,
 	}
 
+	// Apply the middleware globally
+	router.Use(cors.New(corsConfig))
+
+	// Group routes by read and write operations
+	readGroup := router.Group("/").Use(middleware.JWTAuthMiddleware(false))
+	{
+		// Define read-only routes here
+		readGroup.GET("/rooms", handlers.GetRoomsHandler)
+		readGroup.GET("/rooms/simple/:dormName", handlers.GetSimpleFormattedDorm)
+		readGroup.GET("/rooms/simpler/:dormName", handlers.GetSimplerFormattedDorm)
+		readGroup.GET("/users", handlers.GetUsers)
+		readGroup.GET("/users/idmap", handlers.GetUsersIdMap)
+	}
+
 	// Initialize the RWMutex and request queue
 	requestQueue := make(chan *gin.Context)
 
+	// For write operations, use a separate group and apply the queue middleware
+	writeGroup := router.Group("/").Use(middleware.QueueMiddleware(requestQueue), middleware.JWTAuthMiddleware(false))
+	{
+		// Define write routes here
+		writeGroup.POST("/rooms/:roomuuid", handlers.UpdateRoomOccupants)
+		writeGroup.POST("/suites/design/:suiteuuid", handlers.SetSuiteDesign)
+		writeGroup.POST("/frosh/:roomuuid", handlers.AddFroshHandler)
+		writeGroup.DELETE("/frosh/:roomuuid", handlers.RemoveFroshHandler)
+		writeGroup.POST("/frosh/bump/:roomuuid", handlers.BumpFroshHandler)
+	}
+
 	// Start the request processor goroutine for write requests
 	go middleware.RequestProcessor(requestQueue)
-
-	// Apply the middleware globally
-	// router.Use(middleware.QueueMiddleware(requestQueue))
-	router.Use(cors.New(corsConfig))
-
-	// Define your routes
-	router.GET("/rooms", middleware.JWTAuthMiddleware(false), handlers.GetRoomsHandler)                           // Read
-	router.GET("/rooms/simple/:dormName", middleware.JWTAuthMiddleware(false), handlers.GetSimpleFormattedDorm)   // Read
-	router.GET("/rooms/simpler/:dormName", middleware.JWTAuthMiddleware(false), handlers.GetSimplerFormattedDorm) // Read
-	router.POST("/rooms/:roomuuid", middleware.JWTAuthMiddleware(false), handlers.UpdateRoomOccupants)            // Write
-	router.GET("/users", middleware.JWTAuthMiddleware(false), handlers.GetUsers)                                  // Read
-	router.GET("/users/idmap", middleware.JWTAuthMiddleware(false), handlers.GetUsersIdMap)
-	router.POST("/suites/design/:suiteuuid", middleware.JWTAuthMiddleware(false), handlers.SetSuiteDesign)
-
-	router.POST("/frosh/:roomuuid", middleware.JWTAuthMiddleware(true), handlers.AddFroshHandler)
-	router.DELETE("/frosh/:roomuuid", middleware.JWTAuthMiddleware(true), handlers.RemoveFroshHandler)
-	router.POST("/frosh/bump/:roomuuid", middleware.JWTAuthMiddleware(false), handlers.BumpFroshHandler)
 
 	// Start the server
 	router.Run(config.ServerAddress)

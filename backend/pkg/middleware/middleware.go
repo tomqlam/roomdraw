@@ -7,7 +7,6 @@ import (
 	"log"
 	"math/big"
 	"net/http"
-	"roomdraw/backend/pkg/handlers"
 	"strings"
 	"sync"
 	"time"
@@ -42,25 +41,6 @@ var (
 	cacheMutex    = &sync.RWMutex{}
 	keysCacheTime time.Time
 )
-
-type HandlerMapping struct {
-	Method  string
-	Path    string
-	Handler gin.HandlerFunc
-}
-
-var handlerMappings = map[string]gin.HandlerFunc{
-	"GET_/rooms":                     handlers.GetRoomsHandler,
-	"GET_/rooms/simple/:dormName":    handlers.GetSimpleFormattedDorm, // Note: dynamic segments need special handling
-	"GET_/rooms/simpler/:dormName":   handlers.GetSimplerFormattedDorm,
-	"POST_/rooms/:roomuuid":          handlers.UpdateRoomOccupants,
-	"GET_/users":                     handlers.GetUsers,
-	"GET_/users/idmap":               handlers.GetUsersIdMap,
-	"POST_/suites/design/:suiteuuid": handlers.SetSuiteDesign,
-	"POST_/frosh/:roomuuid":          handlers.AddFroshHandler,
-	"DELETE_/frosh/:roomuuid":        handlers.RemoveFroshHandler,
-	"POST_/frosh/bump/:roomuuid":     handlers.BumpFroshHandler,
-}
 
 // FetchGooglePublicKeys fetches and caches Google's public keys for JWT validation.
 func FetchGooglePublicKeys() error {
@@ -146,49 +126,33 @@ func getGooglePublicKey(token *jwt.Token) (interface{}, error) {
 
 func QueueMiddleware(requestQueue chan<- *gin.Context) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		isRead := c.Request.Method == "GET" || c.Request.Method == "HEAD"
-		if isRead {
-			c.Next()
-		} else {
-			doneChan := make(chan bool, 1) // Channel to signal completion of request processing
-			c.Set("doneChan", doneChan)    // Pass the channel along with the context
-			requestQueue <- c              // Enqueue the context
-			<-doneChan                     // Wait for processing to complete
-		}
+		// if the request is a write operation, enqueue the request
+		// log.Printf("QueueMiddleware triggered for path: %s", c.Request.URL.Path)
+		doneChan := make(chan bool, 1) // Channel to signal completion of request processing
+		c.Set("doneChan", doneChan)    // Pass the channel along with the context
+		requestQueue <- c              // Enqueue the context
 	}
-}
-
-func determineHandlerFunc(c *gin.Context) (gin.HandlerFunc, bool) {
-	key := c.Request.Method + "_" + c.Request.URL.Path
-
-	if handler, exists := handlerMappings[key]; exists {
-		return handler, true
-	}
-	return nil, false // Handler not found
 }
 
 func RequestProcessor(requestQueue <-chan *gin.Context) {
 	for c := range requestQueue {
-		// Assuming you can directly call the appropriate handler based on some context information
-		// For simplicity, let's pretend we have a way to determine this
-		handlerFunc, found := determineHandlerFunc(c)
+		// log.Print("Start processing request +", c.Request.URL.Path)
+		c.Next() // Process the request
 
-		if !found {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Handler not found"})
+		// Wait for the request to be processed
+		doneChan, exists := c.Get("doneChan")
+		if !exists {
+			log.Print("Error: doneChan not found in context for request processor +", c.Request.URL.Path)
 			continue
 		}
 
-		handlerFunc(c) // Execute the handler
+		// Wait for the doneChan to receive a signal
+		<-doneChan.(chan bool)
+		// log.Print("Finished processing request +", c.Request.URL.Path)
 
-		time.Sleep(3 * time.Second) // Add a 3 second delay here to simulate processing time
-
-		// Signal that processing is complete
-		if doneChan, exists := c.Get("doneChan"); exists {
-			if dc, ok := doneChan.(chan bool); ok {
-				dc <- true // Signal completion
-				close(dc)  // Close the channel
-			}
-		}
+		// log.Print("Sleeping for 10 seconds")
+		// time.Sleep(10 * time.Second) // Simulate processing time
+		// log.Print("Woke up")
 	}
 }
 
