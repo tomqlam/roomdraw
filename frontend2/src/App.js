@@ -50,7 +50,7 @@ function App() {
   'simyang@g.hmc.edu',
   'yukyang@g.hmc.edu',
   'jeshuang@g.hmc.edu',
-  'opick@hmc.edu',
+  'opick@g.hmc.edu',
   'twigder@g.hmc.edu',
   'asilver@g.hmc.edu',
   'agruian@g.hmc.edu',
@@ -95,14 +95,16 @@ function App() {
   'ravjones@g.hmc.edu',
   'saan@g.hmc.edu',
   'njobanputra@g.hmc.edu',
-  'lhilkemeyer@hmc.edu',
+  'lhilkemeyer@g.hmc.edu',
   'ebarr@g.hmc.edu',
   'vkrishna@g.hmc.edu',
   'nphillips@g.hmc.edu',
   'igodoy@g.hmc.edu',
   'rpreis@g.hmc.edu',
   'chschofield@h.hmc.edu',
-  'hkenyatta@g.hmc.edu']
+  'hkenyatta@g.hmc.edu',
+  'wosong@g.hmc.edu',
+    ]
   useEffect(() => {
     const storedCredentials = localStorage.getItem('jwt');
     if (storedCredentials) {
