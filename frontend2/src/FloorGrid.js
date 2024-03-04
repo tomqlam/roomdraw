@@ -18,40 +18,53 @@ function FloorGrid({ gridData }) {
     selectedID,
     onlyShowBumpableRooms,
     userMap,
+    dormMapping,
+    selectedRoomObject,
+    setIsFroshModalOpen,
     setIsSuiteNoteModalOpen,
+    activeTab
   } = useContext(MyContext);
 
 
-  function getOccupantsByRoomNumber(roomNumber) {
-    // given a room number, return the occupants of the room
-    // Iterate over each suite
-    for (let suite of gridData.suites) {
-      // Find the room with the given room number within the current suite
-      const room = suite.rooms.find(r => r.roomNumber.toString() === roomNumber.toString());
+  async function getOccupantsByRoomNumber(roomNumber) {
+    return new Promise((resolve, reject) => {
+      // given a room number, return the occupants of the room
+      // Iterate over each suite
+      for (let suite of gridData.suites) {
+        // Find the room with the given room number within the current suite
+        const room = suite.rooms.find(r => r.roomNumber.toString() === roomNumber.toString());
 
-      // If the room exists, return the list of occupants
-      if (room) {
-        setSelectedRoomObject(room);
-        setSelectedSuiteObject(suite);
-        return [room.occupant1.toString(), room.occupant2.toString(), room.occupant3.toString(), room.occupant4.toString()];
+        // If the room exists, resolve the Promise with the list of occupants and the room object
+        if (room) {
+          setSelectedSuiteObject(suite);
+          resolve({
+            occupants: [room.occupant1.toString(), room.occupant2.toString(), room.occupant3.toString(), room.occupant4.toString()],
+            roomObject: room
+          });
+          return;
+        }
       }
-    }
-    console.log("Did not find the occupants");
-    // If the room does not exist in any suite, return an empty array
-    return ['', '', '', ''];
+      console.log("Did not find the occupants");
+      // If the room does not exist in any suite, resolve the Promise with an empty array and null
+      resolve({
+        occupants: ['', '', '', ''],
+        roomObject: null
+      });
+    });
   }
+
   // entire collection of cells
   const gridContainerStyle = {
     display: 'grid',
-    gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr 1fr 1fr', // this must scale with the number of columns
-    gap: '5px',
+    gridTemplateColumns: `1fr 1fr 1fr 1fr 1fr ${(activeTab === 'Atwood' || (activeTab === 'Drinkward' || activeTab === 'Case'))? '1fr' : ''} ${activeTab === 'Case' ? '1fr' : ''}`,
+    gap: '3px',
     maxWidth: '800px', // Set the maximum width of the grid container
     margin: '0 auto', // Center the grid container horizontally
 
   };
   // each cell in floorgrid
   const gridItemStyle = {
-    borderRadius: '3px',
+    borderRadius: '2px',
     padding: '1.5px',
     textAlign: 'center',
     fontSize: '14px',
@@ -74,7 +87,7 @@ function FloorGrid({ gridData }) {
   const updateSuiteNotes = (room) => {
     getOccupantsByRoomNumber(room);
     setIsSuiteNoteModalOpen(true);
-    
+
 
   }
   // given parameters, return grid item style with correct background color shading
@@ -115,13 +128,22 @@ function FloorGrid({ gridData }) {
     ...gridItemStyle,
     backgroundColor: cellColors.pullMethod,
   };
-  const handleCellClick = (roomNumber) => {
-    setIsModalOpen(true);
+  const handleCellClick = async (roomNumber) => {
     setSelectedItem(roomNumber);
-    setSelectedOccupants(getOccupantsByRoomNumber(roomNumber));
-    console.log(selectedOccupants);
-    setPullMethod("Pulled themselves");
-
+    console.log("Room number: " + roomNumber);
+    const { occupants, roomObject } = await getOccupantsByRoomNumber(roomNumber);
+    setSelectedOccupants(occupants);
+    setSelectedRoomObject(roomObject);
+    console.log("has frosh?");
+    console.log(roomObject);
+    console.log(roomObject.hasFrosh);
+    if (roomObject && roomObject.hasFrosh) {
+      setIsFroshModalOpen(true);
+    } else {
+      console.log(occupants);
+      setPullMethod("Pulled themselves");
+      setIsModalOpen(true);
+    }
   };
 
   function getPullMethodByRoomNumber(roomNumber) {
@@ -156,6 +178,9 @@ function FloorGrid({ gridData }) {
           const yearMapping = ["", "", "Sophomore", "Junior", "Senior"];
           finalString += `${yearMapping[pullPriority.year]} ${pullPriority.drawNumber !== 0 ? pullPriority.drawNumber : ''}`;
 
+        }
+        if (room.pullPriority.pullType === 4) {
+          return finalString += " (2nd best #)";
         }
 
         return finalString += `${room.pullPriority.pullType === 2 ? " Pull" : ''}`;
@@ -219,13 +244,13 @@ function FloorGrid({ gridData }) {
       <div style={roomNumberStyle}><strong>Suite</strong></div>
       <div style={roomNumberStyle}><strong>Occupant 1</strong></div>
       <div style={roomNumberStyle}><strong>Occupant 2</strong></div>
-      <div style={roomNumberStyle}><strong>Occupant 3</strong></div>
-      <div style={roomNumberStyle}><strong>Occupant 4</strong></div>
-
+      {((activeTab === 'Atwood' || activeTab === 'Drinkward') || activeTab === 'Case') && <div style={roomNumberStyle}><strong>Occupant 3</strong></div>}
+{      activeTab === 'Case' && <div style={roomNumberStyle}><strong>Occupant 4</strong></div>
+}
       {[...gridData.suites].sort((a, b) => {
-          const firstRoomNumberA = a.rooms[0].roomNumber;
-          const firstRoomNumberB = b.rooms[0].roomNumber;
-          return firstRoomNumberA.localeCompare(firstRoomNumberB);
+        const firstRoomNumberA = a.rooms[0].roomNumber;
+        const firstRoomNumberB = b.rooms[0].roomNumber;
+        return firstRoomNumberA.localeCompare(firstRoomNumberB);
       }).map((suite, suiteIndex) => (
         suite.rooms.sort((a, b) => String(a.roomNumber).localeCompare(String(b.roomNumber)))
           .map((room, roomIndex) => (
@@ -246,10 +271,10 @@ function FloorGrid({ gridData }) {
                 }} onClick={() => updateSuiteNotes(room.roomNumber)}>{suite.suiteDesign}</div>
 
               }
-              <div style={getGridItemStyle(room, room.maxOccupancy, 1, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{getNameById(room.occupant1)}</div>
-              <div style={getGridItemStyle(room, room.maxOccupancy, 2, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{getNameById(room.occupant2)}</div>
-              <div style={getGridItemStyle(room, room.maxOccupancy, 3, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{getNameById(room.occupant3)}</div>
-              <div style={getGridItemStyle(room, room.maxOccupancy, 4, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{getNameById(room.occupant4)}</div>
+              <div style={getGridItemStyle(room, room.maxOccupancy, 1, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{room.hasFrosh ? 'Frosh' : getNameById(room.occupant1)}</div>
+              <div style={getGridItemStyle(room, room.maxOccupancy, 2, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{room.hasFrosh ? 'Frosh' : getNameById(room.occupant2)}</div>
+              {((activeTab === 'Atwood' || activeTab === 'Drinkward')|| activeTab === 'Case') && <div style={getGridItemStyle(room, room.maxOccupancy, 3, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{room.hasFrosh ? 'Frosh' : getNameById(room.occupant3)}</div>}
+              {activeTab === "Case" && <div style={getGridItemStyle(room, room.maxOccupancy, 4, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{room.hasFrosh ? 'Frosh' : getNameById(room.occupant4)}</div>}
 
             </React.Fragment>
           ))

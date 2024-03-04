@@ -8,6 +8,7 @@ import { GoogleLogin } from '@react-oauth/google';
 import { jwtDecode } from "jwt-decode";
 import SuiteNoteModal from './SuiteNoteModal';
 import { googleLogout } from '@react-oauth/google';
+import BumpFroshModal from './BumpFroshModal';
 
 function App() {
   const options = [
@@ -33,7 +34,8 @@ function App() {
     setCredentials,
     lastRefreshedTime,
     activeTab,
-    setActiveTab
+    setActiveTab,
+    isFroshModalOpen,
 
   } = useContext(MyContext);
 
@@ -136,7 +138,7 @@ function App() {
 
   // Component for each floor, to show even and odd floors separately
   const FloorDisplay = ({ gridData, filterCondition }) => (
-    <div>
+    <div style={showFloorplans ? { width: '50vw' } : {}}>
       {gridData.map((dorm) => (
         <div key={dorm.dormName} className={activeTab === dorm.dormName ? '' : 'is-hidden'}>
           {dorm.floors
@@ -158,47 +160,28 @@ function App() {
         <div class="navbar-brand">
           <a class="navbar-item" href="https://ibb.co/c3D21bJ"><img src="https://i.ibb.co/SyRVPQN/Screenshot-2023-12-26-at-10-14-31-PM.png" alt="Screenshot-2023-12-26-at-10-14-31-PM" border="0" /></a>
 
-          <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarBasicExample" onClick={() => setIsBurgerClicked(true)}>
+          {/* <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarBasicExample" onClick={() => setIsBurgerClicked(true)}>
             <span aria-hidden="true"></span>
             <span aria-hidden="true"></span>
             <span aria-hidden="true"></span>
-          </a>
-          {isBurgerClicked && <a class="button">Hello</a>}
+          </a> */}
+          {(!credentials &&  window.innerWidth <= 768) && 
+                  <GoogleLogin auto_select={true}
+                    onSuccess={handleSuccess}
+                    onError={handleError}
+                  />}
+          {(credentials && window.innerWidth <= 768) && <a class="button is-danger" onClick={handleLogout}>
+                  <strong>Log Out</strong>
+                </a>}
         </div>
         
 
 
         <div id="navbarBasicExample" class="navbar-menu">
           <div class="navbar-start">
-            <a class="navbar-item" onClick={() => setCurrPage("Home")}>
-              Home
-            </a>
+            
 
-            <a class="navbar-item" onClick={() => setCurrPage("Recommendations")}>
-              Recommendations
-            </a>
-
-            <div class="navbar-item has-dropdown is-hoverable">
-              <a class="navbar-link">
-                More
-              </a>
-
-              <div class="navbar-dropdown">
-                <a class="navbar-item">
-                  About
-                </a>
-                <a class="navbar-item">
-                  Jobs
-                </a>
-                <a class="navbar-item">
-                  Contact
-                </a>
-
-                <a class="navbar-item">
-                  Report an issue
-                </a>
-              </div>
-            </div>
+            
           </div>
 
           <div class="navbar-end">
@@ -222,6 +205,8 @@ function App() {
       </nav>
       {isModalOpen && <BumpModal />}
       {isSuiteNoteModalOpen && <SuiteNoteModal />}
+      {isFroshModalOpen && <BumpFroshModal />}
+
       
 
       {!credentials && <section class="section">
@@ -311,15 +296,19 @@ function App() {
             {showFloorplans && (
   <div style={{ display: 'flex', flexDirection: 'column' }}>
     {gridData
-      .filter(dorm => dorm.dormName === activeTab)
-      .flatMap(dorm => dorm.floors)
-      .map((_, floorIndex) => (
-        <div style={{ display: 'flex', alignItems: 'center' }}>
-          <FloorDisplay gridData={gridData} filterCondition={(floorNumber) => floorNumber === floorIndex} />
-          <img src={`https://www.cs.hmc.edu/~tlam/digitaldraw/Floorplans/floorplans_${activeTab.toLowerCase()}_${floorIndex + 1}.png`} alt={`Floorplan for floor ${floorIndex}`} />
-        </div>
-      ))}
-  </div>
+  .filter(dorm => dorm.dormName === activeTab)
+  .flatMap(dorm => dorm.floors)
+  .map((_, floorIndex) => (
+    <div style={{ display: 'flex', alignItems: 'center' }}>
+      <FloorDisplay  gridData={gridData} filterCondition={(floorNumber) => floorNumber === floorIndex} />
+      <img 
+        src={`https://www.cs.hmc.edu/~tlam/digitaldraw/Floorplans/floorplans_${activeTab.toLowerCase()}_${floorIndex + 1}.png`} 
+        alt={`Floorplan for floor ${floorIndex}`} 
+        style={{maxWidth: '40vw' }} // Add this line
+      />
+    </div>
+  ))}
+</div>
 )}
         </div>
 

@@ -37,7 +37,7 @@ func GetRoomsHandler(c *gin.Context) {
 	}()
 
 	// Example SQL query
-	rows, err := tx.Query("SELECT room_uuid, dorm, dorm_name, room_id, suite_uuid, max_occupancy, current_occupancy, occupants, pull_priority, sgroup_uuid FROM rooms")
+	rows, err := tx.Query("SELECT room_uuid, dorm, dorm_name, room_id, suite_uuid, max_occupancy, current_occupancy, occupants, pull_priority, sgroup_uuid, has_frosh, frosh_room_type FROM rooms")
 	if err != nil {
 		// Handle query error
 		// print the error to the console
@@ -49,7 +49,7 @@ func GetRoomsHandler(c *gin.Context) {
 	var rooms []models.RoomRaw
 	for rows.Next() {
 		var d models.RoomRaw
-		if err := rows.Scan(&d.RoomUUID, &d.Dorm, &d.DormName, &d.RoomID, &d.SuiteUUID, &d.MaxOccupancy, &d.CurrentOccupancy, &d.Occupants, &d.PullPriority, &d.SGroupUUID); err != nil {
+		if err := rows.Scan(&d.RoomUUID, &d.Dorm, &d.DormName, &d.RoomID, &d.SuiteUUID, &d.MaxOccupancy, &d.CurrentOccupancy, &d.Occupants, &d.PullPriority, &d.SGroupUUID, &d.HasFrosh, &d.FroshRoomType); err != nil {
 			// Handle scan error
 			log.Println(err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Database scan failed"})
@@ -83,7 +83,7 @@ func GetSimpleFormattedDorm(c *gin.Context) {
 		}
 	}()
 
-	rows, err := tx.Query("SELECT room_uuid, dorm, dorm_name, room_id, suite_uuid, max_occupancy, current_occupancy, occupants, pull_priority, has_frosh FROM rooms WHERE UPPER(dorm_name) = UPPER($1)", dormNameParam)
+	rows, err := tx.Query("SELECT room_uuid, dorm, dorm_name, room_id, suite_uuid, max_occupancy, current_occupancy, occupants, pull_priority, has_frosh, frosh_room_type FROM rooms WHERE UPPER(dorm_name) = UPPER($1)", dormNameParam)
 	if err != nil {
 		// Handle query error
 		// print the error to the console
@@ -95,7 +95,7 @@ func GetSimpleFormattedDorm(c *gin.Context) {
 	var rooms []models.RoomRaw
 	for rows.Next() {
 		var d models.RoomRaw
-		if err := rows.Scan(&d.RoomUUID, &d.Dorm, &d.DormName, &d.RoomID, &d.SuiteUUID, &d.MaxOccupancy, &d.CurrentOccupancy, &d.Occupants, &d.PullPriority, &d.HasFrosh); err != nil {
+		if err := rows.Scan(&d.RoomUUID, &d.Dorm, &d.DormName, &d.RoomID, &d.SuiteUUID, &d.MaxOccupancy, &d.CurrentOccupancy, &d.Occupants, &d.PullPriority, &d.HasFrosh, &d.FroshRoomType); err != nil {
 			log.Println(err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Database scan failed on rooms"})
 			return
@@ -136,11 +136,12 @@ func GetSimpleFormattedDorm(c *gin.Context) {
 	for _, r := range rooms {
 		suiteUUIDString := r.SuiteUUID.String()
 		room := models.RoomSimple{
-			RoomNumber:   r.RoomID,
-			PullPriority: r.PullPriority,
-			MaxOccupancy: r.MaxOccupancy,
-			RoomUUID:     r.RoomUUID,
-			HasFrosh:     r.HasFrosh,
+			RoomNumber:    r.RoomID,
+			PullPriority:  r.PullPriority,
+			MaxOccupancy:  r.MaxOccupancy,
+			RoomUUID:      r.RoomUUID,
+			HasFrosh:      r.HasFrosh,
+			FroshRoomType: r.FroshRoomType,
 		}
 
 		if len(r.Occupants) >= 1 {
@@ -996,14 +997,18 @@ func UpdateRoomOccupants(c *gin.Context) {
 		_, err = tx.Exec(`
 			UPDATE Rooms
 			SET pull_priority = jsonb_set(
-				pull_priority,
-				'{inherited}',
-				jsonb_build_object(
-					'year', $1::int,
-					'valid', $2::bool,
-					'drawNumber', $3::float,
-					'hasInDorm', $4::bool
-				)
+				jsonb_set(
+					pull_priority,
+					'{inherited}',
+					jsonb_build_object(
+						'year', $1::int,
+						'valid', $2::bool,
+						'drawNumber', $3::float,
+						'hasInDorm', $4::bool
+					)
+				),
+				'{pullType}',
+				'4'::jsonb
 			)
 			WHERE room_uuid = $5`,
 			alternativeGroupPriority.Year,

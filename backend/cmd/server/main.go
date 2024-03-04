@@ -47,17 +47,17 @@ func main() {
 	router.Use(cors.New(corsConfig))
 
 	// Define your routes
-	router.GET("/rooms", middleware.JWTAuthMiddleware(), handlers.GetRoomsHandler)                           // Read
-	router.GET("/rooms/simple/:dormName", middleware.JWTAuthMiddleware(), handlers.GetSimpleFormattedDorm)   // Read
-	router.GET("/rooms/simpler/:dormName", middleware.JWTAuthMiddleware(), handlers.GetSimplerFormattedDorm) // Read
-	router.POST("/rooms/:roomuuid", middleware.JWTAuthMiddleware(), handlers.UpdateRoomOccupants)            // Write
-	router.GET("/users", middleware.JWTAuthMiddleware(), handlers.GetUsers)                                  // Read
-	router.GET("/users/idmap", middleware.JWTAuthMiddleware(), handlers.GetUsersIdMap)
-	router.POST("/suites/design/:suiteuuid", middleware.JWTAuthMiddleware(), handlers.SetSuiteDesign)
+	router.GET("/rooms", middleware.JWTAuthMiddleware(false), handlers.GetRoomsHandler)                           // Read
+	router.GET("/rooms/simple/:dormName", middleware.JWTAuthMiddleware(false), handlers.GetSimpleFormattedDorm)   // Read
+	router.GET("/rooms/simpler/:dormName", middleware.JWTAuthMiddleware(false), handlers.GetSimplerFormattedDorm) // Read
+	router.POST("/rooms/:roomuuid", middleware.JWTAuthMiddleware(false), handlers.UpdateRoomOccupants)            // Write
+	router.GET("/users", middleware.JWTAuthMiddleware(false), handlers.GetUsers)                                  // Read
+	router.GET("/users/idmap", middleware.JWTAuthMiddleware(false), handlers.GetUsersIdMap)
+	router.POST("/suites/design/:suiteuuid", middleware.JWTAuthMiddleware(false), handlers.SetSuiteDesign)
 
-	router.POST("/frosh/:roomuuid", middleware.JWTAuthMiddleware(), handlers.AddFroshHandler)
-	router.DELETE("/frosh/:roomuuid", middleware.JWTAuthMiddleware(), handlers.RemoveFroshHandler)
-	router.POST("/frosh/bump/:roomuuid", middleware.JWTAuthMiddleware(), handlers.BumpFroshHandler)
+	router.POST("/frosh/:roomuuid", middleware.JWTAuthMiddleware(true), handlers.AddFroshHandler)
+	router.DELETE("/frosh/:roomuuid", middleware.JWTAuthMiddleware(true), handlers.RemoveFroshHandler)
+	router.POST("/frosh/bump/:roomuuid", middleware.JWTAuthMiddleware(false), handlers.BumpFroshHandler)
 
 	// Start the server
 	router.Run(config.ServerAddress)

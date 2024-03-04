@@ -202,8 +202,8 @@ func CORSMiddleware() gin.HandlerFunc {
 	}
 }
 
-// JWTAuthMiddleware checks if the JWT token is present and valid
-func JWTAuthMiddleware() gin.HandlerFunc {
+// JWTAuthMiddleware checks if the JWT token is present and valid default value to false
+func JWTAuthMiddleware(requiresAdmin bool) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		const BEARER_SCHEMA = "Bearer "
 		authHeader := c.GetHeader("Authorization")
@@ -239,6 +239,14 @@ func JWTAuthMiddleware() gin.HandlerFunc {
 		if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 			// print type of claims
 			if email, ok := claims["email"].(string); ok && strings.HasSuffix(email, "@g.hmc.edu") {
+				if requiresAdmin { // admins are tlam, smao
+					user := strings.Split(email, "@")[0]
+					if user != "smao" && user != "tlam" {
+						c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized access to admin endpoint"})
+						return
+					}
+				}
+
 				c.Set("email", email) // Pass the email to the next middleware or handler
 				log.Println("Email:", email)
 				c.Next()
