@@ -124,65 +124,35 @@ func getGooglePublicKey(token *jwt.Token) (interface{}, error) {
 	return getKeyFunc(token)
 }
 
-func QueueMiddleware(rwMutex *sync.RWMutex) gin.HandlerFunc {
+func QueueMiddleware(requestQueue chan<- *gin.Context) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Determine whether the request is a read or write operation
-		// This could be based on the HTTP method or specific routes
-		isRead := c.Request.Method == "GET" || c.Request.Method == "HEAD" // Add other read methods as needed
-
-		// Store this information in the context
-		c.Set("isRead", isRead)
-
-		// If it's a read operation, we can allow it to proceed in parallel with other reads
-		if isRead {
-			rwMutex.RLock()
-			c.Next()
-			rwMutex.RUnlock()
-		} else {
-			// If it's a write operation, it must be processed sequentially
-			// So we send it to the request processor
-			c.Set("rwMutex", rwMutex) // Pass the mutex for the processor to use
-			c.Next()                  // The actual locking and unlocking for writes will be handled in the processor
-		}
+		// if the request is a write operation, enqueue the request
+		// log.Printf("QueueMiddleware triggered for path: %s", c.Request.URL.Path)
+		doneChan := make(chan bool, 1) // Channel to signal completion of request processing
+		c.Set("doneChan", doneChan)    // Pass the channel along with the context
+		requestQueue <- c              // Enqueue the context
 	}
 }
 
 func RequestProcessor(requestQueue <-chan *gin.Context) {
 	for c := range requestQueue {
-		// Retrieve the mutex from the context
-		val, exists := c.Get("rwMutex")
+		// log.Print("Start processing request +", c.Request.URL.Path)
+		c.Next() // Process the request
+
+		// Wait for the request to be processed
+		doneChan, exists := c.Get("doneChan")
 		if !exists {
-			// handle the error, the mutex was not found
-			continue
-		}
-		rwMutex, ok := val.(*sync.RWMutex)
-		if !ok {
-			// handle the error, the type assertion was not successful
+			log.Print("Error: doneChan not found in context for request processor +", c.Request.URL.Path)
 			continue
 		}
 
-		// Retrieve the request type (read/write) from the context
-		val, exists = c.Get("isRead")
-		if !exists {
-			// handle the error, the request type was not found
-			continue
-		}
-		isRead, ok := val.(bool)
-		if !ok {
-			// handle the error, the type assertion was not successful
-			continue
-		}
+		// Wait for the doneChan to receive a signal
+		<-doneChan.(chan bool)
+		// log.Print("Finished processing request +", c.Request.URL.Path)
 
-		if isRead {
-			// It's a read request, already handled in the middleware
-			// You might want to put some logic here if needed
-		} else {
-			// It's a write request, so we lock for writing
-			rwMutex.Lock()
-			// The actual processing logic goes here...
-			// ... (handle the request)
-			rwMutex.Unlock()
-		}
+		// log.Print("Sleeping for 10 seconds")
+		// time.Sleep(10 * time.Second) // Simulate processing time
+		// log.Print("Woke up")
 	}
 }
 

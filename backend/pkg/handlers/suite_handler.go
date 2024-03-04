@@ -15,6 +15,29 @@ import (
 )
 
 func SetSuiteDesign(c *gin.Context) {
+	// Retrieve the doneChan from the context
+	doneChanInterface, exists := c.Get("doneChan")
+	if !exists {
+		// If for some reason it doesn't exist, log an error and return
+		log.Print("Error: doneChan not found in context")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	// Assert the type of doneChan to be a chan bool
+	doneChan, ok := doneChanInterface.(chan bool)
+	if !ok {
+		// If the assertion fails, log an error and return
+		log.Print("Error: doneChan is not of type chan bool")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	// Ensure that a signal is sent to doneChan when the function exits
+	defer func() {
+		close(doneChan)
+	}()
+
 	suiteUUID := c.Param("suiteuuid")
 
 	var suiteDesignUpdateReq models.SuiteDesignUpdateRequest
