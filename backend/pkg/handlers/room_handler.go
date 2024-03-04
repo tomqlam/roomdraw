@@ -603,7 +603,7 @@ func UpdateRoomOccupants(c *gin.Context) {
 		// query all the rooms and ensure that they are full
 		var roomsInSuite []models.RoomRaw
 
-		rows, err := tx.Query("SELECT room_uuid, dorm, dorm_name, room_id, suite_uuid, max_occupancy, current_occupancy, occupants, pull_priority, sgroup_uuid FROM rooms WHERE suite_uuid = $1", currentRoomInfo.SuiteUUID)
+		rows, err := tx.Query("SELECT room_uuid, dorm, dorm_name, room_id, suite_uuid, max_occupancy, current_occupancy, occupants, pull_priority, sgroup_uuid, has_frosh FROM rooms WHERE suite_uuid = $1", currentRoomInfo.SuiteUUID)
 		if err != nil {
 			// Handle query error
 			// print the error to the console
@@ -615,7 +615,7 @@ func UpdateRoomOccupants(c *gin.Context) {
 
 		for rows.Next() {
 			var r models.RoomRaw
-			if err := rows.Scan(&r.RoomUUID, &r.Dorm, &r.DormName, &r.RoomID, &r.SuiteUUID, &r.MaxOccupancy, &r.CurrentOccupancy, &r.Occupants, &r.PullPriority, &r.SGroupUUID); err != nil {
+			if err := rows.Scan(&r.RoomUUID, &r.Dorm, &r.DormName, &r.RoomID, &r.SuiteUUID, &r.MaxOccupancy, &r.CurrentOccupancy, &r.Occupants, &r.PullPriority, &r.SGroupUUID, &r.HasFrosh); err != nil {
 				// Handle scan error
 				log.Println(err)
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Database scan failed on rooms for pull priority"})
@@ -627,7 +627,7 @@ func UpdateRoomOccupants(c *gin.Context) {
 
 		for _, roomInSuite := range roomsInSuite {
 			if roomInSuite.CurrentOccupancy < roomInSuite.MaxOccupancy && !roomInSuite.HasFrosh && roomInSuite.RoomUUID != currentRoomInfo.RoomUUID {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "One or more rooms in the suite are not full"})
+				c.JSON(http.StatusBadRequest, gin.H{"error": "One or more rooms in the suite are not full " + roomInSuite.RoomID})
 				tx.Rollback()
 				return
 			}
