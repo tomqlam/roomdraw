@@ -256,6 +256,8 @@ func BumpFroshHandler(c *gin.Context) {
 			return
 		}
 	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Frosh bumped from room" + originalRoom.RoomID + " to room " + targetRoom.RoomID})
 }
 
 func BumpFroshAtwoodHelper(tx *sql.Tx, originalRoom models.RoomRaw, targetRoom models.RoomRaw) error {
