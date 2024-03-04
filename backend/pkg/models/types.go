@@ -108,6 +108,9 @@ type SuiteRaw struct {
 	Rooms           UUIDArray `db:"rooms"`
 	AlternativePull bool      `db:"alternative_pull"`
 	SuiteDesign     string    `db:"suite_design"`
+	CanLockPull     bool      `db:"can_lock_pull"`
+	LockPulledRoom  uuid.UUID `db:"lock_pulled_room"`
+	ReslifeRoom     uuid.UUID `db:"reslife_room"`
 }
 
 type DormSimple struct {
@@ -182,7 +185,6 @@ type SuiteGroupRaw struct {
 	SGroupPriority string    `db:"sgroup_priority"`
 	Rooms          UUIDArray `db:"rooms"`
 	Disbanded      bool      `db:"disbanded"`
-	CanLockPull    bool      `db:"can_lock_pull"`
 	LockPulledRoom uuid.UUID `db:"contains_lock_pull"`
 	ReslifeRoom    uuid.UUID `db:"reslife_room"`
 }

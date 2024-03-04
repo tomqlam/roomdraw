@@ -575,7 +575,7 @@ func UpdateRoomOccupants(c *gin.Context) {
 		// get suite info for the room
 		suiteInfo := models.SuiteRaw{}
 
-		err = tx.QueryRow("SELECT suite_uuid, dorm, dorm_name, floor, room_count, rooms, alternative_pull FROM suites WHERE suite_uuid = $1", currentRoomInfo.SuiteUUID).Scan(
+		err = tx.QueryRow("SELECT suite_uuid, dorm, dorm_name, floor, room_count, rooms, alternative_pull, can_lock_pull FROM suites WHERE suite_uuid = $1", currentRoomInfo.SuiteUUID).Scan(
 			&suiteInfo.SuiteUUID,
 			&suiteInfo.Dorm,
 			&suiteInfo.DormName,
@@ -583,10 +583,18 @@ func UpdateRoomOccupants(c *gin.Context) {
 			&suiteInfo.RoomCount,
 			&suiteInfo.Rooms,
 			&suiteInfo.AlternativePull,
+			&suiteInfo.CanLockPull,
 		)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to query suite info from suites table"})
 			tx.Rollback()
+		}
+
+		// ensure that lock pull is allowed for the suite
+		if !suiteInfo.CanLockPull {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Lock pull is not allowed for the suite"})
+			tx.Rollback()
+			return
 		}
 
 		// query all the rooms and ensure that they are full
@@ -615,7 +623,7 @@ func UpdateRoomOccupants(c *gin.Context) {
 		}
 
 		for _, roomInSuite := range roomsInSuite {
-			if roomInSuite.CurrentOccupancy < roomInSuite.MaxOccupancy && roomInSuite.RoomUUID != currentRoomInfo.RoomUUID {
+			if roomInSuite.CurrentOccupancy < roomInSuite.MaxOccupancy && !roomInSuite.HasFrosh && roomInSuite.RoomUUID != currentRoomInfo.RoomUUID {
 				c.JSON(http.StatusBadRequest, gin.H{"error": "One or more rooms in the suite are not full"})
 				tx.Rollback()
 				return
