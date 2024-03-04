@@ -101,7 +101,7 @@ function App() {
   'nphillips@g.hmc.edu',
   'igodoy@g.hmc.edu',
   'rpreis@g.hmc.edu',
-  'chschofield@h.hmc.edu',
+  'chschofield@g.hmc.edu',
   'hkenyatta@g.hmc.edu',
   'wosong@g.hmc.edu',
     ]
