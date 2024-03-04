@@ -8,6 +8,7 @@ import { GoogleLogin } from '@react-oauth/google';
 import { jwtDecode } from "jwt-decode";
 import SuiteNoteModal from './SuiteNoteModal';
 import { googleLogout } from '@react-oauth/google';
+import BumpFroshModal from './BumpFroshModal';
 
 function App() {
   const options = [
@@ -33,7 +34,8 @@ function App() {
     setCredentials,
     lastRefreshedTime,
     activeTab,
-    setActiveTab
+    setActiveTab,
+    isFroshModalOpen,
 
   } = useContext(MyContext);
 
@@ -203,6 +205,8 @@ function App() {
       </nav>
       {isModalOpen && <BumpModal />}
       {isSuiteNoteModalOpen && <SuiteNoteModal />}
+      {isFroshModalOpen && <BumpFroshModal />}
+
       
 
       {!credentials && <section class="section">

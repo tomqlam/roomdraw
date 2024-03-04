@@ -20,6 +20,8 @@ export const MyContextProvider = ({ children }) => {
     const [pullError, setPullError] = useState("There was an unknown error. Please try again."); // text of error showig up when you can't pull
     const [credentials, setCredentials] = useState(null); // jwt token for user
     const [lastRefreshedTime, setLastRefreshedTime] = useState(new Date()); // last time the page was refreshed
+    const [isSuiteNoteModalOpen, setIsSuiteNoteModalOpen] = useState(false); // If suite note modal 
+    const [isFroshModalOpen, setIsFroshModalOpen] = useState(false); // If frosh modal is open
     
     // Initialize active tab state from localStorage or default to 'Atwood'
     const [activeTab, setActiveTab] = useState(() => {
@@ -31,7 +33,6 @@ export const MyContextProvider = ({ children }) => {
         const selectedID = localStorage.getItem('selectedID');
         return selectedID !== null ? selectedID : '8'; //TODO 
     });
-    const [isSuiteNoteModalOpen, setIsSuiteNoteModalOpen] = useState(false); // If suite note modal 
 
     const handleErrorFromTokenExpiry = (data) => {
         if (data.error === "Invalid token") {
@@ -277,7 +278,9 @@ export const MyContextProvider = ({ children }) => {
         setLastRefreshedTime,
         activeTab,
         setActiveTab,
-        handleErrorFromTokenExpiry
+        handleErrorFromTokenExpiry,
+        isFroshModalOpen,
+        setIsFroshModalOpen
     };
 
     return (

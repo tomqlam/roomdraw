@@ -283,6 +283,7 @@ function BumpModal() {
 
 
   return (
+    
     <div className="modal is-active">
       <div className="modal-background"></div>
       <div className="modal-card">
@@ -294,25 +295,7 @@ function BumpModal() {
 
           <button onClick={() => postToFrosh(selectedRoomObject)}>Add Frosh</button>
 
-
-          {selectedRoomObject.hasFrosh && (
-            <div>
-              <label className="label">Bump these frosh to room:</label>
-              <div className="select" style={{ marginRight: "10px" }}>
-                <select value={selectedRoomObject} onChange={() => console.log("lol")}>
-                  <option value="">Select a room to bump frosh to</option>
-                  {rooms && rooms
-                    .filter(room => !room.HasFrosh && room.FroshRoomType === selectedRoomObject.froshRoomType && dormMapping[room.Dorm] === activeTab)
-                    .map((room, index) => (
-                      <option key={index} value={room.RoomID}>Room {room.RoomID}</option>
-                    ))
-                  }
-                </select>
-              </div>
-            </div>
-          )}
-
-          {!selectedRoomObject.hasFrosh && <div>
+          {<div>
             <div>
               <label className="label">{`Reassign Occupant${selectedRoomObject.maxOccupancy > 1 ? "s" : ""}`}</label>
 
