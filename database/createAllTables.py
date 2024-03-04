@@ -23,6 +23,11 @@ print(CONNSTR)
 engine = create_engine(CONNSTR)
 
 with engine.connect() as connection:
+    with open('DropTables.sql', 'r') as file:
+        query = file.read()
+        result = connection.execute(text(query))
+        connection.commit()
+        
     with open('CreateSuitesTable.sql', 'r') as file:
         query = file.read()
         result = connection.execute(text(query))
