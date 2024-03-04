@@ -36,7 +36,7 @@ function BumpModal() {
   const [roomsWhoCanAlternatePull, setRoomsWhoCanAlternatePull] = useState([["Example Room Number", "Example Room UUID"]]);
   const [peopleAlreadyInRoom, setPeopleAlreadyInRoom] = useState([]); // list of numeric IDs of people already in the Room
   const [loadingSubmit, setLoadingSubmit] = useState(false);
-  const [loadingClearPerson, setLoadingClearPerson] = useState(false);
+  const [loadingClearPerson, setLoadingClearPerson] = useState([]);
   const [loadingClearRoom, setLoadingClearRoom] = useState(false);
 
   useEffect(() => {
@@ -105,7 +105,7 @@ function BumpModal() {
   };
   const closeModal = () => {
     setLoadingSubmit(false);
-    setLoadingClearPerson(false);
+    setLoadingClearPerson(loadingClearPerson.map((person) => false));
     setLoadingClearRoom(false);
     setShowModalError(false);
     setPullError("");
@@ -203,7 +203,9 @@ function BumpModal() {
             if (data.error === "One or more of the proposed occupants is already in a room") {
               console.log("Someone's already there rrror:");
               console.log(data.occupants);
-              setPeopleAlreadyInRoom(data.occupants);
+              setPeopleAlreadyInRoom((data.occupants));
+              setLoadingClearPerson(data.occupants.map((person) => false));
+            
               const names = data.occupants.map(getNameById).join(', ');
               setPullError("Please remove " + names + " from their existing room");
 
@@ -241,7 +243,7 @@ function BumpModal() {
     // }
   };
 
-  const handleClearRoom = (roomUUID, closeModalBool) => {
+  const handleClearRoom = (roomUUID, closeModalBool, personIndex) => {
     return new Promise((resolve) => {
       fetch(`https://www.cs.hmc.edu/~tlam/digitaldraw/api/rooms/${roomUUID}`, {
         method: 'POST',
@@ -254,8 +256,12 @@ function BumpModal() {
           pullType: 1,
         }),
       })
-        .then(response => response.json())
+        .then(response => {
+          console.log("Fetch response status:", response.status);  // Add this line
+          return response;
+        })
         .then(data => {
+          console.log("Received response from clearing room");
           if (data.error) {
             if (handleErrorFromTokenExpiry(data)) {
               return;
@@ -268,9 +274,17 @@ function BumpModal() {
 
           } else {
             // no error 
+            console.log("Refreshing and settingloadClearPeron");
             setRefreshKey(refreshKey + 1);
             resolve(true);
-            setLoadingClearPerson(false);
+            if (personIndex !== -1) {
+              setLoadingClearPerson(loadingClearPerson.filter((_, itemIndex) => itemIndex !== personIndex));
+              setPeopleAlreadyInRoom(peopleAlreadyInRoom.filter((_, itemIndex) => itemIndex !== personIndex));
+              setShowModalError("");
+            }
+            if (closeModalBool) {
+              closeModal();
+            }
 
           }
 
@@ -366,9 +380,9 @@ function BumpModal() {
           {showModalError && (<p class="help is-danger">{pullError}</p>)}
           {peopleAlreadyInRoom.map((person, index) => (
             <div key={index} style={{ marginTop: '5px' }} className="field">
-              <button className={`button is-danger ${loadingClearPerson ? 'is-loading' : ''}`} onClick={() => {
-                setLoadingClearPerson(true);
-                handleClearRoom(getRoomUUIDFromUserID(person), false);
+              <button className={`button is-danger ${loadingClearPerson[index] ? 'is-loading' : ''}`} onClick={() => {
+                setLoadingClearPerson(loadingClearPerson.map((item, itemIndex) => itemIndex === index ? true : item));                
+                handleClearRoom(getRoomUUIDFromUserID(person), false, index);
               }}>Clear {getNameById(person)}'s existing room</button>
             </div>
           ))}
@@ -378,7 +392,7 @@ function BumpModal() {
           <button className={`button is-primary ${loadingSubmit ? 'is-loading' : ''}`} onClick={handleSubmit}>Update room</button>
           <button className={`button is-danger ${loadingClearRoom ? 'is-loading' : ''}`} onClick={() => {
             setLoadingClearRoom(true);
-            handleClearRoom(selectedRoomObject.roomUUID, true);
+            handleClearRoom(selectedRoomObject.roomUUID, true, -1);
           }}>Clear room</button>
         </footer>
       </div>
