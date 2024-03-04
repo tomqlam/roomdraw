@@ -266,6 +266,11 @@ function BumpModal() {
             resolve(false);
 
 
+          } else {
+            // no error 
+            setRefreshKey(refreshKey + 1);
+            resolve(true);
+
           }
 
         })

@@ -134,8 +134,6 @@ func QueueMiddleware(requestQueue chan<- *gin.Context) gin.HandlerFunc {
 
 func RequestProcessor(requestQueue <-chan *gin.Context) {
 	for c := range requestQueue {
-		c.Next() // Process the request
-
 		// Wait for the request to be processed
 		doneChan, exists := c.Get("doneChan")
 		if !exists {
@@ -143,8 +141,10 @@ func RequestProcessor(requestQueue <-chan *gin.Context) {
 			continue
 		}
 
-		// set timeout time to 10 seconds
-		timeout := time.After(10 * time.Second)
+		c.Next() // Process the request
+
+		// set timeout time to 5 seconds
+		timeout := time.After(5 * time.Second)
 
 		// Wait for the doneChan to receive a signal
 		select {
@@ -154,6 +154,7 @@ func RequestProcessor(requestQueue <-chan *gin.Context) {
 			log.Print("Request processing timed out +", c.Request.URL.Path)
 			close(doneChan.(chan bool))
 		}
+
 		// log.Print("Finished processing request +", c.Request.URL.Path)
 
 		// log.Print("Sleeping for 10 seconds")
