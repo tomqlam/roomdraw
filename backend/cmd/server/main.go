@@ -39,12 +39,13 @@ func main() {
 
 	// Apply the middleware globally
 	router.Use(cors.New(corsConfig))
+	router.Use(middleware.JWTAuthMiddleware(false))
 
 	// Start the request processor goroutine for write requests
 	go middleware.RequestProcessor(requestQueue)
 
 	// Group routes by read and write operations
-	readGroup := router.Group("/").Use(middleware.JWTAuthMiddleware(false))
+	readGroup := router.Group("/").Use()
 	{
 		// Define read-only routes here
 		readGroup.GET("/rooms", handlers.GetRoomsHandler)
@@ -55,7 +56,7 @@ func main() {
 	}
 
 	// For write operations, use a separate group and apply the queue middleware
-	writeGroup := router.Group("/").Use(middleware.JWTAuthMiddleware(false), middleware.QueueMiddleware(requestQueue))
+	writeGroup := router.Group("/").Use(middleware.QueueMiddleware(requestQueue))
 	{
 		// Define write routes here
 		writeGroup.POST("/rooms/:roomuuid", handlers.UpdateRoomOccupants)
