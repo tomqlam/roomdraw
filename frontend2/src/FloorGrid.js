@@ -247,13 +247,8 @@ function FloorGrid({ gridData }) {
       {((activeTab === 'Atwood' || activeTab === 'Drinkward') || activeTab === 'Case') && <div style={roomNumberStyle}><strong>Occupant 3</strong></div>}
 {      activeTab === 'Case' && <div style={roomNumberStyle}><strong>Occupant 4</strong></div>
 }
-      {[...gridData.suites].sort((a, b) => {
-        const firstRoomNumberA = a.rooms[0].roomNumber;
-        const firstRoomNumberB = b.rooms[0].roomNumber;
-        return firstRoomNumberA.localeCompare(firstRoomNumberB);
-      }).map((suite, suiteIndex) => (
-        suite.rooms.sort((a, b) => String(a.roomNumber).localeCompare(String(b.roomNumber)))
-          .map((room, roomIndex) => (
+{[...gridData.suites].map((suite, suiteIndex) => (
+    suite.rooms.map((room, roomIndex) => (
             <React.Fragment key={roomIndex}>
               <div
                 style={getGridItemStyle(room, room.maxOccupancy, 1, suiteIndex, room.pullPriority)}

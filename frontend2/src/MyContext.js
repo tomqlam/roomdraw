@@ -139,6 +139,7 @@ export const MyContextProvider = ({ children }) => {
         }
     }
     function fetchRoomsForOneDorm(dorm) {
+        console.log("fetching one dorm");
         fetch(`/rooms/simple/${dorm}`, {
             method: 'GET',
             headers: {
@@ -150,26 +151,32 @@ export const MyContextProvider = ({ children }) => {
                 if (handleErrorFromTokenExpiry(data)) {
                     return;
                 };
+                console.log("reached here");
+                console.log(data.floors[0].suites);
+
 
                 if (Array.isArray(data.floors[0].suites)) {
                     data.floors.forEach(floor => {
                         if (Array.isArray(floor.suites)) {
                             floor.suites.sort((a, b) => {
-                                const firstRoomNumberA = a.rooms[0].roomNumber;
-                                const firstRoomNumberB = b.rooms[0].roomNumber;
-                                return firstRoomNumberA.localeCompare(firstRoomNumberB);
+                                // Sort rooms within each suite
+                                a.rooms.sort((roomA, roomB) => String(roomA.roomNumber).localeCompare(String(roomB.roomNumber)));
+                                b.rooms.sort((roomA, roomB) => String(roomA.roomNumber).localeCompare(String(roomB.roomNumber)));
+
+                                const smallestRoomNumberA = String(a.rooms[0].roomNumber);
+                                const smallestRoomNumberB = String(b.rooms[0].roomNumber);
+                                return smallestRoomNumberA.localeCompare(smallestRoomNumberB);
                             });
                         } else {
                             console.error("floor.suites is not an array:", floor.suites);
                         }
                     });
                 } else {
-                    console.error("data is not an array:", data);
+                    console.error("data.floors[0].suites is not an array:", data.floors[0].suites);
                 }
 
-
-                setGridData(prevGridData => prevGridData.map(item => item.dormName === dorm ? data : item));
                 console.log(data);
+                setGridData(prevGridData => prevGridData.map(item => item.dormName === dorm ? data : item));
             })
             .catch(err => {
                 console.error(`Error fetching rooms for ${dorm}:`, err);
