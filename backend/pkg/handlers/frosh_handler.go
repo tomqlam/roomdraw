@@ -192,6 +192,12 @@ func RemoveFroshHandler(c *gin.Context) { // should be a secured route
 		return
 	}
 
+	err = RemoveLockPull(room.RoomUUID, tx)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to remove lock pull"})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{"message": "Frosh removed from room"})
 }
 
@@ -320,9 +326,15 @@ func BumpFroshHandler(c *gin.Context) {
 			err = errors.New("invalid dorm")
 		}
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
+	}
+
+	err = RemoveLockPull(originalRoom.RoomUUID, tx)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to remove lock pull"})
+		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Frosh bumped from room" + originalRoom.RoomID + " to room " + targetRoom.RoomID})
