@@ -1,5 +1,8 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { MyContext } from './MyContext';
+import { ImageEditorComponent } from '@syncfusion/ej2-react-image-editor';
+import './App.css';
+import * as ReactDOM from 'react-dom';
 
 function SuiteNoteModal() {
 
@@ -22,17 +25,20 @@ function SuiteNoteModal() {
         }
     }, []);
 
-
     const updateSuiteNotes = (notes) => {
-        fetch(`/suites/design/${selectedSuiteObject.suiteUUID}`, {
+        const url = `/suites/design/${selectedSuiteObject.suiteUUID}`;
+
+        const formData = new FormData();
+        const fileField = document.querySelector('input[type="file"]');
+
+        formData.append('suite_design', fileField.files[0]);
+
+        fetch(url, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
                 'Authorization': `Bearer ${localStorage.getItem('jwt')}`
             },
-            body: JSON.stringify({
-                SuiteDesign: notes,
-            }),
+            body: formData,
         })
             .then(response => response.json())
             .then(data => {
@@ -43,13 +49,41 @@ function SuiteNoteModal() {
                     setIsSuiteNoteModalOpen(false);
                     setRefreshKey(prevKey => prevKey + 1);
                     console.log("refreshing");
-
                 }
             })
             .catch((error) => {
                 console.error('Error:', error);
             });
     }
+
+
+    // const updateSuiteNotes = (notes) => {
+    //     fetch(`/suites/design/${selectedSuiteObject.suiteUUID}`, {
+    //         method: 'POST',
+    //         headers: {
+    //             'Content-Type': 'application/json',
+    //             'Authorization': `Bearer ${localStorage.getItem('jwt')}`
+    //         },
+    //         body: JSON.stringify({
+    //             SuiteDesign: notes,
+    //         }),
+    //     })
+    //         .then(response => response.json())
+    //         .then(data => {
+    //             if (data.error) {
+    //                 console.log(data.error);
+    //             } else {
+    //                 // updated suite successfully 
+    //                 setIsSuiteNoteModalOpen(false);
+    //                 setRefreshKey(prevKey => prevKey + 1);
+    //                 console.log("refreshing");
+
+    //             }
+    //         })
+    //         .catch((error) => {
+    //             console.error('Error:', error);
+    //         });
+    // }
 
 
     return (
@@ -61,6 +95,10 @@ function SuiteNoteModal() {
                     <button className="delete" aria-label="close" onClick={() => setIsSuiteNoteModalOpen(false)}></button>
                 </header>
                 <section className="modal-card-body">
+                    <input type="file" id="fileUpload" />
+                    <div id="container" style={{ width: '100%', height: '100%' }}>
+    <ImageEditorComponent />
+</div>
                     <textarea
                         className="textarea"
                         placeholder="Enter information about genderlocking, suite culture, etc. here."
@@ -72,7 +110,7 @@ function SuiteNoteModal() {
                     <button className={`button is-primary ${loadingSubmit && "is-loading"}`} onClick={() => {
                         setLoadingSubmit(true);
                         updateSuiteNotes(suiteNotes);
-                        }}>Submit</button>
+                    }}>Submit</button>
                     <button className={`button is-danger ${loadingClearNotes && "is-loading"}`} onClick={() => {
                         setLoadingClearNotes(true);
                         setSuiteNotes('');

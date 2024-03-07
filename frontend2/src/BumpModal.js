@@ -338,7 +338,13 @@ function BumpModal() {
           placeholder={`Select Occupant ${index}`}
           value={selectedOccupants[index-1]}
           menuPortalTarget={document.body} 
-          styles={{ menuPortal: base => ({ ...base, zIndex: 9999 })}}
+          styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }),
+          option: (provided, state) => ({
+            ...provided,
+            color: 'red',
+            backgroundColor: 'blue'
+          }),
+        }}
           onChange={(selectedOption) => handleDropdownChange(index, selectedOption)}
           options={userMap && Object.keys(userMap)
             .sort((a, b) => {
