@@ -274,11 +274,11 @@ export const MyContextProvider = ({ children }) => {
         if (id && userMap) {
             id = id.toString();
             if (userMap[id] === undefined) {
-                return 'Empty';
+                return '';
             }
             return `${userMap[id].FirstName} ${userMap[id].LastName}`;
         }
-        return "Empty";
+        return "";
 
     };
 
