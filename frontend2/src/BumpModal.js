@@ -341,8 +341,8 @@ function BumpModal() {
           styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }),
           option: (provided, state) => ({
             ...provided,
-            color: 'red',
-            backgroundColor: 'blue'
+            // color: 'red',
+            // backgroundColor: 'blue'
           }),
         }}
           onChange={(selectedOption) => handleDropdownChange(index, selectedOption)}
