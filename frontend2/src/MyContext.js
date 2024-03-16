@@ -197,6 +197,27 @@ export const MyContextProvider = ({ children }) => {
                     if (handleErrorFromTokenExpiry(data)) {
                         return;
                     };
+
+                    if (Array.isArray(data.floors[0].suites)) {
+                        data.floors.forEach(floor => {
+                            if (Array.isArray(floor.suites)) {
+                                floor.suites.sort((a, b) => {
+                                    // Sort rooms within each suite
+                                    a.rooms.sort((roomA, roomB) => String(roomA.roomNumber).localeCompare(String(roomB.roomNumber)));
+                                    b.rooms.sort((roomA, roomB) => String(roomA.roomNumber).localeCompare(String(roomB.roomNumber)));
+
+                                    const smallestRoomNumberA = String(a.rooms[0].roomNumber);
+                                    const smallestRoomNumberB = String(b.rooms[0].roomNumber);
+                                    return smallestRoomNumberA.localeCompare(smallestRoomNumberB);
+                                });
+                            } else {
+                                console.error("floor.suites is not an array:", floor.suites);
+                            }
+                        });
+                    } else {
+                        console.error("data.floors[0].suites is not an array:", data.floors[0].suites);
+                    }
+
                     return data;
                 })
                 .catch(err => {
