@@ -22,7 +22,7 @@ export const MyContextProvider = ({ children }) => {
     const [lastRefreshedTime, setLastRefreshedTime] = useState(new Date()); // last time the page was refreshed
     const [isSuiteNoteModalOpen, setIsSuiteNoteModalOpen] = useState(false); // If suite note modal 
     const [isFroshModalOpen, setIsFroshModalOpen] = useState(false); // If frosh modal is open
-
+    const [suiteDimensions, setSuiteDimensions] = useState({ width: 0, height: 0 }); // dimensions of the suite
     // Initialize active tab state from localStorage or default to 'Atwood'
     const [activeTab, setActiveTab] = useState(() => {
         const savedTab = localStorage.getItem('activeTab');
@@ -325,7 +325,9 @@ export const MyContextProvider = ({ children }) => {
         setActiveTab,
         handleErrorFromTokenExpiry,
         isFroshModalOpen,
-        setIsFroshModalOpen
+        setIsFroshModalOpen,
+        suiteDimensions,
+        setSuiteDimensions
     };
 
     return (

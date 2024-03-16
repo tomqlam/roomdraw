@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useRef, useEffect, createRef} from 'react';
 import { useContext } from 'react';
 import { MyContext } from './MyContext';
 import 'bulma/css/bulma.min.css';
@@ -9,6 +9,8 @@ function FloorGrid({ gridData }) {
     setIsModalOpen,
     setSelectedItem,
     selectedOccupants,
+    setSuiteDimensions,
+    isSuiteNoteModalOpen,
     setSelectedOccupants,
     setSelectedSuiteObject,
     getNameById,
@@ -72,6 +74,22 @@ function FloorGrid({ gridData }) {
     overflow: 'auto',
 
   };
+  const divRefs = useRef(gridData.suites.map(() => createRef()));
+
+  const divRef = useRef(null);
+
+  // useEffect(() => {
+  //   if (divRef.current && isSuiteNoteModalOpen && divRef.current.offsetWidth !== 0 && divRef.current.offsetHeight !== 0) {
+  //     console.log("Selected room object;");
+  //     console.log('Width:', divRef.current.offsetWidth);
+  //     console.log('Height:', divRef.current.offsetHeight);
+  //     // setSuiteDimensions({
+  //     //   width: divRef.current.offsetWidth,
+  //     //   height: divRef.current.offsetHeight
+  //     // });
+  //   }
+  // }, [isSuiteNoteModalOpen]);
+
 
   // darkens given color by a factor, using match
   function darken(color, factor) {
@@ -84,9 +102,14 @@ function FloorGrid({ gridData }) {
     return `#${newColor.join('')}`;
   }
 
-  const updateSuiteNotes = (room) => {
+  const updateSuiteNotes = (room, ref) => {
     getOccupantsByRoomNumber(room);
     setIsSuiteNoteModalOpen(true);
+    console.log(ref.current);
+    setSuiteDimensions({
+      width: ref.current.offsetWidth,
+      height: ref.current.offsetHeight
+    });
 
 
   }
@@ -248,32 +271,32 @@ function FloorGrid({ gridData }) {
 {      activeTab === 'Case' && <div style={roomNumberStyle}><strong>Occupant 4</strong></div>
 }
 {[...gridData.suites].map((suite, suiteIndex) => (
-    suite.rooms.map((room, roomIndex) => (
-            <React.Fragment key={roomIndex}>
-              <div
-                style={getGridItemStyle(room, room.maxOccupancy, 1, suiteIndex, room.pullPriority)}
-                onClick={() => handleCellClick(room.roomNumber)}
-              >
-                {room.roomNumber}
-              </div>
-              <div style={getGridItemStyle(room, room.maxOccupancy, 1, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{getPullMethodByRoomNumber(room.roomNumber)}</div>
-              {
-                roomIndex === 0
-                && <div style={{
-                  ...pullMethodStyle, gridRow: `span ${suite.rooms.length}`, backgroundColor: suiteIndex % 2 === 0
-                    ? cellColors.evenSuite // color for even suiteIndex
-                    : cellColors.oddSuite
-                }} onClick={() => updateSuiteNotes(room.roomNumber)}><img src={suite.suiteDesign} alt="Suite Design" /></div>
-
-              }
-              <div style={getGridItemStyle(room, room.maxOccupancy, 1, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{room.hasFrosh ? 'Frosh' : getNameById(room.occupant1)}</div>
-              <div style={getGridItemStyle(room, room.maxOccupancy, 2, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{room.hasFrosh ? 'Frosh' : getNameById(room.occupant2)}</div>
-              {((activeTab === 'Atwood' || activeTab === 'Drinkward')|| activeTab === 'Case') && <div style={getGridItemStyle(room, room.maxOccupancy, 3, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{room.hasFrosh ? 'Frosh' : getNameById(room.occupant3)}</div>}
-              {activeTab === "Case" && <div style={getGridItemStyle(room, room.maxOccupancy, 4, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{room.hasFrosh ? 'Frosh' : getNameById(room.occupant4)}</div>}
-
-            </React.Fragment>
-          ))
-      ))}
+  suite.rooms.map((room, roomIndex) => {
+    return (
+      <React.Fragment key={roomIndex}>
+        <div
+          style={getGridItemStyle(room, room.maxOccupancy, 1, suiteIndex, room.pullPriority)}
+          onClick={() => handleCellClick(room.roomNumber)}
+        >
+          {room.roomNumber}
+        </div>
+        <div style={getGridItemStyle(room, room.maxOccupancy, 1, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{getPullMethodByRoomNumber(room.roomNumber)}</div>
+        {
+          roomIndex === 0
+          && <div style={{
+            ...pullMethodStyle, gridRow: `span ${suite.rooms.length}`, backgroundColor: suiteIndex % 2 === 0
+              ? cellColors.evenSuite // color for even suiteIndex
+              : cellColors.oddSuite
+          }} ref={divRefs.current[suiteIndex]} onClick={() => updateSuiteNotes(room.roomNumber, divRefs.current[suiteIndex])}>{suite.suiteDesign && <img src={suite.suiteDesign} alt={suite.suiteDesign} />}</div>
+        }
+        <div style={getGridItemStyle(room, room.maxOccupancy, 1, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{room.hasFrosh ? 'Frosh' : getNameById(room.occupant1)}</div>
+        <div style={getGridItemStyle(room, room.maxOccupancy, 2, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{room.hasFrosh ? 'Frosh' : getNameById(room.occupant2)}</div>
+        {((activeTab === 'Atwood' || activeTab === 'Drinkward')|| activeTab === 'Case') && <div style={getGridItemStyle(room, room.maxOccupancy, 3, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{room.hasFrosh ? 'Frosh' : getNameById(room.occupant3)}</div>}
+        {activeTab === "Case" && <div style={getGridItemStyle(room, room.maxOccupancy, 4, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{room.hasFrosh ? 'Frosh' : getNameById(room.occupant4)}</div>}
+      </React.Fragment>
+    );
+  })
+))}
 
 
 
