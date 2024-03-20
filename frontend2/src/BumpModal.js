@@ -361,7 +361,10 @@ function BumpModal() {
                     <div style={{ marginBottom: "10px", width: 200 }}>
                       <Select
                         placeholder={`Select Occupant ${index}`}
-                        value={selectedOccupants[index - 1]}
+                        value={userMap && selectedOccupants[index - 1] ? {
+                          value: selectedOccupants[index - 1],
+                          label: `${userMap[selectedOccupants[index - 1]].FirstName} ${userMap[selectedOccupants[index - 1]].LastName}`
+                        } : null}
                         menuPortalTarget={document.body}
                         styles={{
                           menuPortal: base => ({ ...base, zIndex: 9999 }),
