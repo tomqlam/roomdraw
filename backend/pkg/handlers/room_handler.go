@@ -1259,7 +1259,7 @@ func AlternativePull(c *gin.Context, request models.OccupantUpdateRequest) error
 			tx.Rollback()
 			panic(r)
 		} else if err != nil {
-			log.Println("Result for " + userFullName.(string) + ": failed to Alternative Pull room " + roomUUIDParam + " because of error " + r.(error).Error())
+			log.Println("Result for " + userFullName.(string) + ": failed to Alternative Pull room " + roomUUIDParam + " because of error " + err.Error())
 			tx.Rollback()
 		} else {
 			log.Println("Result for " + userFullName.(string) + ": successfully Alternative Pulled room " + roomUUIDParam)

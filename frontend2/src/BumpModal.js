@@ -1,6 +1,7 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { MyContext } from './MyContext';
 import { jwtDecode } from "jwt-decode";
+import Select from "react-select";
 
 
 function BumpModal() {
@@ -116,6 +117,7 @@ function BumpModal() {
     const updatedselectedOccupants = [...selectedOccupants];
     updatedselectedOccupants[index - 1] = value;
     setSelectedOccupants(updatedselectedOccupants);
+    print(selectedOccupants);
     setPeopleAlreadyInRoom([]);
     setShowModalError(false);
     setPullError("");
@@ -189,7 +191,9 @@ function BumpModal() {
           'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
         },
         body: JSON.stringify({
-          proposedOccupants: selectedOccupants.map(Number).filter(num => num !== 0),
+          proposedOccupants: selectedOccupants
+  .filter(occupant => occupant !== '0')
+  .map(occupant => Number(occupant.value)),
           pullType,
           pullLeaderRoom,
         }),
@@ -318,6 +322,7 @@ function BumpModal() {
         </header>
         <section className="modal-card-body">
 
+
           {((jwtDecode(credentials).email == "tlam@g.hmc.edu") || (jwtDecode(credentials).email == "smao@g.hmc.edu")) && <button onClick={() => postToFrosh(selectedRoomObject)}>Add Frosh</button>}
 
           {<div>
@@ -325,34 +330,36 @@ function BumpModal() {
               <label className="label">{`Reassign Occupant${selectedRoomObject.maxOccupancy > 1 ? "s" : ""}`}</label>
 
               {[1, 2, 3, 4].slice(0, selectedRoomObject.maxOccupancy).map((index) => (
-                <div className="field" key={index}>
-                  <div className="control">
-                    <div className="select" style={{ marginRight: "10px" }}>
-                      <select value={selectedOccupants[index - 1]} onChange={(e) => handleDropdownChange(index, e.target.value)}>
-
-                        <option value="">No occupant</option>
-
-                        {userMap && Object.keys(userMap)
-                          .sort((a, b) => {
-                            const nameA = `${userMap[a].FirstName} ${userMap[a].LastName}`;
-                            const nameB = `${userMap[b].FirstName} ${userMap[b].LastName}`;
-                            return nameA.localeCompare(nameB);
-                          })
-                          .map((key, index) => (
-                            <option key={index} value={key}>
-                              {userMap[key].FirstName} {userMap[key].LastName}
-                            </option>
-                          ))}
-
-                      </select>
-                    </div>
-
-
-                  </div>
-
-                </div>
-
-              ))}
+  <div className="field" key={index}>
+    <div className="control">
+      <div style={{ marginBottom: "10px", width: 200 }}>
+        <Select
+          placeholder={`Select Occupant ${index}`}
+          value={selectedOccupants[index-1]}
+          menuPortalTarget={document.body} 
+          styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }),
+          option: (provided, state) => ({
+            ...provided,
+            // color: 'red',
+            // backgroundColor: 'blue'
+          }),
+        }}
+          onChange={(selectedOption) => handleDropdownChange(index, selectedOption)}
+          options={userMap && Object.keys(userMap)
+            .sort((a, b) => {
+              const nameA = `${userMap[a].FirstName} ${userMap[a].LastName}`;
+              const nameB = `${userMap[b].FirstName} ${userMap[b].LastName}`;
+              return nameA.localeCompare(nameB);
+            })
+            .map((key) => ({
+              value: key,
+              label: `${userMap[key].FirstName} ${userMap[key].LastName}`
+            }))}
+        />
+      </div>
+    </div>
+  </div>
+))}
             </div>
             <div>
               <label className="label" >How did they pull this room?</label>

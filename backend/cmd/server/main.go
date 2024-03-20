@@ -60,7 +60,7 @@ func main() {
 	{
 		// Define write routes here
 		writeGroup.POST("/rooms/:roomuuid", handlers.UpdateRoomOccupants)
-		writeGroup.POST("/suites/design/:suiteuuid", handlers.SetSuiteDesign)
+		writeGroup.POST("/suites/design/:suiteuuid", handlers.SetSuiteDesignNew)
 		writeGroup.POST("/frosh/:roomuuid", handlers.AddFroshHandler)
 		writeGroup.DELETE("/frosh/:roomuuid", handlers.RemoveFroshHandler)
 		writeGroup.POST("/frosh/bump/:roomuuid", handlers.BumpFroshHandler)

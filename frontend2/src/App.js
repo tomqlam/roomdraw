@@ -197,6 +197,7 @@ function App() {
   }
 
 
+
   // Component for each floor, to show even and odd floors separately
   const FloorDisplay = ({ gridData, filterCondition }) => (
     <div style={showFloorplans ? { width: '50vw' } : {}}>
@@ -226,23 +227,23 @@ function App() {
             <span aria-hidden="true"></span>
             <span aria-hidden="true"></span>
           </a> */}
-          {(!credentials &&  window.innerWidth <= 768) && 
-                  <GoogleLogin auto_select={true}
-                    onSuccess={handleSuccess}
-                    onError={handleError}
-                  />}
+          {(!credentials && window.innerWidth <= 768) &&
+            <GoogleLogin auto_select={true}
+              onSuccess={handleSuccess}
+              onError={handleError}
+            />}
           {(credentials && window.innerWidth <= 768) && <a class="button is-danger" onClick={handleLogout}>
-                  <strong>Log Out</strong>
-                </a>}
+            <strong>Log Out</strong>
+          </a>}
         </div>
-        
+
 
 
         <div id="navbarBasicExample" class="navbar-menu">
           <div class="navbar-start">
-            
 
-            
+
+
           </div>
 
           <div class="navbar-end">
@@ -268,7 +269,7 @@ function App() {
       {isSuiteNoteModalOpen && <SuiteNoteModal />}
       {isFroshModalOpen && <BumpFroshModal />}
 
-      
+
 
       {!credentials && <section class="section">
         <div style={{ textAlign: 'center' }}>
@@ -361,23 +362,23 @@ function App() {
                 <FloorDisplay gridData={gridData} filterCondition={(floorNumber) => floorNumber === floorIndex} />
               </div>
             ))}
-            {showFloorplans && (
-  <div style={{ display: 'flex', flexDirection: 'column' }}>
-    {gridData
-  .filter(dorm => dorm.dormName === activeTab)
-  .flatMap(dorm => dorm.floors)
-  .map((_, floorIndex) => (
-    <div style={{ display: 'flex', alignItems: 'center' }}>
-      <FloorDisplay  gridData={gridData} filterCondition={(floorNumber) => floorNumber === floorIndex} />
-      <img 
-        src={`https://www.cs.hmc.edu/~tlam/digitaldraw/Floorplans/floorplans_${activeTab.toLowerCase()}_${floorIndex + 1}.png`} 
-        alt={`Floorplan for floor ${floorIndex}`} 
-        style={{maxWidth: '40vw' }} // Add this line
-      />
-    </div>
-  ))}
-</div>
-)}
+          {showFloorplans && (
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              {gridData
+                .filter(dorm => dorm.dormName === activeTab)
+                .flatMap(dorm => dorm.floors)
+                .map((_, floorIndex) => (
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <FloorDisplay gridData={gridData} filterCondition={(floorNumber) => floorNumber === floorIndex} />
+                    <img
+                      src={`https://www.cs.hmc.edu/~tlam/digitaldraw/Floorplans/floorplans_${activeTab.toLowerCase()}_${floorIndex + 1}.png`}
+                      alt={`Floorplan for floor ${floorIndex}`}
+                      style={{ maxWidth: '40vw' }} // Add this line
+                    />
+                  </div>
+                ))}
+            </div>
+          )}
         </div>
 
 

@@ -22,7 +22,7 @@ export const MyContextProvider = ({ children }) => {
     const [lastRefreshedTime, setLastRefreshedTime] = useState(new Date()); // last time the page was refreshed
     const [isSuiteNoteModalOpen, setIsSuiteNoteModalOpen] = useState(false); // If suite note modal 
     const [isFroshModalOpen, setIsFroshModalOpen] = useState(false); // If frosh modal is open
-
+    const [suiteDimensions, setSuiteDimensions] = useState({ width: 0, height: 0 }); // dimensions of the suite
     // Initialize active tab state from localStorage or default to 'Atwood'
     const [activeTab, setActiveTab] = useState(() => {
         const savedTab = localStorage.getItem('activeTab');
@@ -139,6 +139,7 @@ export const MyContextProvider = ({ children }) => {
         }
     }
     function fetchRoomsForOneDorm(dorm) {
+        console.log("fetching one dorm");
         fetch(`https://www.cs.hmc.edu/~tlam/digitaldraw/api/rooms/simple/${dorm}`, {
             method: 'GET',
             headers: {
@@ -150,26 +151,32 @@ export const MyContextProvider = ({ children }) => {
                 if (handleErrorFromTokenExpiry(data)) {
                     return;
                 };
+                console.log("reached here");
+                console.log(data.floors[0].suites);
+
 
                 if (Array.isArray(data.floors[0].suites)) {
                     data.floors.forEach(floor => {
                         if (Array.isArray(floor.suites)) {
                             floor.suites.sort((a, b) => {
-                                const firstRoomNumberA = a.rooms[0].roomNumber;
-                                const firstRoomNumberB = b.rooms[0].roomNumber;
-                                return firstRoomNumberA.localeCompare(firstRoomNumberB);
+                                // Sort rooms within each suite
+                                a.rooms.sort((roomA, roomB) => String(roomA.roomNumber).localeCompare(String(roomB.roomNumber)));
+                                b.rooms.sort((roomA, roomB) => String(roomA.roomNumber).localeCompare(String(roomB.roomNumber)));
+
+                                const smallestRoomNumberA = String(a.rooms[0].roomNumber);
+                                const smallestRoomNumberB = String(b.rooms[0].roomNumber);
+                                return smallestRoomNumberA.localeCompare(smallestRoomNumberB);
                             });
                         } else {
                             console.error("floor.suites is not an array:", floor.suites);
                         }
                     });
                 } else {
-                    console.error("data is not an array:", data);
+                    console.error("data.floors[0].suites is not an array:", data.floors[0].suites);
                 }
 
-
-                setGridData(prevGridData => prevGridData.map(item => item.dormName === dorm ? data : item));
                 console.log(data);
+                setGridData(prevGridData => prevGridData.map(item => item.dormName === dorm ? data : item));
             })
             .catch(err => {
                 console.error(`Error fetching rooms for ${dorm}:`, err);
@@ -190,6 +197,27 @@ export const MyContextProvider = ({ children }) => {
                     if (handleErrorFromTokenExpiry(data)) {
                         return;
                     };
+
+                    if (Array.isArray(data.floors[0].suites)) {
+                        data.floors.forEach(floor => {
+                            if (Array.isArray(floor.suites)) {
+                                floor.suites.sort((a, b) => {
+                                    // Sort rooms within each suite
+                                    a.rooms.sort((roomA, roomB) => String(roomA.roomNumber).localeCompare(String(roomB.roomNumber)));
+                                    b.rooms.sort((roomA, roomB) => String(roomA.roomNumber).localeCompare(String(roomB.roomNumber)));
+
+                                    const smallestRoomNumberA = String(a.rooms[0].roomNumber);
+                                    const smallestRoomNumberB = String(b.rooms[0].roomNumber);
+                                    return smallestRoomNumberA.localeCompare(smallestRoomNumberB);
+                                });
+                            } else {
+                                console.error("floor.suites is not an array:", floor.suites);
+                            }
+                        });
+                    } else {
+                        console.error("data.floors[0].suites is not an array:", data.floors[0].suites);
+                    }
+
                     return data;
                 })
                 .catch(err => {
@@ -246,11 +274,11 @@ export const MyContextProvider = ({ children }) => {
         if (id && userMap) {
             id = id.toString();
             if (userMap[id] === undefined) {
-                return 'Empty';
+                return '';
             }
             return `${userMap[id].FirstName} ${userMap[id].LastName}`;
         }
-        return "Empty";
+        return "";
 
     };
 
@@ -297,7 +325,9 @@ export const MyContextProvider = ({ children }) => {
         setActiveTab,
         handleErrorFromTokenExpiry,
         isFroshModalOpen,
-        setIsFroshModalOpen
+        setIsFroshModalOpen,
+        suiteDimensions,
+        setSuiteDimensions
     };
 
     return (
