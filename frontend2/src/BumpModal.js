@@ -401,7 +401,7 @@ function BumpModal() {
                   {selectedSuiteObject.alternative_pull && roomsWhoCanAlternatePull.map((room, index) => (
                     <option key={index} value={`Alt Pull ${room[1]}`}>Pull w/ 2nd best of {selectedRoomObject.roomNumber} and {room[0]}</option>
                   ))}
-                  <option value="Lock Pull">Lock Pull</option>
+                  {selectedSuiteObject.can_lock_pull && <option value="Lock Pull">Lock Pull</option>}
                 </select>
               </div>
             </div>
