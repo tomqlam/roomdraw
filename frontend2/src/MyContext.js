@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useRef } from 'react';
 
 
 export const MyContext = createContext();
@@ -23,7 +23,25 @@ export const MyContextProvider = ({ children }) => {
     const [isSuiteNoteModalOpen, setIsSuiteNoteModalOpen] = useState(false); // If suite note modal 
     const [isFroshModalOpen, setIsFroshModalOpen] = useState(false); // If frosh modal is open
     const [suiteDimensions, setSuiteDimensions] = useState({ width: 0, height: 0 }); // dimensions of the suite
+    const roomRefs = useRef({}); // references to all the room divs
     // Initialize active tab state from localStorage or default to 'Atwood'
+
+    const getRoomUUIDFromUserID = (userID) => {
+        if (rooms) {
+          for (let room of rooms) {
+    
+            if (room.Occupants && room.Occupants.includes(Number(userID))) {
+              // they are this room
+    
+              return room.RoomUUID;
+            }
+          }
+    
+    
+        }
+        return null;
+      }
+
     const [activeTab, setActiveTab] = useState(() => {
         const savedTab = localStorage.getItem('activeTab');
         return savedTab !== null ? savedTab : 'Atwood';
@@ -328,7 +346,10 @@ export const MyContextProvider = ({ children }) => {
         isFroshModalOpen,
         setIsFroshModalOpen,
         suiteDimensions,
-        setSuiteDimensions
+        setSuiteDimensions,
+        getRoomUUIDFromUserID,
+        roomRefs,
+ 
     };
 
     return (

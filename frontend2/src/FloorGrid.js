@@ -24,6 +24,8 @@ function FloorGrid({ gridData }) {
     selectedRoomObject,
     setIsFroshModalOpen,
     setIsSuiteNoteModalOpen,
+
+    roomRefs,
     activeTab
   } = useContext(MyContext);
 
@@ -39,8 +41,15 @@ function FloorGrid({ gridData }) {
         // If the room exists, resolve the Promise with the list of occupants and the room object
         if (room) {
           setSelectedSuiteObject(suite);
+          print(room.occupant1.toString());
+          print(userMap);
           resolve({
-            occupants: [room.occupant1.toString(), room.occupant2.toString(), room.occupant3.toString(), room.occupant4.toString()],
+            occupants: [
+              room.occupant1 !== 0 ? { value: room.occupant1.toString(), label: `${userMap[room.occupant1].FirstName} ${userMap[room.occupant1].LastName}` } : '',
+              room.occupant2 !== 0 ? { value: room.occupant2.toString(), label: `${userMap[room.occupant2].FirstName} ${userMap[room.occupant2].LastName}` } : '',
+              room.occupant3 !== 0 ? { value: room.occupant3.toString(), label: `${userMap[room.occupant3].FirstName} ${userMap[room.occupant3].LastName}` } : '',
+              room.occupant4 !== 0 ? { value: room.occupant4.toString(), label: `${userMap[room.occupant4].FirstName} ${userMap[room.occupant4].LastName}` } : '',
+            ],
             roomObject: room
           });
           return;
@@ -280,6 +289,8 @@ function FloorGrid({ gridData }) {
         <div
           style={getGridItemStyle(room, room.maxOccupancy, 1, suiteIndex, room.pullPriority)}
           onClick={() => handleCellClick(room.roomNumber)}
+          ref={el => {roomRefs.current[room.roomUUID] = el; }}
+          id={room.roomUUID}
         >
           {room.roomNumber}
         </div>

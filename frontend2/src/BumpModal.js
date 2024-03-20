@@ -29,6 +29,7 @@ function BumpModal() {
     setCredentials,
     handleErrorFromTokenExpiry,
     dormMapping,
+    getRoomUUIDFromUserID
 
   } = useContext(MyContext);
 
@@ -84,21 +85,7 @@ function BumpModal() {
       });
   }
 
-  const getRoomUUIDFromUserID = (userID) => {
-    if (rooms) {
-      for (let room of rooms) {
-
-        if (room.Occupants && room.Occupants.includes(Number(userID))) {
-          // they are this room
-
-          return room.RoomUUID;
-        }
-      }
-
-
-    }
-    return null;
-  }
+  
 
   const handlePullMethodChange = (e) => {
     print(pullMethod);
@@ -113,7 +100,7 @@ function BumpModal() {
     setIsModalOpen(false);
   };
   const handleDropdownChange = (index, value) => {
-
+    print(value);
     const updatedselectedOccupants = [...selectedOccupants];
     updatedselectedOccupants[index - 1] = value;
     setSelectedOccupants(updatedselectedOccupants);
@@ -195,7 +182,7 @@ function BumpModal() {
         },
         body: JSON.stringify({
           proposedOccupants: selectedOccupants
-            .filter(occupant => occupant !== '0')
+            .filter(occupant => occupant !== '')
             .map(occupant => Number(occupant.value)),
           pullType,
           pullLeaderRoom,
@@ -361,10 +348,9 @@ function BumpModal() {
                     <div style={{ marginBottom: "10px", width: 200 }}>
                       <Select
                         placeholder={`Select Occupant ${index}`}
-                        value={userMap && selectedOccupants[index - 1] ? {
-                          value: selectedOccupants[index - 1],
-                          label: `${userMap[selectedOccupants[index - 1]].FirstName} ${userMap[selectedOccupants[index - 1]].LastName}`
-                        } : null}
+                        value={
+                          selectedOccupants[index - 1]
+                        }
                         menuPortalTarget={document.body}
                         styles={{
                           menuPortal: base => ({ ...base, zIndex: 9999 }),

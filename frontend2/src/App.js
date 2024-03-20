@@ -36,6 +36,8 @@ function App() {
     activeTab,
     setActiveTab,
     isFroshModalOpen,
+    getRoomUUIDFromUserID,
+    roomRefs
 
   } = useContext(MyContext);
 
@@ -97,7 +99,7 @@ function App() {
         if (room.Occupants && room.Occupants.includes(Number(selectedID))) {
 
 
-          setMyRoom(`You are in ${room.DormName} ${room.RoomID}.`);
+          setMyRoom(`You are in ${room.DormName} ${room.RoomID}. `);
           return;
         }
       }
@@ -155,6 +157,26 @@ function App() {
       ))}
     </div>
   );
+
+  const handleTakeMeThere = (myLocationString) => {
+    const words = myLocationString.split(' ');
+    console.log(words);
+    if (words[3] !== "in") {
+      setActiveTab(words[3]);
+    }
+
+    // Assume `selectedID` is the ID of the selected room
+    const roomUUID = getRoomUUIDFromUserID(selectedID); // Replace this with the actual function to get the room UUID
+
+    // Delay the scrolling until after the tab has finished switching
+    setTimeout(() => {
+      const roomRef = roomRefs.current[roomUUID];
+      if (roomRef) {
+        roomRef.scrollIntoView({ behavior: 'smooth' });
+      }
+    }, 0);
+  }
+
   return (
     <div>
       <nav class="navbar" role="navigation" aria-label="main navigation">
@@ -220,10 +242,13 @@ function App() {
         <div style={{ textAlign: 'center' }}>
 
           <h1 className="title">You're viewing DigiDraw as {getNameById(selectedID)}. <br /> </h1>
-          <h2 className="subtitle">You are <strong>{getDrawNumberAndYear(selectedID)}</strong>. {myRoom} <br />Click on any room you'd like to change! <br />Last refreshed at {lastRefreshedTime.toLocaleTimeString()}.</h2>
-
+          <h2 className="subtitle">
+            You are <strong>{getDrawNumberAndYear(selectedID)}</strong>. {myRoom} 
+            {myRoom !== "You are not in a room yet." && <a href="#" onClick={() => handleTakeMeThere(myRoom)} style={{ textDecoration: 'underline' }}>Click to jump there!</a>}            <br />Click on any room you'd like to change!
+            <br />Last refreshed at {lastRefreshedTime.toLocaleTimeString()}.
+          </h2>
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-            <span style={{marginRight: '10px'}}>View as:  </span>
+            <span style={{ marginRight: '10px' }}>View as:  </span>
             <select className="select" value={selectedID} onChange={handleNameChange}>
               {userMap && Object.keys(userMap)
                 .sort((a, b) => {
