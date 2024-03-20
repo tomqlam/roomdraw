@@ -222,9 +222,9 @@ function App() {
           <h1 className="title">You're viewing DigiDraw as {getNameById(selectedID)}. <br /> </h1>
           <h2 className="subtitle">You are <strong>{getDrawNumberAndYear(selectedID)}</strong>. {myRoom} <br />Click on any room you'd like to change! <br />Last refreshed at {lastRefreshedTime.toLocaleTimeString()}.</h2>
 
-          <div style={{ display: 'flex', justifyContent: 'center' }}>
-            <select className="select" onChange={handleNameChange}>
-              <option value="">This isn't me</option>
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+            <span style={{marginRight: '10px'}}>View as:  </span>
+            <select className="select" value={selectedID} onChange={handleNameChange}>
               {userMap && Object.keys(userMap)
                 .sort((a, b) => {
                   const nameA = `${userMap[a].FirstName} ${userMap[a].LastName}`.toUpperCase();
