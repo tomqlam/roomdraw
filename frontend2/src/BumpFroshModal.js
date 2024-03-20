@@ -56,6 +56,9 @@ const BumpFroshModal = () => {
         }
     }
 
+    const filteredRooms = rooms && rooms
+        .filter(room => !room.HasFrosh && room.FroshRoomType === selectedRoomObject.froshRoomType && dormMapping[room.Dorm] === activeTab);
+
     return (
         <div className="modal is-active">
             <div className="modal-background"></div>
@@ -65,23 +68,21 @@ const BumpFroshModal = () => {
                     <button className="delete" aria-label="close" onClick={() => setIsFroshModalOpen(false)}></button>
                 </header>
                 <section className="modal-card-body">
-                    <label className="label">Bump these frosh to a new room</label>
-                    <div className="select" style={{ marginRight: "10px" }}>
+                    <label className="label">{filteredRooms.length > 0 ? 'Bump these frosh to a new room' : 'Unbumpable frosh'}</label>                    {filteredRooms.length !== 0 && <div className="select" style={{ marginRight: "10px" }}>
                         <select value={targetRoom} onChange={(event) => handleSelectChange(event)}>
                             <option value="">Select a frosh room</option>
-                            {rooms && rooms
-                                .filter(room => !room.HasFrosh && room.FroshRoomType === selectedRoomObject.froshRoomType && dormMapping[room.Dorm] === activeTab)
+                            {rooms && filteredRooms
                                 .map((room, index) => (
                                     <option key={index} value={room.RoomUUID}>Room {room.RoomID}</option>
                                 ))
                             }
                         </select>
-                    </div>
+                    </div>}
 
 
                 </section>
                 <footer className="modal-card-foot" style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <button className={`button is-primary ${froshBumpLoading ? "is-loading" : ""}`} onClick={handleBumpFrosh}>Bump these frosh!</button>
+                    {filteredRooms.length !== 0 && <button className={`button is-primary ${froshBumpLoading ? "is-loading" : ""}`} onClick={handleBumpFrosh}>Bump these frosh!</button>}
 
                 </footer>
             </div>
