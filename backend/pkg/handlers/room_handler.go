@@ -105,7 +105,7 @@ func GetSimpleFormattedDorm(c *gin.Context) {
 		rooms = append(rooms, d)
 	}
 
-	rows, err = tx.Query("SELECT suite_uuid, dorm, dorm_name, floor, room_count, rooms, alternative_pull, suite_design FROM suites WHERE UPPER(dorm_name) = UPPER($1)", dormNameParam)
+	rows, err = tx.Query("SELECT suite_uuid, dorm, dorm_name, floor, room_count, rooms, alternative_pull, suite_design, can_lock_pull FROM suites WHERE UPPER(dorm_name) = UPPER($1)", dormNameParam)
 	if err != nil {
 		log.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database query failed on suites"})
@@ -115,7 +115,7 @@ func GetSimpleFormattedDorm(c *gin.Context) {
 	var suites []models.SuiteRaw
 	for rows.Next() {
 		var s models.SuiteRaw
-		if err := rows.Scan(&s.SuiteUUID, &s.Dorm, &s.DormName, &s.Floor, &s.RoomCount, &s.Rooms, &s.AlternativePull, &s.SuiteDesign); err != nil {
+		if err := rows.Scan(&s.SuiteUUID, &s.Dorm, &s.DormName, &s.Floor, &s.RoomCount, &s.Rooms, &s.AlternativePull, &s.SuiteDesign, &s.CanLockPull); err != nil {
 			log.Println(err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Database scan failed on suites"})
 			return
@@ -172,6 +172,7 @@ func GetSimpleFormattedDorm(c *gin.Context) {
 			SuiteDesign:     s.SuiteDesign,
 			SuiteUUID:       s.SuiteUUID,
 			AlternativePull: s.AlternativePull,
+			CanLockPull:     s.CanLockPull,
 		}
 
 		floorMap[floor] = append(floorMap[floor], suite)

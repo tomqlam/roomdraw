@@ -137,6 +137,7 @@ type SuiteSimple struct {
 	SuiteDesign     string       `json:"suiteDesign"`
 	SuiteUUID       uuid.UUID    `json:"suiteUUID"`
 	AlternativePull bool         `json:"alternative_pull"`
+	CanLockPull     bool         `json:"can_lock_pull"`
 }
 
 type SuiteSimpler struct {
