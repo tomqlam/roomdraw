@@ -73,7 +73,7 @@ function BumpModal() {
       .then(response => response.json())
       .then(data => {
         console.log(data);
-        setIsModalOpen(false);
+        closeModal();
         setRefreshKey(prev => prev + 1);
         if (handleErrorFromTokenExpiry(data)) {
           return;
