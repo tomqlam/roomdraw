@@ -350,10 +350,10 @@ func ToggleInDorm(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to query room info from rooms table"})
 	}
 
-	// check if the Year property of the PullPriority is 4
-	if currentRoomInfo.PullPriority.Year != 4 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Cannot toggle in dorm for a user who is not a senior"})
-		err = errors.New("cannot toggle in dorm for a user who is not a senior")
+	// check if the Year property of the PullPriority is 4 and the hasInDorm property is True
+	if currentRoomInfo.PullPriority.Year != 4 || !currentRoomInfo.PullPriority.HasInDorm {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Cannot toggle in dorm for a user that is not a senior with in dorm"})
+		err = errors.New("cannot toggle in dorm for a user that is not a senior with in dorm")
 	}
 
 	// check if they are part of a suite group
@@ -362,10 +362,28 @@ func ToggleInDorm(c *gin.Context) {
 		err = errors.New("cannot toggle in dorm for a user who has been pulled or is pulling another user")
 	}
 
-	// flip the hasInDorm property of the PullPriority with a single SQL update statement
-	_, err = tx.Exec("UPDATE rooms SET pull_priority = pull_priority || jsonb_build_object('hasInDorm', NOT (pull_priority->>'hasInDorm')::boolean) WHERE room_uuid = $1", request.RoomUUID)
+	newPullPriority := currentRoomInfo.PullPriority
+
+	if !currentRoomInfo.PullPriority.Inherited.Valid { // this means that the in dorm status is not disabled
+		newPullPriority.Inherited.Valid = true
+		newPullPriority.Inherited.DrawNumber = currentRoomInfo.PullPriority.DrawNumber
+		newPullPriority.Inherited.Year = currentRoomInfo.PullPriority.Year
+		newPullPriority.Inherited.HasInDorm = !currentRoomInfo.PullPriority.HasInDorm
+	} else { // this means that in dorm status is disabled and we should restore it
+		newPullPriority.Inherited.Valid = false
+		newPullPriority.Inherited.DrawNumber = 0
+		newPullPriority.Inherited.Year = 0
+		newPullPriority.Inherited.HasInDorm = false
+	}
+
+	newPullPriorityJSON, err := json.Marshal(newPullPriority)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to toggle in dorm"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to marshal new pull priority"})
+	}
+
+	_, err = tx.Exec("UPDATE rooms SET pull_priority = $1 WHERE room_uuid = $2", newPullPriorityJSON, request.RoomUUID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update pull_priority in rooms table"})
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Successfully toggled in dorm for room " + request.RoomUUID.String()})
