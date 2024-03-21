@@ -304,6 +304,73 @@ func GetSimplerFormattedDorm(c *gin.Context) {
 	c.JSON(http.StatusOK, dorm)
 }
 
+func ToggleInDorm(c *gin.Context) {
+	var request models.ToggleInDormRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
+		log.Printf("JSON unmarshal error: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	}
+
+	// Start a transaction
+	tx, err := database.DB.Begin()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to start transaction"})
+	}
+
+	// Ensure the transaction is either committed or rolled back
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+			panic(r)
+		} else if err != nil {
+			tx.Rollback()
+		} else {
+			err = tx.Commit()
+		}
+	}()
+
+	// get the current room's into
+	var currentRoomInfo models.RoomRaw
+	err = tx.QueryRow("SELECT room_uuid, dorm, dorm_name, room_id, suite_uuid, max_occupancy, current_occupancy, occupants, pull_priority, sgroup_uuid, has_frosh, frosh_room_type FROM rooms WHERE room_uuid = $1", request.RoomUUID).Scan(
+		&currentRoomInfo.RoomUUID,
+		&currentRoomInfo.Dorm,
+		&currentRoomInfo.DormName,
+		&currentRoomInfo.RoomID,
+		&currentRoomInfo.SuiteUUID,
+		&currentRoomInfo.MaxOccupancy,
+		&currentRoomInfo.CurrentOccupancy,
+		&currentRoomInfo.Occupants,
+		&currentRoomInfo.PullPriority,
+		&currentRoomInfo.SGroupUUID,
+		&currentRoomInfo.HasFrosh,
+		&currentRoomInfo.FroshRoomType,
+	)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to query room info from rooms table"})
+	}
+
+	// check if the Year property of the PullPriority is 4
+	if currentRoomInfo.PullPriority.Year != 4 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Cannot toggle in dorm for a user who is not a senior"})
+		err = errors.New("cannot toggle in dorm for a user who is not a senior")
+	}
+
+	// check if they are part of a suite group
+	if currentRoomInfo.SGroupUUID != uuid.Nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Cannot toggle in dorm for a user who has been pulled or is pulling another user"})
+		err = errors.New("cannot toggle in dorm for a user who has been pulled or is pulling another user")
+	}
+
+	// flip the hasInDorm property of the PullPriority with a single SQL update statement
+	_, err = tx.Exec("UPDATE rooms SET pull_priority = pull_priority || jsonb_build_object('hasInDorm', NOT (pull_priority->>'hasInDorm')::boolean) WHERE room_uuid = $1", request.RoomUUID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to toggle in dorm"})
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Successfully toggled in dorm for room " + request.RoomUUID.String()})
+}
+
 func UpdateRoomOccupants(c *gin.Context) {
 	// Retrieve the doneChan from the context
 	doneChanInterface, exists := c.Get("doneChan")
@@ -676,6 +743,8 @@ func NormalPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 		return err
 	}
 
+	var forfeitInDorm bool
+
 	if currentRoomInfo.MaxOccupancy > 1 {
 		// error because normal pull is not allowed for rooms with max occupancy > 1
 		c.JSON(http.StatusBadRequest, gin.H{"error": "You may only initiate a normal pull for singles"})
@@ -735,9 +804,8 @@ func NormalPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 		for _, occupant := range sortedOccupants {
 			// if the pull leader has indorm and the proposed occupants do not, it is invalid
 			if pullLeaderPriority.HasInDorm && !(generateUserPriority(occupant, currentRoomInfo.Dorm).HasInDorm) {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "Pull leader has in dorm and at least one of the proposed occupants do not"})
-				tx.Rollback()
-				return err
+				log.Println("Pull leader has in dorm and proposed occupants do not, pull leader will forfeit in dorm")
+				forfeitInDorm = true
 			}
 		}
 
@@ -756,7 +824,7 @@ func NormalPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 
 		proposedPullPriority.Inherited.Valid = true
 		proposedPullPriority.Inherited.DrawNumber = pullLeaderPriority.DrawNumber
-		proposedPullPriority.Inherited.HasInDorm = pullLeaderPriority.HasInDorm
+		proposedPullPriority.Inherited.HasInDorm = pullLeaderPriority.HasInDorm && !forfeitInDorm
 		proposedPullPriority.Inherited.Year = pullLeaderPriority.Year
 	}
 
