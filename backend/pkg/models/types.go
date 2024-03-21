@@ -248,8 +248,3 @@ type BumpFroshRequest struct {
 type GeneralRequest struct {
 	UserJWT string `json:"userJWT"`
 }
-
-type ToggleInDormRequest struct {
-	RoomUUID uuid.UUID `json:"roomUUID"`
-	UserJWT  string    `json:"userJWT"`
-}
