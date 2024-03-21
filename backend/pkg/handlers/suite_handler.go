@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"log"
 	"net/http"
 	"os"
@@ -81,6 +82,29 @@ func SetSuiteDesign(c *gin.Context) {
 }
 
 func SetSuiteDesignNew(c *gin.Context) {
+	// Retrieve the doneChan from the context
+	doneChanInterface, exists := c.Get("doneChan")
+	if !exists {
+		// If for some reason it doesn't exist, log an error and return
+		log.Print("Error: doneChan not found in context")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	// Assert the type of doneChan to be a chan bool
+	doneChan, ok := doneChanInterface.(chan bool)
+	if !ok {
+		// If the assertion fails, log an error and return
+		log.Print("Error: doneChan is not of type chan bool")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	// Ensure that a signal is sent to doneChan when the function exits
+	defer func() {
+		close(doneChan)
+	}()
+
 	suiteUUID := c.Param("suiteuuid")
 
 	tx, err := database.DB.Begin()
@@ -128,11 +152,15 @@ func SetSuiteDesignNew(c *gin.Context) {
 	readOnlyKey, ok := os.LookupEnv("BUNNYNET_READ_API_KEY")
 	if !ok {
 		log.Fatal("missing env var: BUNNYNET_READ_API_KEY")
+		err = errors.New("missing env var: BUNNYNET_READ_API_KEY")
+		return
 	}
 
 	readWriteKey, ok := os.LookupEnv("BUNNYNET_WRITE_API_KEY")
 	if !ok {
 		log.Fatal("missing env var: BUNNYNET_WRITE_API_KEY")
+		err = errors.New("missing env var: BUNNYNET_WRITE_API_KEY")
+		return
 	}
 
 	// Create new Config to be initialize a Client.
@@ -245,4 +273,112 @@ func SetSuiteDesignNew(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Suite design updated"})
+}
+
+func DeleteSuiteDesign(c *gin.Context) {
+	// Retrieve the doneChan from the context
+	doneChanInterface, exists := c.Get("doneChan")
+	if !exists {
+		// If for some reason it doesn't exist, log an error and return
+		log.Print("Error: doneChan not found in context")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	// Assert the type of doneChan to be a chan bool
+	doneChan, ok := doneChanInterface.(chan bool)
+	if !ok {
+		// If the assertion fails, log an error and return
+		log.Print("Error: doneChan is not of type chan bool")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	// Ensure that a signal is sent to doneChan when the function exits
+	defer func() {
+		close(doneChan)
+	}()
+
+	suiteUUID := c.Param("suiteuuid")
+	tx, err := database.DB.Begin()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to start transaction"})
+		return
+	}
+
+	// Ensure the transaction is either committed or rolled back
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+			panic(r)
+		} else if err != nil {
+			tx.Rollback()
+		} else {
+			err = tx.Commit()
+		}
+	}()
+
+	// ensure the suite exists
+	var suiteExists bool
+	err = tx.QueryRow("SELECT EXISTS(SELECT 1 FROM suites WHERE suite_uuid = $1)", suiteUUID).Scan(&suiteExists)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to check if suite exists"})
+		return
+	}
+
+	if !suiteExists {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Suite not found"})
+		return
+	}
+
+	// query for the current suite design
+	var currentSuiteDesign string
+	err = tx.QueryRow("SELECT suite_design FROM suites WHERE suite_uuid = $1", suiteUUID).Scan(&currentSuiteDesign)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get current suite design"})
+		return
+	}
+
+	// extract file name from URL
+	currentSuiteDesign = currentSuiteDesign[strings.LastIndex(currentSuiteDesign, "/")+1:]
+
+	readOnlyKey, ok := os.LookupEnv("BUNNYNET_READ_API_KEY")
+	if !ok {
+		log.Fatal("missing env var: BUNNYNET_READ_API_KEY")
+	}
+
+	readWriteKey, ok := os.LookupEnv("BUNNYNET_WRITE_API_KEY")
+	if !ok {
+		log.Fatal("missing env var: BUNNYNET_WRITE_API_KEY")
+	}
+
+	// Create new Config to be initialize a Client.
+	cfg := &bunnystorage.Config{
+		StorageZone: "digitaldraw",
+		Key:         readWriteKey,
+		ReadOnlyKey: readOnlyKey,
+		Endpoint:    bunnystorage.EndpointLosAngeles,
+	}
+
+	client, err := bunnystorage.NewClient(cfg)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create BunnyStorage client"})
+		return
+	}
+
+	// delete the current suite design from BunnyStorage
+	_, err = client.Delete(c, "suite_designs", currentSuiteDesign)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete current suite design"})
+		return
+	}
+
+	// remove the suite design from the suite default ''
+	_, err = tx.Exec("UPDATE suites SET suite_design = '' WHERE suite_uuid = $1", suiteUUID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to remove suite design"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Suite design deleted"})
 }

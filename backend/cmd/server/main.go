@@ -62,6 +62,7 @@ func main() {
 		writeGroup.POST("/rooms/:roomuuid", handlers.UpdateRoomOccupants)
 		writeGroup.POST("/rooms/indorm/:roomuuid", handlers.ToggleInDorm)
 		writeGroup.POST("/suites/design/:suiteuuid", handlers.SetSuiteDesignNew)
+		writeGroup.DELETE("/suites/design/:suiteuuid", handlers.DeleteSuiteDesign)
 		writeGroup.POST("/frosh/:roomuuid", handlers.AddFroshHandler)
 		writeGroup.DELETE("/frosh/:roomuuid", handlers.RemoveFroshHandler)
 		writeGroup.POST("/frosh/bump/:roomuuid", handlers.BumpFroshHandler)
