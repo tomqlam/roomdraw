@@ -743,8 +743,6 @@ func NormalPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 		return err
 	}
 
-	var forfeitInDorm bool
-
 	if currentRoomInfo.MaxOccupancy > 1 {
 		// error because normal pull is not allowed for rooms with max occupancy > 1
 		c.JSON(http.StatusBadRequest, gin.H{"error": "You may only initiate a normal pull for singles"})
@@ -804,8 +802,9 @@ func NormalPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 		for _, occupant := range sortedOccupants {
 			// if the pull leader has indorm and the proposed occupants do not, it is invalid
 			if pullLeaderPriority.HasInDorm && !(generateUserPriority(occupant, currentRoomInfo.Dorm).HasInDorm) {
-				log.Println("Pull leader has in dorm and proposed occupants do not, pull leader will forfeit in dorm")
-				forfeitInDorm = true
+				log.Println("Pull leader has in dorm and proposed occupants do not")
+				err = errors.New("pull leader has in dorm and proposed occupants do not")
+				return err
 			}
 		}
 
@@ -824,7 +823,7 @@ func NormalPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 
 		proposedPullPriority.Inherited.Valid = true
 		proposedPullPriority.Inherited.DrawNumber = pullLeaderPriority.DrawNumber
-		proposedPullPriority.Inherited.HasInDorm = pullLeaderPriority.HasInDorm && !forfeitInDorm
+		proposedPullPriority.Inherited.HasInDorm = pullLeaderPriority.HasInDorm
 		proposedPullPriority.Inherited.Year = pullLeaderPriority.Year
 	}
 
