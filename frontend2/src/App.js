@@ -9,6 +9,7 @@ import { jwtDecode } from "jwt-decode";
 import SuiteNoteModal from './SuiteNoteModal';
 import { googleLogout } from '@react-oauth/google';
 import BumpFroshModal from './BumpFroshModal';
+import Select from 'react-select';
 
 function App() {
   const options = [
@@ -37,7 +38,9 @@ function App() {
     setActiveTab,
     isFroshModalOpen,
     getRoomUUIDFromUserID,
-    roomRefs
+    roomRefs,
+    setRefreshKey,
+    handleErrorFromTokenExpiry
 
   } = useContext(MyContext);
 
@@ -117,8 +120,8 @@ function App() {
   }, [activeTab]);
 
 
-  const handleNameChange = (event) => {
-    setSelectedID(event.target.value);
+  const handleNameChange = (newID) => {
+    setSelectedID(newID);
   };
 
   const handleTabClick = (tab) => {
@@ -175,6 +178,29 @@ function App() {
         roomRef.scrollIntoView({ behavior: 'smooth' });
       }
     }, 0);
+  }
+
+  const handleForfeit = () => {
+    if (localStorage.getItem('jwt')) {
+      fetch(`/rooms/indorm/${getRoomUUIDFromUserID(selectedID)}`, {
+          method: 'POST',
+          headers: {
+              'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
+          },
+      })
+          .then(res => {
+              return res.json();
+          })
+          .then(data => {
+              setRefreshKey(prevKey => prevKey + 1);
+              if (handleErrorFromTokenExpiry(data)) {
+                  return;
+              };
+          })
+          .catch(err => {
+              console.log(err);
+          })
+  }
   }
 
   return (
@@ -243,13 +269,44 @@ function App() {
 
           <h1 className="title">You're viewing DigiDraw as {getNameById(selectedID)}. <br /> </h1>
           <h2 className="subtitle">
-            You are <strong>{getDrawNumberAndYear(selectedID)}</strong>. {myRoom} 
+            You are <strong>{getDrawNumberAndYear(selectedID)}</strong>. {myRoom}
             {myRoom !== "You are not in a room yet." && <a href="#" onClick={() => handleTakeMeThere(myRoom)} style={{ textDecoration: 'underline' }}>Click to jump there!</a>}            <br />Click on any room you'd like to change!
+            <a href="#" onClick={handleForfeit}>Click to toggle in-dorm on/off for my current single</a>
+<br />
             <br />Last refreshed at {lastRefreshedTime.toLocaleTimeString()}.
           </h2>
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
             <span style={{ marginRight: '10px' }}>View as:  </span>
-            <select className="select" value={selectedID} onChange={handleNameChange}>
+            <Select
+                        placeholder={`Select a user`}
+                        value={
+                          {
+                            value: selectedID,
+                            label: `${userMap[selectedID].FirstName} ${userMap[selectedID].LastName}`
+                          }
+                        }
+                        menuPortalTarget={document.body}
+                        styles={{
+                          menuPortal: base => ({ ...base, zIndex: 9999 }),
+                          option: (provided, state) => ({
+                            ...provided,
+                            // color: 'red',
+                            // backgroundColor: 'blue'
+                          }),
+                        }}
+                        onChange={(selectedOption) => handleNameChange(selectedOption.value)}
+                        options={userMap && Object.keys(userMap)
+                          .sort((a, b) => {
+                            const nameA = `${userMap[a].FirstName} ${userMap[a].LastName}`;
+                            const nameB = `${userMap[b].FirstName} ${userMap[b].LastName}`;
+                            return nameA.localeCompare(nameB);
+                          })
+                          .map((key) => ({
+                            value: key,
+                            label: `${userMap[key].FirstName} ${userMap[key].LastName}`
+                          }))}
+                      />
+            {/* <select className="select" value={selectedID} onChange={handleNameChange}>
               {userMap && Object.keys(userMap)
                 .sort((a, b) => {
                   const nameA = `${userMap[a].FirstName} ${userMap[a].LastName}`.toUpperCase();
@@ -267,7 +324,7 @@ function App() {
                     {userMap[key].FirstName} {userMap[key].LastName}
                   </option>
                 ))}
-            </select>
+            </select> */}
           </div>
 
         </div>
