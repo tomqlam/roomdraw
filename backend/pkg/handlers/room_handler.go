@@ -305,11 +305,30 @@ func GetSimplerFormattedDorm(c *gin.Context) {
 }
 
 func ToggleInDorm(c *gin.Context) {
-	var request models.ToggleInDormRequest
-	if err := c.ShouldBindJSON(&request); err != nil {
-		log.Printf("JSON unmarshal error: %v", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	// Retrieve the doneChan from the context
+	doneChanInterface, exists := c.Get("doneChan")
+	if !exists {
+		// If for some reason it doesn't exist, log an error and return
+		log.Print("Error: doneChan not found in context")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
 	}
+
+	// Assert the type of doneChan to be a chan bool
+	doneChan, ok := doneChanInterface.(chan bool)
+	if !ok {
+		// If the assertion fails, log an error and return
+		log.Print("Error: doneChan is not of type chan bool")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	// Ensure that a signal is sent to doneChan when the function exits
+	defer func() {
+		close(doneChan)
+	}()
+
+	roomUUIDParam := c.Param("roomuuid")
 
 	// Start a transaction
 	tx, err := database.DB.Begin()
@@ -331,7 +350,7 @@ func ToggleInDorm(c *gin.Context) {
 
 	// get the current room's into
 	var currentRoomInfo models.RoomRaw
-	err = tx.QueryRow("SELECT room_uuid, dorm, dorm_name, room_id, suite_uuid, max_occupancy, current_occupancy, occupants, pull_priority, sgroup_uuid, has_frosh, frosh_room_type FROM rooms WHERE room_uuid = $1", request.RoomUUID).Scan(
+	err = tx.QueryRow("SELECT room_uuid, dorm, dorm_name, room_id, suite_uuid, max_occupancy, current_occupancy, occupants, pull_priority, sgroup_uuid, has_frosh, frosh_room_type FROM rooms WHERE room_uuid = $1", roomUUIDParam).Scan(
 		&currentRoomInfo.RoomUUID,
 		&currentRoomInfo.Dorm,
 		&currentRoomInfo.DormName,
@@ -381,12 +400,12 @@ func ToggleInDorm(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to marshal new pull priority"})
 	}
 
-	_, err = tx.Exec("UPDATE rooms SET pull_priority = $1 WHERE room_uuid = $2", newPullPriorityJSON, request.RoomUUID)
+	_, err = tx.Exec("UPDATE rooms SET pull_priority = $1 WHERE room_uuid = $2", newPullPriorityJSON, roomUUIDParam)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update pull_priority in rooms table"})
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Successfully toggled in dorm for room " + request.RoomUUID.String()})
+	c.JSON(http.StatusOK, gin.H{"message": "Successfully toggled in dorm for room " + roomUUIDParam})
 }
 
 func UpdateRoomOccupants(c *gin.Context) {
