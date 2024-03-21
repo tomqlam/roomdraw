@@ -228,6 +228,9 @@ function FloorGrid({ gridData }) {
 
       return false;
     }
+    if (pullPriority.pullType === 3) {
+      return false; // lock pull, cannot bump
+    }
     // if inherited, use that pullPriority instead
     if (pullPriority.inherited.valid) {
       pullPriority = pullPriority.inherited;

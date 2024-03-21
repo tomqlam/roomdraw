@@ -137,6 +137,7 @@ type SuiteSimple struct {
 	SuiteDesign     string       `json:"suiteDesign"`
 	SuiteUUID       uuid.UUID    `json:"suiteUUID"`
 	AlternativePull bool         `json:"alternative_pull"`
+	CanLockPull     bool         `json:"can_lock_pull"`
 }
 
 type SuiteSimpler struct {
@@ -240,8 +241,8 @@ type SuiteDesignUpdateRequest struct {
 }
 
 type BumpFroshRequest struct {
-	TargetRoomUUID string `json:"targetRoomUUID"`
-	UserJWT        string `json:"userJWT"`
+	TargetRoomUUID uuid.UUID `json:"targetRoomUUID"`
+	UserJWT        string    `json:"userJWT"`
 }
 
 type GeneralRequest struct {

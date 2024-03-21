@@ -74,6 +74,7 @@ export const MyContextProvider = ({ children }) => {
             // getting the room data for uuid mapping
             fetchRoomsWithUUIDs();
         } else if (credentials) {
+            print("Refreshing from useEffect," + refreshKey);
             fetchRoomsForOneDorm(activeTab);
             fetchRoomsWithUUIDs();
             fetchUserMap();

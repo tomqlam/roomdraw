@@ -74,7 +74,7 @@ function BumpModal() {
       .then(data => {
         console.log(data);
         setIsModalOpen(false);
-        setRefreshKey(refreshKey + 1);
+        setRefreshKey(prev => prev + 1);
         if (handleErrorFromTokenExpiry(data)) {
           return;
         };
@@ -131,7 +131,7 @@ function BumpModal() {
     if (pullMethod.startsWith("Alt Pull")) {
       let roomUUID = pullMethod.slice("Alt Pull ".length).trim();
       if (await canIAlternatePull(roomUUID)) {  // Wait for canIBePulled to complete
-        print("This room was successfully pulled by someone else in the suite");
+        print("This room was successfully alternative pulled");
         closeModal();
       } else {
         setLoadingSubmit(false);
@@ -172,6 +172,7 @@ function BumpModal() {
 
         print("This room pulled themselves");
         closeModal();
+        setRefreshKey(prev => prev + 1);
       } else {
         setLoadingSubmit(false);
         setShowModalError(true);
@@ -183,6 +184,8 @@ function BumpModal() {
   };
 
   const performRoomAction = (pullType, pullLeaderRoom = null) => {
+    console.log("performing room actoin");
+    setLoadingSubmit(true);
     return new Promise((resolve) => {
       fetch(`https://www.cs.hmc.edu/~tlam/digitaldraw/api/rooms/${selectedRoomObject.roomUUID}`, {
         method: 'POST',
@@ -192,8 +195,8 @@ function BumpModal() {
         },
         body: JSON.stringify({
           proposedOccupants: selectedOccupants
-  .filter(occupant => occupant !== '0')
-  .map(occupant => Number(occupant.value)),
+            .filter(occupant => occupant !== '0')
+            .map(occupant => Number(occupant.value)),
           pullType,
           pullLeaderRoom,
         }),
@@ -207,11 +210,32 @@ function BumpModal() {
             if (data.error === "One or more of the proposed occupants is already in a room") {
               console.log("Someone's already there rrror:");
               console.log(data.occupants);
-              setPeopleAlreadyInRoom((data.occupants));
-              setLoadingClearPerson(data.occupants.map((person) => false));
-            
-              const names = data.occupants.map(getNameById).join(', ');
-              setPullError("Please remove " + names + " from their existing room");
+
+              // But wait: if these are the same people in the current room, handle clearing the room in the backend
+              // Check if all occupants are in the current room
+              if (data.occupants.length !== 0 && data.occupants.every(occupant => selectedRoomObject.roomUUID === getRoomUUIDFromUserID(occupant))) {
+                // Clear the room and retry
+                print("That's the case!");
+                setLoadingSubmit(true);
+                handleClearRoom(selectedRoomObject.roomUUID, false, -1)
+                  .then(() => performRoomAction(pullType, pullLeaderRoom))
+                  .then(() => {
+                    setRefreshKey(prev => prev + 1);
+                    closeModal();
+                    resolve(true);
+                  });
+                return;
+              } else {
+                setPeopleAlreadyInRoom((data.occupants));
+                setLoadingClearPerson(data.occupants.map((person) => false));
+
+                const names = data.occupants.map(getNameById).join(', ');
+                setPullError("Please remove " + names + " from their existing room");
+
+              }
+
+
+
 
             } else {
               setPullError(data.error);
@@ -220,13 +244,14 @@ function BumpModal() {
             setShowModalError(true);
             resolve(false);
           } else {
-            setRefreshKey(refreshKey + 1);
+            console.log("Refreshing and setting");
+            setRefreshKey(prev => prev + 1);
             resolve(true);
           }
         })
         .catch((error) => {
           console.error(error.error);
-          setRefreshKey(refreshKey + 1);
+          setRefreshKey(prev => prev + 1);
           resolve(true);
         });
     });
@@ -279,7 +304,7 @@ function BumpModal() {
           } else {
             // no error 
             console.log("Refreshing and settingloadClearPeron");
-            setRefreshKey(refreshKey + 1);
+            setRefreshKey(prev => prev + 1);
             resolve(true);
             if (personIndex !== -1) {
               setLoadingClearPerson(loadingClearPerson.filter((_, itemIndex) => itemIndex !== personIndex));
@@ -290,11 +315,12 @@ function BumpModal() {
               closeModal();
             }
 
+
           }
 
         })
         .catch((error) => {
-          setRefreshKey(refreshKey + 1);
+          setRefreshKey(prev => prev + 1);
           resolve(true);
           if (closeModalBool) {
             closeModal();
@@ -312,7 +338,7 @@ function BumpModal() {
 
 
   return (
-    
+
     <div className="modal is-active">
       <div className="modal-background"></div>
       <div className="modal-card">
@@ -330,36 +356,37 @@ function BumpModal() {
               <label className="label">{`Reassign Occupant${selectedRoomObject.maxOccupancy > 1 ? "s" : ""}`}</label>
 
               {[1, 2, 3, 4].slice(0, selectedRoomObject.maxOccupancy).map((index) => (
-  <div className="field" key={index}>
-    <div className="control">
-      <div style={{ marginBottom: "10px", width: 200 }}>
-        <Select
-          placeholder={`Select Occupant ${index}`}
-          value={selectedOccupants[index-1]}
-          menuPortalTarget={document.body} 
-          styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }),
-          option: (provided, state) => ({
-            ...provided,
-            // color: 'red',
-            // backgroundColor: 'blue'
-          }),
-        }}
-          onChange={(selectedOption) => handleDropdownChange(index, selectedOption)}
-          options={userMap && Object.keys(userMap)
-            .sort((a, b) => {
-              const nameA = `${userMap[a].FirstName} ${userMap[a].LastName}`;
-              const nameB = `${userMap[b].FirstName} ${userMap[b].LastName}`;
-              return nameA.localeCompare(nameB);
-            })
-            .map((key) => ({
-              value: key,
-              label: `${userMap[key].FirstName} ${userMap[key].LastName}`
-            }))}
-        />
-      </div>
-    </div>
-  </div>
-))}
+                <div className="field" key={index}>
+                  <div className="control">
+                    <div style={{ marginBottom: "10px", width: 200 }}>
+                      <Select
+                        placeholder={`Select Occupant ${index}`}
+                        value={selectedOccupants[index - 1]}
+                        menuPortalTarget={document.body}
+                        styles={{
+                          menuPortal: base => ({ ...base, zIndex: 9999 }),
+                          option: (provided, state) => ({
+                            ...provided,
+                            // color: 'red',
+                            // backgroundColor: 'blue'
+                          }),
+                        }}
+                        onChange={(selectedOption) => handleDropdownChange(index, selectedOption)}
+                        options={userMap && Object.keys(userMap)
+                          .sort((a, b) => {
+                            const nameA = `${userMap[a].FirstName} ${userMap[a].LastName}`;
+                            const nameB = `${userMap[b].FirstName} ${userMap[b].LastName}`;
+                            return nameA.localeCompare(nameB);
+                          })
+                          .map((key) => ({
+                            value: key,
+                            label: `${userMap[key].FirstName} ${userMap[key].LastName}`
+                          }))}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
             <div>
               <label className="label" >How did they pull this room?</label>
@@ -388,7 +415,7 @@ function BumpModal() {
           {peopleAlreadyInRoom.map((person, index) => (
             <div key={index} style={{ marginTop: '5px' }} className="field">
               <button className={`button is-danger ${loadingClearPerson[index] ? 'is-loading' : ''}`} onClick={() => {
-                setLoadingClearPerson(loadingClearPerson.map((item, itemIndex) => itemIndex === index ? true : item));                
+                setLoadingClearPerson(loadingClearPerson.map((item, itemIndex) => itemIndex === index ? true : item));
                 handleClearRoom(getRoomUUIDFromUserID(person), false, index);
               }}>Clear {getNameById(person)}'s existing room</button>
             </div>

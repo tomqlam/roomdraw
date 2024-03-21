@@ -144,7 +144,7 @@ func RequestProcessor(requestQueue <-chan *gin.Context) {
 		c.Next() // Process the request
 
 		// set timeout time to 5 seconds
-		timeout := time.After(5 * time.Second)
+		timeout := time.After(1 * time.Second)
 
 		// Wait for the doneChan to receive a signal
 		select {

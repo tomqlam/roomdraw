@@ -105,7 +105,7 @@ func GetSimpleFormattedDorm(c *gin.Context) {
 		rooms = append(rooms, d)
 	}
 
-	rows, err = tx.Query("SELECT suite_uuid, dorm, dorm_name, floor, room_count, rooms, alternative_pull, suite_design FROM suites WHERE UPPER(dorm_name) = UPPER($1)", dormNameParam)
+	rows, err = tx.Query("SELECT suite_uuid, dorm, dorm_name, floor, room_count, rooms, alternative_pull, suite_design, can_lock_pull FROM suites WHERE UPPER(dorm_name) = UPPER($1)", dormNameParam)
 	if err != nil {
 		log.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database query failed on suites"})
@@ -115,7 +115,7 @@ func GetSimpleFormattedDorm(c *gin.Context) {
 	var suites []models.SuiteRaw
 	for rows.Next() {
 		var s models.SuiteRaw
-		if err := rows.Scan(&s.SuiteUUID, &s.Dorm, &s.DormName, &s.Floor, &s.RoomCount, &s.Rooms, &s.AlternativePull, &s.SuiteDesign); err != nil {
+		if err := rows.Scan(&s.SuiteUUID, &s.Dorm, &s.DormName, &s.Floor, &s.RoomCount, &s.Rooms, &s.AlternativePull, &s.SuiteDesign, &s.CanLockPull); err != nil {
 			log.Println(err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Database scan failed on suites"})
 			return
@@ -172,6 +172,7 @@ func GetSimpleFormattedDorm(c *gin.Context) {
 			SuiteDesign:     s.SuiteDesign,
 			SuiteUUID:       s.SuiteUUID,
 			AlternativePull: s.AlternativePull,
+			CanLockPull:     s.CanLockPull,
 		}
 
 		floorMap[floor] = append(floorMap[floor], suite)
@@ -301,6 +302,110 @@ func GetSimplerFormattedDorm(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dorm)
+}
+
+func ToggleInDorm(c *gin.Context) {
+	// Retrieve the doneChan from the context
+	doneChanInterface, exists := c.Get("doneChan")
+	if !exists {
+		// If for some reason it doesn't exist, log an error and return
+		log.Print("Error: doneChan not found in context")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	// Assert the type of doneChan to be a chan bool
+	doneChan, ok := doneChanInterface.(chan bool)
+	if !ok {
+		// If the assertion fails, log an error and return
+		log.Print("Error: doneChan is not of type chan bool")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	// Ensure that a signal is sent to doneChan when the function exits
+	defer func() {
+		close(doneChan)
+	}()
+
+	roomUUIDParam := c.Param("roomuuid")
+
+	// Start a transaction
+	tx, err := database.DB.Begin()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to start transaction"})
+	}
+
+	// Ensure the transaction is either committed or rolled back
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+			panic(r)
+		} else if err != nil {
+			tx.Rollback()
+		} else {
+			err = tx.Commit()
+		}
+	}()
+
+	// get the current room's into
+	var currentRoomInfo models.RoomRaw
+	err = tx.QueryRow("SELECT room_uuid, dorm, dorm_name, room_id, suite_uuid, max_occupancy, current_occupancy, occupants, pull_priority, sgroup_uuid, has_frosh, frosh_room_type FROM rooms WHERE room_uuid = $1", roomUUIDParam).Scan(
+		&currentRoomInfo.RoomUUID,
+		&currentRoomInfo.Dorm,
+		&currentRoomInfo.DormName,
+		&currentRoomInfo.RoomID,
+		&currentRoomInfo.SuiteUUID,
+		&currentRoomInfo.MaxOccupancy,
+		&currentRoomInfo.CurrentOccupancy,
+		&currentRoomInfo.Occupants,
+		&currentRoomInfo.PullPriority,
+		&currentRoomInfo.SGroupUUID,
+		&currentRoomInfo.HasFrosh,
+		&currentRoomInfo.FroshRoomType,
+	)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to query room info from rooms table"})
+	}
+
+	// check if the Year property of the PullPriority is 4 and the hasInDorm property is True
+	if currentRoomInfo.PullPriority.Year != 4 || !currentRoomInfo.PullPriority.HasInDorm {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Cannot toggle in dorm for a user that is not a senior with in dorm"})
+		err = errors.New("cannot toggle in dorm for a user that is not a senior with in dorm")
+	}
+
+	// check if they are part of a suite group
+	if currentRoomInfo.SGroupUUID != uuid.Nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Cannot toggle in dorm for a user who has been pulled or is pulling another user"})
+		err = errors.New("cannot toggle in dorm for a user who has been pulled or is pulling another user")
+	}
+
+	newPullPriority := currentRoomInfo.PullPriority
+
+	if !currentRoomInfo.PullPriority.Inherited.Valid { // this means that the in dorm status is not disabled
+		newPullPriority.Inherited.Valid = true
+		newPullPriority.Inherited.DrawNumber = currentRoomInfo.PullPriority.DrawNumber
+		newPullPriority.Inherited.Year = currentRoomInfo.PullPriority.Year
+		newPullPriority.Inherited.HasInDorm = !currentRoomInfo.PullPriority.HasInDorm
+	} else { // this means that in dorm status is disabled and we should restore it
+		newPullPriority.Inherited.Valid = false
+		newPullPriority.Inherited.DrawNumber = 0
+		newPullPriority.Inherited.Year = 0
+		newPullPriority.Inherited.HasInDorm = false
+	}
+
+	newPullPriorityJSON, err := json.Marshal(newPullPriority)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to marshal new pull priority"})
+	}
+
+	_, err = tx.Exec("UPDATE rooms SET pull_priority = $1 WHERE room_uuid = $2", newPullPriorityJSON, roomUUIDParam)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update pull_priority in rooms table"})
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Successfully toggled in dorm for room " + roomUUIDParam})
 }
 
 func UpdateRoomOccupants(c *gin.Context) {
@@ -734,8 +839,8 @@ func NormalPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 		for _, occupant := range sortedOccupants {
 			// if the pull leader has indorm and the proposed occupants do not, it is invalid
 			if pullLeaderPriority.HasInDorm && !(generateUserPriority(occupant, currentRoomInfo.Dorm).HasInDorm) {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "Pull leader has in dorm and at least one of the proposed occupants do not"})
-				tx.Rollback()
+				log.Println("Pull leader has in dorm and proposed occupants do not")
+				err = errors.New("pull leader has in dorm and proposed occupants do not")
 				return err
 			}
 		}
