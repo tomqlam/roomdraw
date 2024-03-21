@@ -241,10 +241,15 @@ type SuiteDesignUpdateRequest struct {
 }
 
 type BumpFroshRequest struct {
-	TargetRoomUUID string `json:"targetRoomUUID"`
-	UserJWT        string `json:"userJWT"`
+	TargetRoomUUID uuid.UUID `json:"targetRoomUUID"`
+	UserJWT        string    `json:"userJWT"`
 }
 
 type GeneralRequest struct {
 	UserJWT string `json:"userJWT"`
+}
+
+type ToggleInDormRequest struct {
+	RoomUUID uuid.UUID `json:"roomUUID"`
+	UserJWT  string    `json:"userJWT"`
 }
