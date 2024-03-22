@@ -279,7 +279,7 @@ function App() {
             <span style={{ marginRight: '10px' }}>View as:  </span>
             <Select
                         placeholder={`Select a user`}
-                        value={
+                        value={userMap && 
                           {
                             value: selectedID,
                             label: `${userMap[selectedID].FirstName} ${userMap[selectedID].LastName}`
