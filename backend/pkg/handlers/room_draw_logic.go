@@ -50,7 +50,6 @@ func isHigherPriority(user1 models.UserRaw, user2 models.UserRaw, dormId int) bo
 }
 
 // given a list of users, return the sorted list of users by priority highest to lowest
-// use quicksort
 func sortUsersByPriority(users []models.UserRaw, dormId int) []models.UserRaw {
 	if len(users) <= 1 {
 		return users
@@ -99,7 +98,7 @@ func generateUserPriority(user models.UserRaw, dormId int) models.PullPriority {
 		}
 	} else {
 		var yearNumber int
-
+		var hasInDorm bool
 		switch user.Year {
 		case "sophomore":
 			yearNumber = 2
@@ -108,13 +107,13 @@ func generateUserPriority(user models.UserRaw, dormId int) models.PullPriority {
 		case "senior":
 			yearNumber = 4
 			if dormId == user.InDorm {
-				yearNumber = 5
+				hasInDorm = true
 			}
 		}
 
 		return models.PullPriority{
 			IsPreplaced: false,
-			HasInDorm:   dormId == user.InDorm,
+			HasInDorm:   hasInDorm,
 			DrawNumber:  user.DrawNumber,
 			Year:        yearNumber,
 		}
@@ -152,22 +151,25 @@ func comparePullPriority(priority1 models.PullPriority, priority2 models.PullPri
 	if priority1.Inherited.Valid {
 		p1EffectiveDrawNumber = priority1.Inherited.DrawNumber
 		p1EffectiveYear = priority1.Inherited.Year
-	} else if priority2.Inherited.Valid {
+		if priority1.Inherited.HasInDorm && p1EffectiveYear == 4 {
+			p1EffectiveYear = 5
+		}
+	} else {
+		if priority1.HasInDorm && p1EffectiveYear == 4 {
+			p1EffectiveYear = 5
+		}
+	}
+
+	if priority2.Inherited.Valid {
 		p2EffectiveDrawNumber = priority2.Inherited.DrawNumber
 		p2EffectiveYear = priority2.Inherited.Year
-	}
-
-	log.Println("p1EffectiveDrawNumber", p1EffectiveDrawNumber)
-	log.Println("p1EffectiveYear", p1EffectiveYear)
-	log.Println("p2EffectiveDrawNumber", p2EffectiveDrawNumber)
-	log.Println("p2EffectiveYear", p2EffectiveYear)
-
-	if priority1.Inherited.HasInDorm && p1EffectiveYear == 4 {
-		p1EffectiveYear = 5
-	}
-
-	if priority2.Inherited.HasInDorm && p2EffectiveYear == 4 {
-		p2EffectiveYear = 5
+		if priority2.Inherited.HasInDorm && p2EffectiveYear == 4 {
+			p2EffectiveYear = 5
+		}
+	} else {
+		if priority2.HasInDorm && p2EffectiveYear == 4 {
+			p2EffectiveYear = 5
+		}
 	}
 
 	if priority1.PullType == 3 {
@@ -177,6 +179,11 @@ func comparePullPriority(priority1 models.PullPriority, priority2 models.PullPri
 	if priority2.PullType == 3 {
 		p2EffectiveYear = 6
 	}
+
+	log.Println("p1EffectiveDrawNumber", p1EffectiveDrawNumber)
+	log.Println("p1EffectiveYear", p1EffectiveYear)
+	log.Println("p2EffectiveDrawNumber", p2EffectiveDrawNumber)
+	log.Println("p2EffectiveYear", p2EffectiveYear)
 
 	if p1EffectiveYear > p2EffectiveYear {
 		return true

@@ -334,6 +334,7 @@ func ToggleInDorm(c *gin.Context) {
 	tx, err := database.DB.Begin()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to start transaction"})
+		return
 	}
 
 	// Ensure the transaction is either committed or rolled back
@@ -367,18 +368,21 @@ func ToggleInDorm(c *gin.Context) {
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to query room info from rooms table"})
+		return
 	}
 
 	// check if the Year property of the PullPriority is 4 and the hasInDorm property is True
 	if currentRoomInfo.PullPriority.Year != 4 || !currentRoomInfo.PullPriority.HasInDorm {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Cannot toggle in dorm for a user that is not a senior with in dorm"})
 		err = errors.New("cannot toggle in dorm for a user that is not a senior with in dorm")
+		return
 	}
 
 	// check if they are part of a suite group
 	if currentRoomInfo.SGroupUUID != uuid.Nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Cannot toggle in dorm for a user who has been pulled or is pulling another user"})
 		err = errors.New("cannot toggle in dorm for a user who has been pulled or is pulling another user")
+		return
 	}
 
 	newPullPriority := currentRoomInfo.PullPriority
@@ -398,11 +402,13 @@ func ToggleInDorm(c *gin.Context) {
 	newPullPriorityJSON, err := json.Marshal(newPullPriority)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to marshal new pull priority"})
+		return
 	}
 
 	_, err = tx.Exec("UPDATE rooms SET pull_priority = $1 WHERE room_uuid = $2", newPullPriorityJSON, roomUUIDParam)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update pull_priority in rooms table"})
+		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Successfully toggled in dorm for room " + roomUUIDParam})
@@ -461,9 +467,7 @@ func SelfPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 	userFullName, exists := c.Get("user_full_name")
 	if !exists {
 		log.Print("Error: user_full_name not found in context")
-		c.AbortWithStatus(http.StatusInternalServerError)
-		err := errors.New("user_full_name not found in context")
-		return err
+		userFullName = "unknown user"
 	}
 
 	log.Println(userFullName.(string) + " is attempting a self pull for room " + roomUUIDParam)
@@ -666,9 +670,7 @@ func NormalPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 	userFullName, exists := c.Get("user_full_name")
 	if !exists {
 		log.Print("Error: user_full_name not found in context")
-		c.AbortWithStatus(http.StatusInternalServerError)
-		err := errors.New("user_full_name not found in context")
-		return err
+		userFullName = "unknown user"
 	}
 
 	proposedOccupants := request.ProposedOccupants
@@ -1051,9 +1053,7 @@ func LockPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 	userFullName, exists := c.Get("user_full_name")
 	if !exists {
 		log.Print("Error: user_full_name not found in context")
-		c.AbortWithStatus(http.StatusInternalServerError)
-		err := errors.New("user_full_name not found in context")
-		return err
+		userFullName = "unknown user"
 	}
 
 	log.Println(userFullName.(string) + " is attempting a lock pull for room " + roomUUIDParam)
@@ -1343,9 +1343,7 @@ func AlternativePull(c *gin.Context, request models.OccupantUpdateRequest) error
 	userFullName, exists := c.Get("user_full_name")
 	if !exists {
 		log.Print("Error: user_full_name not found in context")
-		c.AbortWithStatus(http.StatusInternalServerError)
-		err := errors.New("user_full_name not found in context")
-		return err
+		userFullName = "unknown user"
 	}
 
 	log.Println(userFullName.(string) + " is attempting an alternative pull for room " + roomUUIDParam + " with occupants " + strings.Join(proposedOccupantStrings, ", "))
