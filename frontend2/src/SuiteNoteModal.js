@@ -16,6 +16,7 @@ function SuiteNoteModal() {
         credentials,
         setRefreshKey,
         suiteDimensions,
+        handleErrorFromTokenExpiry
 
     } = useContext(MyContext);
 
@@ -62,7 +63,9 @@ function SuiteNoteModal() {
                         .then(response => response.json())
                         .then(data => {
                             if (data.error) {
-                                console.log(data.error);
+                                if (handleErrorFromTokenExpiry(data)) {
+                                    return;
+                                  };
                             } else {
                                 // updated suite successfully 
                                 setIsSuiteNoteModalOpen(false);
@@ -79,33 +82,29 @@ function SuiteNoteModal() {
     }
 
 
-    // const updateSuiteNotes = (notes) => {
-    //     fetch(`/suites/design/${selectedSuiteObject.suiteUUID}`, {
-    //         method: 'POST',
-    //         headers: {
-    //             'Content-Type': 'application/json',
-    //             'Authorization': `Bearer ${localStorage.getItem('jwt')}`
-    //         },
-    //         body: JSON.stringify({
-    //             SuiteDesign: notes,
-    //         }),
-    //     })
-    //         .then(response => response.json())
-    //         .then(data => {
-    //             if (data.error) {
-    //                 console.log(data.error);
-    //             } else {
-    //                 // updated suite successfully 
-    //                 setIsSuiteNoteModalOpen(false);
-    //                 setRefreshKey(prevKey => prevKey + 1);
-    //                 console.log("refreshing");
+    const deleteSuiteNotes = (notes) => {
+        fetch(`/suites/design/${selectedSuiteObject.suiteUUID}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('jwt')}`
+            },
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    console.log(data.error);
+                } else {
+                    // updated suite successfully 
+                    setIsSuiteNoteModalOpen(false);
+                    setRefreshKey(prevKey => prevKey + 1);
 
-    //             }
-    //         })
-    //         .catch((error) => {
-    //             console.error('Error:', error);
-    //         });
-    // }
+                }
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+    }
 
 
     const imgObj = React.useRef(null);
@@ -203,8 +202,7 @@ function SuiteNoteModal() {
                     }}>Submit</button>
                     <button className={`button is-danger ${loadingClearNotes && "is-loading"}`} onClick={() => {
                         setLoadingClearNotes(true);
-                        setSuiteNotes('');
-                        updateSuiteNotes('');
+                        deleteSuiteNotes();
                     }}>Delete all notes</button>
                 </footer>
             </div>

@@ -197,7 +197,7 @@ function FloorGrid({ gridData }) {
         }
         var pullPriority = room.pullPriority;
         var finalString = "";
-        if (pullPriority.pullType === 2 || pullPriority.pullType === 4) {
+        if (pullPriority.inherited.valid) {
           pullPriority = pullPriority.inherited;
         }
         if (pullPriority.isPreplaced) {
