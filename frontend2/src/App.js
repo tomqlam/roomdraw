@@ -91,6 +91,42 @@ function App() {
     googleLogout();
   };
 
+  const getRoomObjectFromUserID = (userID) => {
+    if (rooms) {
+      for (let room of rooms) {
+
+        if (room.Occupants && room.Occupants.includes(Number(selectedID))) {
+
+
+          return room;
+        }
+      }
+
+
+    }
+    return null;
+  }
+
+  const canUserToggleInDorm = (userID) => {
+    const usersRoom = getRoomObjectFromUserID(userID);
+    console.log(usersRoom);
+    if (!usersRoom) {
+      if (dormMapping[userMap[userID].InDorm]) {
+        return 0;
+      }
+      return -1;
+    }
+    if (dormMapping[userMap[userID].InDorm] === usersRoom.DormName) {
+      return 1;
+    } else if (dormMapping[userMap[userID].InDorm]) {
+      return 0;
+    }
+    return -1;
+
+  }
+
+
+
   useEffect(() => {
     // updates room that thei current user is in every time the selected user or the room data changes
     if (!rooms || !Array.isArray(rooms)) {
@@ -270,8 +306,11 @@ function App() {
           <h1 className="title">You're viewing DigiDraw as {getNameById(selectedID)}. <br /> </h1>
           <h2 className="subtitle">
             You are <strong>{getDrawNumberAndYear(selectedID)}</strong>. {myRoom}
-            {myRoom !== "You are not in a room yet." && <a href="#" onClick={() => handleTakeMeThere(myRoom)} style={{ textDecoration: 'underline' }}>Click to jump there!</a>}            <br />Click on any room you'd like to change!
-            <a href="#" onClick={handleForfeit}>Click to toggle in-dorm on/off for my current single</a>
+            {myRoom !== "You are not in a room yet." && <a href="#" onClick={() => handleTakeMeThere(myRoom)} style={{ textDecoration: 'underline' }}>Click to jump there!</a>}            <br />Click on any room you'd like to change! <br/>
+            {canUserToggleInDorm(selectedID) === 1 && <a onClick={handleForfeit} style={{ textDecoration: 'underline' }}>Click to toggle in-dorm on/off for my current single</a>}
+            {canUserToggleInDorm(selectedID) === 0 && <p>Pull into a single to toggle your in-dorm.</p>}             
+
+
 <br />
             <br />Last refreshed at {lastRefreshedTime.toLocaleTimeString()}.
           </h2>
