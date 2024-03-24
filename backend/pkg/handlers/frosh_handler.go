@@ -183,18 +183,18 @@ func RemoveFroshHandler(c *gin.Context) { // should be a secured route
 		_, err = tx.Exec("UPDATE rooms SET has_frosh = false WHERE suite_uuid = $1", room.SuiteUUID)
 
 		log.Println("Frosh removed from suite because frosh was removed from inner dorm")
+	} else {
+		err = RemoveLockPull(room.RoomUUID, tx) // runs buggy if you remove a suite of frosh
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to remove lock pull"})
+			return
+		}
 	}
 
 	// commit the transaction
 	err = tx.Commit()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to commit transaction"})
-		return
-	}
-
-	err = RemoveLockPull(room.RoomUUID, tx)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to remove lock pull"})
 		return
 	}
 
