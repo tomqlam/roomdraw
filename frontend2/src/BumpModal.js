@@ -85,7 +85,7 @@ function BumpModal() {
       });
   }
 
-  
+
 
   const handlePullMethodChange = (e) => {
     print(pullMethod);
@@ -206,9 +206,19 @@ function BumpModal() {
                 setLoadingSubmit(true);
                 handleClearRoom(selectedRoomObject.roomUUID, false, -1)
                   .then(() => performRoomAction(pullType, pullLeaderRoom))
-                  .then(() => {
-                    setRefreshKey(prev => prev + 1);
-                    closeModal();
+                  .then((data) => {
+                    console.log(data);
+                    if (data === true) {
+                      setRefreshKey(prev => prev + 1);
+                      closeModal();
+                      console.log("THERE HAS NOT BEEN A ERROR");
+
+                    } else {
+                      setLoadingSubmit(false);
+                      setShowModalError(true);
+                      console.log("THERE HAS BEEN A ERROR");
+                      resolve(false);
+                    }
                     resolve(true);
                   });
                 return;
