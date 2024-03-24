@@ -16,6 +16,7 @@ function SuiteNoteModal() {
         credentials,
         setRefreshKey,
         suiteDimensions,
+        handleErrorFromTokenExpiry
 
     } = useContext(MyContext);
 
@@ -62,7 +63,9 @@ function SuiteNoteModal() {
                         .then(response => response.json())
                         .then(data => {
                             if (data.error) {
-                                console.log(data.error);
+                                if (handleErrorFromTokenExpiry(data)) {
+                                    return;
+                                };
                             } else {
                                 // updated suite successfully 
                                 setIsSuiteNoteModalOpen(false);
@@ -79,33 +82,29 @@ function SuiteNoteModal() {
     }
 
 
-    // const updateSuiteNotes = (notes) => {
-    //     fetch(`/suites/design/${selectedSuiteObject.suiteUUID}`, {
-    //         method: 'POST',
-    //         headers: {
-    //             'Content-Type': 'application/json',
-    //             'Authorization': `Bearer ${localStorage.getItem('jwt')}`
-    //         },
-    //         body: JSON.stringify({
-    //             SuiteDesign: notes,
-    //         }),
-    //     })
-    //         .then(response => response.json())
-    //         .then(data => {
-    //             if (data.error) {
-    //                 console.log(data.error);
-    //             } else {
-    //                 // updated suite successfully 
-    //                 setIsSuiteNoteModalOpen(false);
-    //                 setRefreshKey(prevKey => prevKey + 1);
-    //                 console.log("refreshing");
+    const deleteSuiteNotes = (notes) => {
+        fetch(`https://www.cs.hmc.edu/~tlam/digitaldraw/api/suites/design/${selectedSuiteObject.suiteUUID}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('jwt')}`
+            },
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    console.log(data.error);
+                } else {
+                    // updated suite successfully 
+                    setIsSuiteNoteModalOpen(false);
+                    setRefreshKey(prevKey => prevKey + 1);
 
-    //             }
-    //         })
-    //         .catch((error) => {
-    //             console.error('Error:', error);
-    //         });
-    // }
+                }
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+    }
 
 
     const imgObj = React.useRef(null);
@@ -120,30 +119,44 @@ function SuiteNoteModal() {
 
     useEffect(() => {
         if (imgObj.current) {
-          const width = suiteDimensions.width*3; // replace with your desired width
-          const height = suiteDimensions.height*3; // replace with your desired height
-      
-          // Create a new canvas element
-          const canvas = document.createElement('canvas');
-      
-          // Set the width and height of the canvas
-          canvas.width = width;
-          canvas.height = height;
-      
-          // Get the 2D rendering context for the canvas
-          const ctx = canvas.getContext('2d');
-      
-          // Fill the canvas with white color
-          ctx.fillStyle = 'white';
-          ctx.fillRect(0, 0, width, height);
-      
-          // Convert the canvas to a data URL
-          const url = canvas.toDataURL('image/png');
-      
-          // Open the image in the ImageEditorComponent
-          imgObj.current.open(url);
+            // const width = suiteDimensions.width * 3; // replace with your desired width
+            // const height = suiteDimensions.height * 3; // replace with your desired height
+
+            // // Create a new canvas element
+            // const canvas = document.createElement('canvas');
+
+            // // Set the width and height of the canvas
+            // canvas.width = width;
+            // canvas.height = height;
+
+            // // Get the 2D rendering context for the canvas
+            // const ctx = canvas.getContext('2d');
+
+            // // Fill the canvas with white color
+            // ctx.fillStyle = 'black';
+            // ctx.fillRect(0, 0, width, height);
+
+            // // Set the color for the text
+            // ctx.fillStyle = 'white';
+
+            // // Set the font for the text
+            // ctx.font = '30px Arial';
+
+            // // Add the text to the canvas
+            // ctx.fillText('Some text', 50, 50);
+
+            // // Convert the canvas to a data URL
+            // const url = canvas.toDataURL('image/png');
+            if (selectedSuiteObject.suiteDesign) {
+                const url = selectedSuiteObject.suiteDesign;
+                console.log(selectedSuiteObject);
+
+                // Open the image in the ImageEditorComponent
+                imgObj.current.open(url);
+            }
+
         }
-      }, []);
+    }, []);
     const [image, setImage] = React.useState(null);
 
     const handleSave = () => {
@@ -184,9 +197,10 @@ function SuiteNoteModal() {
                     <button className="delete" aria-label="close" onClick={() => setIsSuiteNoteModalOpen(false)}></button>
                 </header>
                 <section className="modal-card-body">
+                    <p>First you must upload any picture, then crop & overlay text on top!</p> <br/>
                     {/* <input type="file" id="fileUpload" /> */}
                     <div id="container" style={{ width: '100%', height: '50vh' }}>
-                        <ImageEditorComponent ref={imgObj} />
+                        <ImageEditorComponent toolbar={['Crop', 'Transform', 'Annotate', 'Image', 'ZoomIn', 'ZoomOut',]} ref={imgObj} />
                     </div>
                     {/* <button onClick={handleSave}>Save</button> */}
                     {/* <textarea
@@ -203,8 +217,7 @@ function SuiteNoteModal() {
                     }}>Submit</button>
                     <button className={`button is-danger ${loadingClearNotes && "is-loading"}`} onClick={() => {
                         setLoadingClearNotes(true);
-                        setSuiteNotes('');
-                        updateSuiteNotes('');
+                        deleteSuiteNotes();
                     }}>Delete all notes</button>
                 </footer>
             </div>

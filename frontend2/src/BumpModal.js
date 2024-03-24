@@ -29,6 +29,7 @@ function BumpModal() {
     setCredentials,
     handleErrorFromTokenExpiry,
     dormMapping,
+    getRoomUUIDFromUserID
 
   } = useContext(MyContext);
 
@@ -73,7 +74,7 @@ function BumpModal() {
       .then(response => response.json())
       .then(data => {
         console.log(data);
-        setIsModalOpen(false);
+        closeModal();
         setRefreshKey(prev => prev + 1);
         if (handleErrorFromTokenExpiry(data)) {
           return;
@@ -84,21 +85,7 @@ function BumpModal() {
       });
   }
 
-  const getRoomUUIDFromUserID = (userID) => {
-    if (rooms) {
-      for (let room of rooms) {
-
-        if (room.Occupants && room.Occupants.includes(Number(userID))) {
-          // they are this room
-
-          return room.RoomUUID;
-        }
-      }
-
-
-    }
-    return null;
-  }
+  
 
   const handlePullMethodChange = (e) => {
     print(pullMethod);
@@ -113,7 +100,7 @@ function BumpModal() {
     setIsModalOpen(false);
   };
   const handleDropdownChange = (index, value) => {
-
+    print(value);
     const updatedselectedOccupants = [...selectedOccupants];
     updatedselectedOccupants[index - 1] = value;
     setSelectedOccupants(updatedselectedOccupants);
@@ -195,7 +182,7 @@ function BumpModal() {
         },
         body: JSON.stringify({
           proposedOccupants: selectedOccupants
-            .filter(occupant => occupant !== '0')
+            .filter(occupant => occupant !== '')
             .map(occupant => Number(occupant.value)),
           pullType,
           pullLeaderRoom,
@@ -361,7 +348,9 @@ function BumpModal() {
                     <div style={{ marginBottom: "10px", width: 200 }}>
                       <Select
                         placeholder={`Select Occupant ${index}`}
-                        value={selectedOccupants[index - 1]}
+                        value={
+                          selectedOccupants[index - 1]
+                        }
                         menuPortalTarget={document.body}
                         styles={{
                           menuPortal: base => ({ ...base, zIndex: 9999 }),
@@ -401,7 +390,7 @@ function BumpModal() {
                   {selectedSuiteObject.alternative_pull && roomsWhoCanAlternatePull.map((room, index) => (
                     <option key={index} value={`Alt Pull ${room[1]}`}>Pull w/ 2nd best of {selectedRoomObject.roomNumber} and {room[0]}</option>
                   ))}
-                  <option value="Lock Pull">Lock Pull</option>
+                  {selectedSuiteObject.can_lock_pull && <option value="Lock Pull">Lock Pull</option>}
                 </select>
               </div>
             </div>
