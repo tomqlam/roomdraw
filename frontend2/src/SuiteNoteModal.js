@@ -83,8 +83,8 @@ function SuiteNoteModal() {
 
 
     const deleteSuiteNotes = (notes) => {
-        fetch(`https://www.cs.hmc.edu/~tlam/digitaldraw/api/suites/design/${selectedSuiteObject.suiteUUID}`, {
-            method: 'DELETE',
+        fetch(`https://www.cs.hmc.edu/~tlam/digitaldraw/api/suites/design/remove/${selectedSuiteObject.suiteUUID}`, {
+            method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${localStorage.getItem('jwt')}`

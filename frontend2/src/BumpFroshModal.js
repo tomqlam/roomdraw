@@ -2,6 +2,8 @@
 import React, { useState } from 'react';
 import { useContext } from 'react';
 import { MyContext } from './MyContext';
+import {jwtDecode} from 'jwt-decode';
+
 
 const BumpFroshModal = () => {
     const {
@@ -13,6 +15,7 @@ const BumpFroshModal = () => {
         handleErrorFromTokenExpiry,
         setIsFroshModalOpen,
         setRefreshKey,
+        credentials,
     } = useContext(MyContext);
 
     const [targetRoom, setTargetRoom] = useState("NONE");
@@ -23,6 +26,33 @@ const BumpFroshModal = () => {
         setTargetRoom(event.target.value);
         console.log("Selected room: " + event.target.value);
     };
+
+    
+  function removeFrosh(roomObject) {
+    fetch(`https://www.cs.hmc.edu/~tlam/digitaldraw/api/frosh/remove/${roomObject.roomUUID}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
+      },
+    })
+      .then(response => response.json())
+      .then(data => {
+        console.log(data);
+        if (data.error){
+            console.log(data.error);
+        } else {
+            setIsFroshModalOpen(false);
+            console.log("refreshing");
+        }
+        setRefreshKey(prev => prev + 1);
+        if (handleErrorFromTokenExpiry(data)) {
+          return;
+        };
+      })
+      .catch((error) => {
+        console.error('Error:', error);
+      });
+  }
 
     const handleBumpFrosh = () => {
         setFroshBumpLoading(true);
@@ -68,8 +98,11 @@ const BumpFroshModal = () => {
                     <button className="delete" aria-label="close" onClick={() => setIsFroshModalOpen(false)}></button>
                 </header>
                 <section className="modal-card-body">
+                {((jwtDecode(credentials).email === "tlam@g.hmc.edu") || (jwtDecode(credentials).email === "smao@g.hmc.edu")) && <button onClick={() => removeFrosh(selectedRoomObject)}>Remove Frosh</button>}
+
                     <label className="label">{filteredRooms.length > 0 ? 'Bump these frosh to a new room' : 'Unbumpable frosh'}</label>                    {filteredRooms.length !== 0 && <div className="select" style={{ marginRight: "10px" }}>
                         <select value={targetRoom} onChange={(event) => handleSelectChange(event)}>
+                        {((jwtDecode(credentials).email === "tlam@g.hmc.edu") || (jwtDecode(credentials).email === "smao@g.hmc.edu")) && <button onClick={() => removeFrosh(selectedRoomObject)}>Remove Frosh</button>}
                             <option value="">Select a frosh room</option>
                             {rooms && filteredRooms
                                 .map((room, index) => (
