@@ -839,10 +839,20 @@ func NormalPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 		sortedOccupants := sortUsersByPriority(occupantsInfo, currentRoomInfo.Dorm)
 
 		for _, occupant := range sortedOccupants {
+			var pullLeaderEffectiveInDorm bool
+
+			// accounts for in dorm forfeit
+			if pullLeaderPriority.Inherited.Valid {
+				pullLeaderEffectiveInDorm = pullLeaderPriority.Inherited.HasInDorm
+			} else {
+				pullLeaderEffectiveInDorm = pullLeaderPriority.HasInDorm
+			}
+
 			// if the pull leader has indorm and the proposed occupants do not, it is invalid
-			if pullLeaderPriority.HasInDorm && !(generateUserPriority(occupant, currentRoomInfo.Dorm).HasInDorm) {
+			if pullLeaderEffectiveInDorm && !(generateUserPriority(occupant, currentRoomInfo.Dorm).HasInDorm) {
 				log.Println("Pull leader has in dorm and proposed occupants do not")
 				err = errors.New("pull leader has in dorm and proposed occupants do not")
+				c.JSON(http.StatusBadRequest, gin.H{"error": "Pull leader has in dorm and proposed occupants do not"})
 				return err
 			}
 		}
@@ -861,9 +871,15 @@ func NormalPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 		}
 
 		proposedPullPriority.Inherited.Valid = true
-		proposedPullPriority.Inherited.DrawNumber = pullLeaderPriority.DrawNumber
-		proposedPullPriority.Inherited.HasInDorm = pullLeaderPriority.HasInDorm
-		proposedPullPriority.Inherited.Year = pullLeaderPriority.Year
+		if pullLeaderPriority.Inherited.Valid {
+			proposedPullPriority.Inherited.DrawNumber = pullLeaderPriority.Inherited.DrawNumber
+			proposedPullPriority.Inherited.HasInDorm = pullLeaderPriority.Inherited.HasInDorm
+			proposedPullPriority.Inherited.Year = pullLeaderPriority.Inherited.Year
+		} else {
+			proposedPullPriority.Inherited.DrawNumber = pullLeaderPriority.DrawNumber
+			proposedPullPriority.Inherited.HasInDorm = pullLeaderPriority.HasInDorm
+			proposedPullPriority.Inherited.Year = pullLeaderPriority.Year
+		}
 	}
 
 	if currentRoomInfo.PullPriority.PullType == 3 {
