@@ -315,12 +315,8 @@ function App() {
           <h2 className="subtitle">
             You are <strong>{getDrawNumberAndYear(selectedID)}</strong>. {myRoom}
             {myRoom !== "You are not in a room yet." && <a href="#" onClick={() => handleTakeMeThere(myRoom)} style={{ textDecoration: 'underline' }}>Click to jump there!</a>}            <br />Click on any room you'd like to change! <br/>
-            {canUserToggleInDorm(selectedID) === 1 && <a onClick={handleForfeit} style={{ textDecoration: 'underline' }}>Click to toggle in-dorm on/off for my current single</a>}
-            {canUserToggleInDorm(selectedID) === 0 && <p>Pull into a single to toggle your in-dorm.</p>}             
-
-
-<br />
-            <br />Last refreshed at {lastRefreshedTime.toLocaleTimeString()}.
+            {canUserToggleInDorm(selectedID) === 1 && <a onClick={handleForfeit} style={{ textDecoration: 'underline' }}>Click to toggle in-dorm on/off for my current single<br/></a>}
+            {canUserToggleInDorm(selectedID) === 0 && <p>Pull into a single to toggle your in-dorm.</p>}             Last refreshed at {lastRefreshedTime.toLocaleTimeString()}.
           </h2>
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
             <span style={{ marginRight: '10px' }}>View as:  </span>
