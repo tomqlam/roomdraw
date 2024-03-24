@@ -28,7 +28,7 @@ engine = create_engine(CONNSTR)
 users = []
 results = 700
 
-response = requests.get('https://randomuser.me/api/?inc=name&results='+str(results))
+response = requests.get('https://randomuser.me/api/?nat=au,br,ca,ch,de,dk,es,fi,fr,gb,ie,in,mx,nl,no,nz,rs,tr,ua,us&inc=name&results='+str(results))
 data = response.json()
 
 with engine.connect() as connection:
