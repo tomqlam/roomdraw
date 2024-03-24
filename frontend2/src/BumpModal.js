@@ -87,6 +87,7 @@ function BumpModal() {
 
 
 
+
   const handlePullMethodChange = (e) => {
     print(pullMethod);
     setPullMethod(e.target.value);
@@ -346,7 +347,8 @@ function BumpModal() {
         <section className="modal-card-body">
 
 
-          {((jwtDecode(credentials).email == "tlam@g.hmc.edu") || (jwtDecode(credentials).email == "smao@g.hmc.edu")) && <button onClick={() => postToFrosh(selectedRoomObject)}>Add Frosh</button>}
+          {((jwtDecode(credentials).email === "tlam@g.hmc.edu") || (jwtDecode(credentials).email === "smao@g.hmc.edu")) && <button onClick={() => postToFrosh(selectedRoomObject)}>Add Frosh</button>}
+
 
           {<div>
             <div>
