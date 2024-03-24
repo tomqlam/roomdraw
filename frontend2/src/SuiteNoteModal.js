@@ -83,8 +83,8 @@ function SuiteNoteModal() {
 
 
     const deleteSuiteNotes = (notes) => {
-        fetch(`/suites/design/${selectedSuiteObject.suiteUUID}`, {
-            method: 'DELETE',
+        fetch(`/suites/design/remove/${selectedSuiteObject.suiteUUID}`, {
+            method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${localStorage.getItem('jwt')}`
