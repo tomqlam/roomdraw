@@ -29,8 +29,8 @@ const BumpFroshModal = () => {
 
     
   function removeFrosh(roomObject) {
-    fetch(`/frosh/${roomObject.roomUUID}`, {
-      method: 'DELETE',
+    fetch(`/frosh/remove/${roomObject.roomUUID}`, {
+      method: 'POST',
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
       },
