@@ -108,12 +108,20 @@ function App() {
   }
 
   const canUserToggleInDorm = (userID) => {
+    userID = Number(userID);
     const usersRoom = getRoomObjectFromUserID(userID);
     console.log(usersRoom);
+    if (!userMap){
+      return -1;
+    }
+    
     if (!usersRoom) {
       if (dormMapping[userMap[userID].InDorm]) {
         return 0;
       }
+      return -1;
+    }
+    if (userMap[userID].InDorm === 0) {
       return -1;
     }
     if (dormMapping[userMap[userID].InDorm] === usersRoom.DormName) {
