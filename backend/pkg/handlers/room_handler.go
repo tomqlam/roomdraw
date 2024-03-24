@@ -531,6 +531,13 @@ func SelfPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 		return err
 	}
 
+	// ensure that room is full before self pulling
+	if currentRoomInfo.CurrentOccupancy < currentRoomInfo.MaxOccupancy {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Room is not full"})
+		err = errors.New("room is not full")
+		return err
+	}
+
 	occupantsAlreadyInRoom := []int{} // list of occupants already in the room
 
 	// check that all of the proposed occupants are not already in a room
