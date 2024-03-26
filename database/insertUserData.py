@@ -55,6 +55,9 @@ with engine.connect() as connection:
     for i in range(results):
         first_name = data['results'][i]['name']['first']
         last_name = data['results'][i]['name']['last']
+
+        escape_first_name = first_name.replace("'", "''")
+        escape_last_name = last_name.replace("'", "''")
         # random number between 40000000 and 49999999
         # random_id = str(random.randint(40000000, 49999999))
         # students distributed equally between senior, junior, and sophomore
