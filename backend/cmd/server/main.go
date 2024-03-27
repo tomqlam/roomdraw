@@ -45,7 +45,7 @@ func main() {
 	go middleware.RequestProcessor(requestQueue)
 
 	// Group routes by read and write operations
-	readGroup := router.Group("/").Use()
+	readGroup := router.Group("/").Use(middleware.JWTAuthMiddleware(false))
 	{
 		// Define read-only routes here
 		readGroup.GET("/rooms", handlers.GetRoomsHandler)
@@ -56,16 +56,21 @@ func main() {
 	}
 
 	// For write operations, use a separate group and apply the queue middleware
-	writeGroup := router.Group("/").Use(middleware.QueueMiddleware(requestQueue))
+	writeGroup := router.Group("/").Use(middleware.JWTAuthMiddleware(false)).Use(middleware.QueueMiddleware(requestQueue))
 	{
 		// Define write routes here
 		writeGroup.POST("/rooms/:roomuuid", handlers.UpdateRoomOccupants)
 		writeGroup.POST("/rooms/indorm/:roomuuid", handlers.ToggleInDorm)
 		writeGroup.POST("/suites/design/:suiteuuid", handlers.SetSuiteDesignNew)
 		writeGroup.POST("/suites/design/remove/:suiteuuid", handlers.DeleteSuiteDesign)
-		writeGroup.POST("/frosh/:roomuuid", handlers.AddFroshHandler)
-		writeGroup.POST("/frosh/remove/:roomuuid", handlers.RemoveFroshHandler)
 		writeGroup.POST("/frosh/bump/:roomuuid", handlers.BumpFroshHandler)
+	}
+
+	writeGroupAdmin := router.Group("/").Use(middleware.JWTAuthMiddleware(true)).Use(middleware.QueueMiddleware(requestQueue))
+	{
+		// Define write routes here
+		writeGroupAdmin.POST("/frosh/:roomuuid", handlers.AddFroshHandler)
+		writeGroupAdmin.POST("/frosh/remove/:roomuuid", handlers.RemoveFroshHandler)
 	}
 
 	// Start the server
