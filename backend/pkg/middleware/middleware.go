@@ -127,7 +127,9 @@ func QueueMiddleware(requestQueue chan<- *gin.Context) gin.HandlerFunc {
 		// if the request is a write operation, enqueue the request
 		// log.Printf("QueueMiddleware triggered for path: %s", c.Request.URL.Path)
 		doneChan := make(chan bool, 1) // Channel to signal completion of request processing
+		closeOnce := sync.Once{}
 		c.Set("doneChan", doneChan)    // Pass the channel along with the context
+		c.Set("closeOnce", &closeOnce) // Pass the closeOnce along with the context
 		requestQueue <- c              // Enqueue the context
 	}
 }
@@ -138,6 +140,12 @@ func RequestProcessor(requestQueue <-chan *gin.Context) {
 		doneChan, exists := c.Get("doneChan")
 		if !exists {
 			log.Print("Error: doneChan not found in context for request processor +", c.Request.URL.Path)
+			continue
+		}
+
+		closeOnce, exists := c.Get("closeOnce")
+		if !exists {
+			log.Print("Error: closeOnce not found in context for request processor +", c.Request.URL.Path)
 			continue
 		}
 
@@ -152,14 +160,11 @@ func RequestProcessor(requestQueue <-chan *gin.Context) {
 			log.Print("Request processed +", c.Request.URL.Path)
 		case <-timeout:
 			log.Print("Request processing timed out +", c.Request.URL.Path)
-			close(doneChan.(chan bool))
+			closeOnce.(*sync.Once).Do(func() {
+				close(doneChan.(chan bool))
+				log.Println("Closed doneChan for timed out request")
+			})
 		}
-
-		// log.Print("Finished processing request +", c.Request.URL.Path)
-
-		// log.Print("Sleeping for 10 seconds")
-		// time.Sleep(10 * time.Second) // Simulate processing time
-		// log.Print("Woke up")
 	}
 }
 

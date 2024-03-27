@@ -8,6 +8,7 @@ import (
 	"roomdraw/backend/pkg/database"
 	"roomdraw/backend/pkg/models"
 	"strings"
+	"sync"
 
 	"git.sr.ht/~jamesponddotco/bunnystorage-go"
 	"github.com/gin-gonic/gin"
@@ -34,9 +35,36 @@ func SetSuiteDesign(c *gin.Context) {
 		return
 	}
 
-	// Ensure that a signal is sent to doneChan when the function exits
+	// Retrieve the closeOnce from the context
+	closeOnceInterface, exists := c.Get("closeOnce")
+	if !exists {
+		// If for some reason it doesn't exist, log an error and return
+		log.Print("Error: closeOnce not found in context")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	// Assert the type of closeOnce to be a *sync.Once
+	closeOnce, ok := closeOnceInterface.(*sync.Once)
+	if !ok {
+		// If the assertion fails, log an error and return
+		log.Print("Error: closeOnce is not of type *sync.Once")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	// Ensure that a signal is sent to doneChan when the function exits, make sure this happens only once
 	defer func() {
-		close(doneChan)
+		closeOnce.Do(func() {
+			close(doneChan)
+			log.Println("Closed doneChan for request")
+		})
+	}()
+
+	// constantly listen for the doneChan to be closed (meaning the request was timed out) and return error
+	go func() {
+		<-doneChan
+		log.Println("Request was fulfilled")
 	}()
 
 	suiteUUID := c.Param("suiteuuid")
@@ -100,9 +128,36 @@ func SetSuiteDesignNew(c *gin.Context) {
 		return
 	}
 
-	// Ensure that a signal is sent to doneChan when the function exits
+	// Retrieve the closeOnce from the context
+	closeOnceInterface, exists := c.Get("closeOnce")
+	if !exists {
+		// If for some reason it doesn't exist, log an error and return
+		log.Print("Error: closeOnce not found in context")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	// Assert the type of closeOnce to be a *sync.Once
+	closeOnce, ok := closeOnceInterface.(*sync.Once)
+	if !ok {
+		// If the assertion fails, log an error and return
+		log.Print("Error: closeOnce is not of type *sync.Once")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	// Ensure that a signal is sent to doneChan when the function exits, make sure this happens only once
 	defer func() {
-		close(doneChan)
+		closeOnce.Do(func() {
+			close(doneChan)
+			log.Println("Closed doneChan for request")
+		})
+	}()
+
+	// constantly listen for the doneChan to be closed (meaning the request was timed out) and return error
+	go func() {
+		<-doneChan
+		log.Println("Request was fulfilled")
 	}()
 
 	suiteUUID := c.Param("suiteuuid")
@@ -294,9 +349,36 @@ func DeleteSuiteDesign(c *gin.Context) {
 		return
 	}
 
-	// Ensure that a signal is sent to doneChan when the function exits
+	// Retrieve the closeOnce from the context
+	closeOnceInterface, exists := c.Get("closeOnce")
+	if !exists {
+		// If for some reason it doesn't exist, log an error and return
+		log.Print("Error: closeOnce not found in context")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	// Assert the type of closeOnce to be a *sync.Once
+	closeOnce, ok := closeOnceInterface.(*sync.Once)
+	if !ok {
+		// If the assertion fails, log an error and return
+		log.Print("Error: closeOnce is not of type *sync.Once")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	// Ensure that a signal is sent to doneChan when the function exits, make sure this happens only once
 	defer func() {
-		close(doneChan)
+		closeOnce.Do(func() {
+			close(doneChan)
+			log.Println("Closed doneChan for request")
+		})
+	}()
+
+	// constantly listen for the doneChan to be closed (meaning the request was timed out) and return error
+	go func() {
+		<-doneChan
+		log.Println("Request was fulfilled")
 	}()
 
 	suiteUUID := c.Param("suiteuuid")
