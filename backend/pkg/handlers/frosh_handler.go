@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"roomdraw/backend/pkg/database"
 	"roomdraw/backend/pkg/models"
+	"sync"
 
 	"github.com/gin-gonic/gin"
 )
@@ -30,10 +31,38 @@ func AddFroshHandler(c *gin.Context) {
 		return
 	}
 
-	// Ensure that a signal is sent to doneChan when the function exits
+	// Retrieve the closeOnce from the context
+	closeOnceInterface, exists := c.Get("closeOnce")
+	if !exists {
+		// If for some reason it doesn't exist, log an error and return
+		log.Print("Error: closeOnce not found in context")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	// Assert the type of closeOnce to be a *sync.Once
+	closeOnce, ok := closeOnceInterface.(*sync.Once)
+	if !ok {
+		// If the assertion fails, log an error and return
+		log.Print("Error: closeOnce is not of type *sync.Once")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	// Ensure that a signal is sent to doneChan when the function exits, make sure this happens only once
 	defer func() {
-		close(doneChan)
+		closeOnce.Do(func() {
+			close(doneChan)
+			log.Println("Closed doneChan for request")
+		})
 	}()
+
+	// constantly listen for the doneChan to be closed (meaning the request was timed out) and return error
+	go func() {
+		<-doneChan
+		log.Println("Request was fulfilled")
+	}()
+
 	// get the room uuid from the request url
 	roomUUID := c.Param("roomuuid")
 
@@ -134,9 +163,36 @@ func RemoveFroshHandler(c *gin.Context) { // should be a secured route
 		return
 	}
 
-	// Ensure that a signal is sent to doneChan when the function exits
+	// Retrieve the closeOnce from the context
+	closeOnceInterface, exists := c.Get("closeOnce")
+	if !exists {
+		// If for some reason it doesn't exist, log an error and return
+		log.Print("Error: closeOnce not found in context")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	// Assert the type of closeOnce to be a *sync.Once
+	closeOnce, ok := closeOnceInterface.(*sync.Once)
+	if !ok {
+		// If the assertion fails, log an error and return
+		log.Print("Error: closeOnce is not of type *sync.Once")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	// Ensure that a signal is sent to doneChan when the function exits, make sure this happens only once
 	defer func() {
-		close(doneChan)
+		closeOnce.Do(func() {
+			close(doneChan)
+			log.Println("Closed doneChan for request")
+		})
+	}()
+
+	// constantly listen for the doneChan to be closed (meaning the request was timed out) and return error
+	go func() {
+		<-doneChan
+		log.Println("Request was fulfilled")
 	}()
 
 	// get the room uuid from the request url
@@ -220,9 +276,36 @@ func BumpFroshHandler(c *gin.Context) {
 		return
 	}
 
-	// Ensure that a signal is sent to doneChan when the function exits
+	// Retrieve the closeOnce from the context
+	closeOnceInterface, exists := c.Get("closeOnce")
+	if !exists {
+		// If for some reason it doesn't exist, log an error and return
+		log.Print("Error: closeOnce not found in context")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	// Assert the type of closeOnce to be a *sync.Once
+	closeOnce, ok := closeOnceInterface.(*sync.Once)
+	if !ok {
+		// If the assertion fails, log an error and return
+		log.Print("Error: closeOnce is not of type *sync.Once")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	// Ensure that a signal is sent to doneChan when the function exits, make sure this happens only once
 	defer func() {
-		close(doneChan)
+		closeOnce.Do(func() {
+			close(doneChan)
+			log.Println("Closed doneChan for request")
+		})
+	}()
+
+	// constantly listen for the doneChan to be closed (meaning the request was timed out) and return error
+	go func() {
+		<-doneChan
+		log.Println("Request was fulfilled")
 	}()
 
 	// get the room uuid from the request url

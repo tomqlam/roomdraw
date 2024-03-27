@@ -43,9 +43,9 @@ func InitDB() error {
 	}
 
 	// Configure connection pool
-	DB.SetMaxOpenConns(25)                 // Example: 25 open connections
-	DB.SetMaxIdleConns(10)                 // Example: 10 idle connections
-	DB.SetConnMaxLifetime(5 * time.Minute) // Example: 5 minutes
+	DB.SetMaxOpenConns(100)
+	DB.SetMaxIdleConns(100)
+	DB.SetConnMaxLifetime(5 * time.Minute)
 
 	// Check the connection
 	if err = DB.Ping(); err != nil {

@@ -46,10 +46,10 @@ with engine.connect() as connection:
     print(seniors, juniors, sophomores)
 
     senior_draw_list = list(range(1, seniors+1))
-    junion_draw_list = list(range(1, juniors+1))
+    junior_draw_list = list(range(1, juniors+1))
     sophomore_draw_list = list(range(1, sophomores+1))
     random.shuffle(senior_draw_list)
-    random.shuffle(junion_draw_list)
+    random.shuffle(junior_draw_list)
     random.shuffle(sophomore_draw_list)
 
     for i in range(results):
@@ -68,14 +68,12 @@ with engine.connect() as connection:
             draw_number = senior_draw_list.pop()
         elif (i < juniors + seniors):
             year = 'junior'
-            draw_number = junion_draw_list.pop()
+            draw_number = junior_draw_list.pop()
         else:
             year = 'sophomore'
             draw_number = sophomore_draw_list.pop()
-        # 1/10 chance of being a preplaced student
-        preplaced = (i%10==0)
-        in_dorm = random.randint(1, 9) if (i%2==0 and (not preplaced and year =='senior')) else 0;
+        in_dorm = random.randint(1, 9) if year =='senior' else 0;
         # generate a uuid
-        query = f"INSERT INTO Users (first_name, last_name, draw_number, year, preplaced, in_dorm) VALUES ('{first_name}', '{last_name}', {draw_number}, '{year}', {preplaced}, {in_dorm});"
+        query = f"INSERT INTO Users (first_name, last_name, draw_number, year, preplaced, in_dorm) VALUES ('{first_name}', '{last_name}', {draw_number}, '{year}', {False}, {in_dorm});"
         result = connection.execute(text(query))
     connection.commit()

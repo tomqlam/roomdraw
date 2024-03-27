@@ -10,6 +10,7 @@ import (
 	"roomdraw/backend/pkg/models"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -323,9 +324,36 @@ func ToggleInDorm(c *gin.Context) {
 		return
 	}
 
-	// Ensure that a signal is sent to doneChan when the function exits
+	// Retrieve the closeOnce from the context
+	closeOnceInterface, exists := c.Get("closeOnce")
+	if !exists {
+		// If for some reason it doesn't exist, log an error and return
+		log.Print("Error: closeOnce not found in context")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	// Assert the type of closeOnce to be a *sync.Once
+	closeOnce, ok := closeOnceInterface.(*sync.Once)
+	if !ok {
+		// If the assertion fails, log an error and return
+		log.Print("Error: closeOnce is not of type *sync.Once")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	// Ensure that a signal is sent to doneChan when the function exits, make sure this happens only once
 	defer func() {
-		close(doneChan)
+		closeOnce.Do(func() {
+			close(doneChan)
+			log.Println("Closed doneChan for request")
+		})
+	}()
+
+	// constantly listen for the doneChan to be closed (meaning the request was timed out) and return error
+	go func() {
+		<-doneChan
+		log.Println("Request was fulfilled")
 	}()
 
 	roomUUIDParam := c.Param("roomuuid")
@@ -433,9 +461,36 @@ func UpdateRoomOccupants(c *gin.Context) {
 		return
 	}
 
-	// Ensure that a signal is sent to doneChan when the function exits
+	// Retrieve the closeOnce from the context
+	closeOnceInterface, exists := c.Get("closeOnce")
+	if !exists {
+		// If for some reason it doesn't exist, log an error and return
+		log.Print("Error: closeOnce not found in context")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	// Assert the type of closeOnce to be a *sync.Once
+	closeOnce, ok := closeOnceInterface.(*sync.Once)
+	if !ok {
+		// If the assertion fails, log an error and return
+		log.Print("Error: closeOnce is not of type *sync.Once")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	// Ensure that a signal is sent to doneChan when the function exits, make sure this happens only once
 	defer func() {
-		close(doneChan)
+		closeOnce.Do(func() {
+			close(doneChan)
+			log.Println("Closed doneChan for request")
+		})
+	}()
+
+	// constantly listen for the doneChan to be closed (meaning the request was timed out) and return error
+	go func() {
+		<-doneChan
+		log.Println("Request was fulfilled")
 	}()
 
 	var request models.OccupantUpdateRequest
@@ -473,6 +528,16 @@ func SelfPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 	log.Println(userFullName.(string) + " is attempting a self pull for room " + roomUUIDParam)
 
 	proposedOccupants := request.ProposedOccupants
+
+	// verify that the proposed occupants are unique
+	proposedOccupantsMap := make(map[int]bool)
+	for _, occupant := range proposedOccupants {
+		if proposedOccupantsMap[occupant] {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Duplicate user was specified in the occupants list"})
+			return errors.New("duplicate user was specified in the occupants list")
+		}
+		proposedOccupantsMap[occupant] = true
+	}
 
 	// Start a transaction
 	tx, err := database.DB.Begin()
@@ -524,6 +589,16 @@ func SelfPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 		return err
 	}
 
+	if len(proposedOccupants) == 0 {
+		err = clearRoom(currentRoomInfo.RoomUUID, tx)
+		if err != nil {
+			log.Println(err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to clear room"})
+			tx.Rollback()
+		}
+		return err
+	}
+
 	// check that the proposed occupants are not more than the max occupancy
 	if len(proposedOccupants) > currentRoomInfo.MaxOccupancy {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Proposed occupants exceeds max occupancy"})
@@ -563,45 +638,35 @@ func SelfPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 	var proposedPullPriority models.PullPriority
 	log.Println(request.PullType)
 
-	if len(proposedOccupants) > 0 {
-		log.Println("Self pull")
-		var occupantsInfo []models.UserRaw
-		rows, err := tx.Query("SELECT id, draw_number, year, in_dorm FROM users WHERE id = ANY($1)", pq.Array(proposedOccupants))
-		if err != nil {
-			// Handle query error
-			// print the error to the console
+	log.Println("Self pull")
+	var occupantsInfo []models.UserRaw
+	rows, err := tx.Query("SELECT id, draw_number, year, in_dorm FROM users WHERE id = ANY($1)", pq.Array(proposedOccupants))
+	if err != nil {
+		// Handle query error
+		// print the error to the console
+		log.Println(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database query failed on users for pull priority"})
+		tx.Rollback()
+		return err
+	}
+	for rows.Next() {
+		var u models.UserRaw
+		if err := rows.Scan(&u.Id, &u.DrawNumber, &u.Year, &u.InDorm); err != nil {
+			// Handle scan error
 			log.Println(err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Database query failed on users for pull priority"})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Database scan failed on users for pull priority"})
 			tx.Rollback()
 			return err
 		}
-		for rows.Next() {
-			var u models.UserRaw
-			if err := rows.Scan(&u.Id, &u.DrawNumber, &u.Year, &u.InDorm); err != nil {
-				// Handle scan error
-				log.Println(err)
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Database scan failed on users for pull priority"})
-				tx.Rollback()
-				return err
-			}
-			occupantsInfo = append(occupantsInfo, u)
-		}
-
-		sortedOccupants := sortUsersByPriority(occupantsInfo, currentRoomInfo.Dorm)
-
-		proposedPullPriority = generateUserPriority(sortedOccupants[0], currentRoomInfo.Dorm)
-
-		proposedPullPriority.Valid = true
-		proposedPullPriority.PullType = 1
-	} else {
-		err = clearRoom(currentRoomInfo.RoomUUID, tx)
-		if err != nil {
-			log.Println(err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to clear room"})
-			tx.Rollback()
-		}
-		return err
+		occupantsInfo = append(occupantsInfo, u)
 	}
+
+	sortedOccupants := sortUsersByPriority(occupantsInfo, currentRoomInfo.Dorm)
+
+	proposedPullPriority = generateUserPriority(sortedOccupants[0], currentRoomInfo.Dorm)
+
+	proposedPullPriority.Valid = true
+	proposedPullPriority.PullType = 1
 
 	if currentRoomInfo.PullPriority.PullType == 3 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Cannot bump a lock pulled room"})
@@ -689,6 +754,16 @@ func NormalPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 	}
 
 	log.Println(userFullName.(string) + " is attempting a normal pull for room " + roomUUIDParam + " with occupants " + strings.Join(proposedOccupantStrings, ", "))
+
+	// verify that the proposed occupants are unique
+	proposedOccupantsMap := make(map[int]bool)
+	for _, occupant := range proposedOccupants {
+		if proposedOccupantsMap[occupant] {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Duplicate user was specified in the occupants list"})
+			return errors.New("duplicate user was specified in the occupants list")
+		}
+		proposedOccupantsMap[occupant] = true
+	}
 
 	// Start a transaction
 	tx, err := database.DB.Begin()
@@ -1083,6 +1158,16 @@ func LockPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 
 	proposedOccupants := request.ProposedOccupants
 
+	// verify that the proposed occupants are unique
+	proposedOccupantsMap := make(map[int]bool)
+	for _, occupant := range proposedOccupants {
+		if proposedOccupantsMap[occupant] {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Duplicate user was specified in the occupants list"})
+			return errors.New("duplicate user was specified in the occupants list")
+		}
+		proposedOccupantsMap[occupant] = true
+	}
+
 	// Start a transaction
 	tx, err := database.DB.Begin()
 	if err != nil {
@@ -1370,6 +1455,16 @@ func AlternativePull(c *gin.Context, request models.OccupantUpdateRequest) error
 	}
 
 	log.Println(userFullName.(string) + " is attempting an alternative pull for room " + roomUUIDParam + " with occupants " + strings.Join(proposedOccupantStrings, ", "))
+
+	// verify that the proposed occupants are unique
+	proposedOccupantsMap := make(map[int]bool)
+	for _, occupant := range proposedOccupants {
+		if proposedOccupantsMap[occupant] {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Duplicate user was specified in the occupants list"})
+			return errors.New("duplicate user was specified in the occupants list")
+		}
+		proposedOccupantsMap[occupant] = true
+	}
 
 	// Start a transaction
 	tx, err := database.DB.Begin()
