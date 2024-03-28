@@ -10,6 +10,8 @@ import SuiteNoteModal from './SuiteNoteModal';
 import { googleLogout } from '@react-oauth/google';
 import BumpFroshModal from './BumpFroshModal';
 import Select from 'react-select';
+import ThemeSelectModal from './ThemeSelectModal';
+
 
 function App() {
   const options = [
@@ -40,7 +42,9 @@ function App() {
     getRoomUUIDFromUserID,
     roomRefs,
     setRefreshKey,
-    handleErrorFromTokenExpiry
+    handleErrorFromTokenExpiry,
+    isThemeModalOpen,
+    setIsThemeModalOpen
 
   } = useContext(MyContext);
 
@@ -111,10 +115,10 @@ function App() {
     userID = Number(userID);
     const usersRoom = getRoomObjectFromUserID(userID);
     console.log(usersRoom);
-    if (!userMap){
+    if (!userMap) {
       return -1;
     }
-    
+
     if (!usersRoom) {
       if (dormMapping[userMap[userID].InDorm]) {
         return 0;
@@ -146,11 +150,11 @@ function App() {
         if (room.Occupants && room.Occupants.includes(Number(selectedID))) {
 
 
-          setMyRoom(`You are in ${room.DormName} ${room.RoomID}. `);
+          setMyRoom(`${room.DormName} ${room.RoomID}`);
           return;
         }
       }
-      setMyRoom("You are not in a room yet.");
+      setMyRoom(`None yet`);
 
 
     }
@@ -227,24 +231,24 @@ function App() {
   const handleForfeit = () => {
     if (localStorage.getItem('jwt')) {
       fetch(`/rooms/indorm/${getRoomUUIDFromUserID(selectedID)}`, {
-          method: 'POST',
-          headers: {
-              'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
-          },
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
+        },
       })
-          .then(res => {
-              return res.json();
-          })
-          .then(data => {
-              setRefreshKey(prevKey => prevKey + 1);
-              if (handleErrorFromTokenExpiry(data)) {
-                  return;
-              };
-          })
-          .catch(err => {
-              console.log(err);
-          })
-  }
+        .then(res => {
+          return res.json();
+        })
+        .then(data => {
+          setRefreshKey(prevKey => prevKey + 1);
+          if (handleErrorFromTokenExpiry(data)) {
+            return;
+          };
+        })
+        .catch(err => {
+          console.log(err);
+        })
+    }
   }
 
   return (
@@ -299,6 +303,8 @@ function App() {
       {isModalOpen && <BumpModal />}
       {isSuiteNoteModalOpen && <SuiteNoteModal />}
       {isFroshModalOpen && <BumpFroshModal />}
+      {isThemeModalOpen && <ThemeSelectModal  />}
+
 
 
 
@@ -310,88 +316,89 @@ function App() {
       </section>}
       {credentials && <section class="section">
         <div style={{ textAlign: 'center' }}>
-
-          <h1 className="title">You're viewing DigiDraw as {getNameById(selectedID)}. <br /> </h1>
-          <h2 className="subtitle">
-            You are <strong>{getDrawNumberAndYear(selectedID)}</strong>. {myRoom}
-            {myRoom !== "You are not in a room yet." && <a href="#" onClick={() => handleTakeMeThere(myRoom)} style={{ textDecoration: 'underline' }}>Click to jump there!</a>}            <br />Click on any room you'd like to change! <br/>
-            {canUserToggleInDorm(selectedID) === 1 && <a onClick={handleForfeit} style={{ textDecoration: 'underline' }}>Click to toggle in-dorm on/off for my current single<br/></a>}
-            {canUserToggleInDorm(selectedID) === 0 && <p>Pull into a single to toggle your in-dorm.</p>}             Last refreshed at {lastRefreshedTime.toLocaleTimeString()}.
-          </h2>
+          <h1 className="title">Welcome to DigiDraw!</h1>
+          <h2 className="subtitle">Last refreshed at {lastRefreshedTime.toLocaleTimeString()}.</h2>
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-            <span style={{ marginRight: '10px' }}>View as:  </span>
+            <span style={{ marginRight: '10px' }}><h2 className='subtitle'>Get helpful info for: </h2> </span>
             <Select
-                        placeholder={`Select a user`}
-                        value={userMap && 
-                          {
-                            value: selectedID,
-                            label: `${userMap[selectedID].FirstName} ${userMap[selectedID].LastName}`
-                          }
-                        }
-                        menuPortalTarget={document.body}
-                        styles={{
-                          menuPortal: base => ({ ...base, zIndex: 9999 }),
-                          option: (provided, state) => ({
-                            ...provided,
-                            // color: 'red',
-                            // backgroundColor: 'blue'
-                          }),
-                        }}
-                        onChange={(selectedOption) => handleNameChange(selectedOption.value)}
-                        options={userMap && Object.keys(userMap)
-                          .sort((a, b) => {
-                            const nameA = `${userMap[a].FirstName} ${userMap[a].LastName}`;
-                            const nameB = `${userMap[b].FirstName} ${userMap[b].LastName}`;
-                            return nameA.localeCompare(nameB);
-                          })
-                          .map((key) => ({
-                            value: key,
-                            label: `${userMap[key].FirstName} ${userMap[key].LastName}`
-                          }))}
-                      />
-            {/* <select className="select" value={selectedID} onChange={handleNameChange}>
-              {userMap && Object.keys(userMap)
+              placeholder={`Select a user`}
+              value={userMap &&
+              {
+                value: selectedID,
+                label: `${userMap[selectedID].FirstName} ${userMap[selectedID].LastName}`
+              }
+              }
+              menuPortalTarget={document.body}
+              styles={{
+                menuPortal: base => ({ ...base, zIndex: 9999 }),
+                option: (provided, state) => ({
+                  ...provided,
+                  // color: 'red',
+                  // backgroundColor: 'blue'
+                }),
+              }}
+              onChange={(selectedOption) => handleNameChange(selectedOption.value)}
+              options={userMap && Object.keys(userMap)
                 .sort((a, b) => {
-                  const nameA = `${userMap[a].FirstName} ${userMap[a].LastName}`.toUpperCase();
-                  const nameB = `${userMap[b].FirstName} ${userMap[b].LastName}`.toUpperCase();
-                  if (nameA < nameB) {
-                    return -1;
-                  }
-                  if (nameA > nameB) {
-                    return 1;
-                  }
-                  return 0;
+                  const nameA = `${userMap[a].FirstName} ${userMap[a].LastName}`;
+                  const nameB = `${userMap[b].FirstName} ${userMap[b].LastName}`;
+                  return nameA.localeCompare(nameB);
                 })
-                .map((key, index) => (
-                  <option key={index} value={key}>
-                    {userMap[key].FirstName} {userMap[key].LastName}
-                  </option>
-                ))}
-            </select> */}
+                .map((key) => ({
+                  value: key,
+                  label: `${userMap[key].FirstName} ${userMap[key].LastName}`
+                }))}
+            />
           </div>
+          <div className="has-text-centered">
+            <h3 className="subtitle is-5">
+              Draw Number: <strong>{getDrawNumberAndYear(selectedID)}</strong>  Room: <strong>{myRoom}</strong>
+              {myRoom !== `None yet` && <a href="#" onClick={() => handleTakeMeThere(myRoom)} style={{ textDecoration: 'underline' }}>Click to jump there!</a>}            
+              {canUserToggleInDorm(selectedID) === 1 && <a onClick={handleForfeit} style={{ textDecoration: 'underline' }}>Click to toggle in-dorm on/off for my current single</a>}
+              {canUserToggleInDorm(selectedID) === 0 && <p>Pull into a single to toggle your in-dorm.</p>}
+            </h3>
+            
+          </div>
+
+          <div className="has-text-centered">
+            <label className="checkbox" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <input
+                type="checkbox"
+                checked={onlyShowBumpableRooms}
+                onChange={() => setOnlyShowBumpableRooms(!onlyShowBumpableRooms)}
+              />
+              <span style={{ marginLeft: '0.5rem' }}>Darken rooms I can't pull</span>
+            </label>
+          </div>
+
+          <div className="has-text-centered">
+            <label className="checkbox" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <input
+                type="checkbox"
+                checked={showFloorplans}
+                onChange={() => setShowFloorplans(!showFloorplans)}
+              />
+              <span style={{ marginLeft: '0.5rem' }}>Show floorplans</span>
+            </label>
+          </div>
+
+
+          <button className="button is-primary" onClick={() => setIsThemeModalOpen(prev => !prev)}>
+          Toggle Theme Modal
+        </button>
+
+
+          
+
+
+
 
         </div>
 
       </section>}
 
       {(credentials && currPage === "Home") && <section class="section">
-        <label className="checkbox" style={{ display: 'flex', alignItems: 'center' }}>
-          <input
-            type="checkbox"
-            checked={onlyShowBumpableRooms}
-            onChange={() => setOnlyShowBumpableRooms(!onlyShowBumpableRooms)}
-          />
-          <span style={{ marginLeft: '0.5rem' }}>Darken rooms I can't pull</span>
-        </label>
 
-        <label className="checkbox">
-          <input
-            type="checkbox"
-            checked={showFloorplans}
-            onChange={() => setShowFloorplans(!showFloorplans)}
-          />
-          <span style={{ marginLeft: '0.5rem' }}>Show floorplans</span>
-        </label>
 
         <div className="tabs is-centered">
           <ul>

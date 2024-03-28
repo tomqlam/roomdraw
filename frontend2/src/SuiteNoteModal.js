@@ -16,7 +16,8 @@ function SuiteNoteModal() {
         credentials,
         setRefreshKey,
         suiteDimensions,
-        handleErrorFromTokenExpiry
+        handleErrorFromTokenExpiry,
+  
 
     } = useContext(MyContext);
 

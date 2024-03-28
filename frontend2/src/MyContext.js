@@ -23,6 +23,7 @@ export const MyContextProvider = ({ children }) => {
     const [isSuiteNoteModalOpen, setIsSuiteNoteModalOpen] = useState(false); // If suite note modal 
     const [isFroshModalOpen, setIsFroshModalOpen] = useState(false); // If frosh modal is open
     const [suiteDimensions, setSuiteDimensions] = useState({ width: 0, height: 0 }); // dimensions of the suite
+    const [isThemeModalOpen, setIsThemeModalOpen] = useState(false); // If theme modal is open
     const roomRefs = useRef({}); // references to all the room divs
     // Initialize active tab state from localStorage or default to 'Atwood'
 
@@ -276,6 +277,7 @@ export const MyContextProvider = ({ children }) => {
 
 
     const cellColors = {
+        name: "Default",
         unbumpableRoom: "black",
         roomNumber: "#ffd6ff",
         pullMethod: "#ffbbf2",
@@ -284,6 +286,43 @@ export const MyContextProvider = ({ children }) => {
         myRoom: "#a2d2ff",
 
     };
+    const cellColors2 = {
+        name: "Palette 2",
+        unbumpableRoom: "#7F7F7F",
+        roomNumber: "#FFD700",
+        pullMethod: "#32CD32",
+        evenSuite: "#FFA500",
+        oddSuite: "#FF4500",
+        myRoom: "#1E90FF",
+    };
+    const cellColors3 = {
+        name: "Palette 3",
+        unbumpableRoom: "#6B5B95",
+        roomNumber: "#D64161",
+        pullMethod: "#FF7B25",
+        evenSuite: "#92A8D1",
+        oddSuite: "#88B04B",
+        myRoom: "#B565A7",
+    };
+    const cellColors4 = {
+        name:  "Palette 4",
+        unbumpableRoom: "#009B77",
+        roomNumber: "#FF6F61",
+        pullMethod: "#FFB447",
+        evenSuite: "#EAF679",
+        oddSuite: "#2EC4B6",
+        myRoom: "#011627",
+    };
+
+    const colorPalettes = [
+        cellColors, cellColors2, cellColors3, cellColors4
+    ]
+
+    const [selectedPalette, setSelectedPalette] = useState(() => {
+        const storedPalette = localStorage.getItem('selectedPalette');
+        return storedPalette ? JSON.parse(storedPalette) : colorPalettes[0];
+    });
+
 
     const getNameById = (id) => {
         if (id === -1) {
@@ -349,6 +388,11 @@ export const MyContextProvider = ({ children }) => {
         setSuiteDimensions,
         getRoomUUIDFromUserID,
         roomRefs,
+        colorPalettes,
+        selectedPalette,
+        setSelectedPalette,
+        setIsThemeModalOpen,
+        isThemeModalOpen
  
     };
 
