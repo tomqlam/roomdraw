@@ -342,7 +342,7 @@ function BumpModal() {
       <div className="modal-card">
         <header className="modal-card-head">
           <p className="modal-card-title">
-            {selectedRoomObject.isPreplaced ? "Can't edit preplaced room" : `Edit Room ${selectedItem}`}
+            {selectedRoomObject.pullPriority.isPreplaced ? "Can't edit preplaced room" : `Edit Room ${selectedItem}`}
           </p>
           <button className="delete" aria-label="close" onClick={closeModal}></button>
         </header>
@@ -352,7 +352,7 @@ function BumpModal() {
           {((jwtDecode(credentials).email === "tlam@g.hmc.edu") || (jwtDecode(credentials).email === "smao@g.hmc.edu")) && <button onClick={() => postToFrosh(selectedRoomObject)}>Add Frosh</button>}
 
 
-          {!selectedRoomObject.isPreplaced && <div>
+          {!selectedRoomObject.pullPriority.isPreplaced && <div>
             <div>
               <label className="label">{`Reassign Occupant${selectedRoomObject.maxOccupancy > 1 ? "s" : ""}`}</label>
 

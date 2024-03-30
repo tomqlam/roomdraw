@@ -325,7 +325,9 @@ function FloorGrid({ gridData }) {
             ...pullMethodStyle, gridRow: `span ${suite.rooms.length}`, backgroundColor: suiteIndex % 2 === 0
               ? selectedPalette.evenSuite // color for even suiteIndex
               : selectedPalette.oddSuite
-          }} ref={divRefs.current[suiteIndex]} onClick={() => updateSuiteNotes(room.roomNumber, divRefs.current[suiteIndex])}>{suite.suiteDesign && <img src={suite.suiteDesign} alt={suite.suiteDesign} />}</div>
+          }} ref={divRefs.current[suiteIndex]} onClick={() => updateSuiteNotes(room.roomNumber, divRefs.current[suiteIndex])}>
+            {suite.suiteDesign && <img src={suite.suiteDesign} alt={suite.suiteDesign} style={{ maxWidth: '100%', maxHeight: '50vh', objectFit: 'contain', width: 'auto', height: 'auto' }} />}
+          </div>
         }
         <div style={getGridItemStyle(room, room.maxOccupancy, 1, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{room.hasFrosh ? 'Frosh' : getNameById(room.occupant1)}</div>
         <div style={getGridItemStyle(room, room.maxOccupancy, 2, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{room.hasFrosh ? 'Frosh' : getNameById(room.occupant2)}</div>

@@ -20,6 +20,7 @@ const BumpFroshModal = () => {
 
     const [targetRoom, setTargetRoom] = useState("NONE");
     const [froshBumpLoading, setFroshBumpLoading] = useState(false);
+    const [froshBumpError, setFroshBumpError] = useState("");
 
 
     const handleSelectChange = (event) => {
@@ -73,6 +74,12 @@ const BumpFroshModal = () => {
                 })
                 .then(data => {
                     console.log(data);
+                    if (data.error) {
+                        setFroshBumpError(data.error);
+                        setFroshBumpLoading(false);
+                        return;
+                        
+                    }
                     setIsFroshModalOpen(false);
                     setFroshBumpLoading(false);
                     setRefreshKey(prevKey => prevKey + 1);
@@ -111,6 +118,7 @@ const BumpFroshModal = () => {
                             }
                         </select>
                     </div>}
+                    {froshBumpError !== "" && <p class="help is-danger">{froshBumpError}</p>}
 
 
                 </section>

@@ -198,7 +198,8 @@ function SuiteNoteModal() {
                     <button className="delete" aria-label="close" onClick={() => setIsSuiteNoteModalOpen(false)}></button>
                 </header>
                 <section className="modal-card-body">
-                    <p>First you must upload any picture, then crop & overlay text on top!</p> <br/>
+                    <p>First you must upload any picture, then crop & overlay text on top!</p>
+                    <p>Please do not submit inappropriate pictures, or pictures too thin/tall.</p> <br/>
                     {/* <input type="file" id="fileUpload" /> */}
                     <div id="container" style={{ width: '100%', height: '50vh' }}>
                         <ImageEditorComponent toolbar={['Crop', 'Transform', 'Annotate', 'Image', 'ZoomIn', 'ZoomOut',]} ref={imgObj} />
