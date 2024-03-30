@@ -2149,12 +2149,6 @@ func PreplaceOccupants(c *gin.Context) {
 		return
 	}
 
-	if currentRoomInfo.PullPriority.IsPreplaced {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Cannot pull into a preplaced room"})
-		err = errors.New("room is already preplaced")
-		return
-	}
-
 	// if proposed occupants is empty, clear the room
 	if len(request.ProposedOccupants) == 0 {
 		err = clearRoom(currentRoomInfo.RoomUUID, tx)
@@ -2163,6 +2157,12 @@ func PreplaceOccupants(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to remove the current occupants of the room"})
 			return
 		}
+		return
+	}
+
+	if currentRoomInfo.PullPriority.IsPreplaced {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Cannot pull into a preplaced room"})
+		err = errors.New("room is already preplaced")
 		return
 	}
 
