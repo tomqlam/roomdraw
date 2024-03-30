@@ -231,7 +231,6 @@ func JWTAuthMiddleware(requiresAdmin bool) gin.HandlerFunc {
 
 				c.Set("email", email)                   // Pass the email to the next middleware or handler
 				c.Set("user_full_name", claims["name"]) // Pass the user's full name to the next middleware or handler
-				log.Println("Email:", email)
 				c.Next()
 				return
 			}
