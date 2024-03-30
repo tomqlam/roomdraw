@@ -23,24 +23,30 @@ export const MyContextProvider = ({ children }) => {
     const [isSuiteNoteModalOpen, setIsSuiteNoteModalOpen] = useState(false); // If suite note modal 
     const [isFroshModalOpen, setIsFroshModalOpen] = useState(false); // If frosh modal is open
     const [suiteDimensions, setSuiteDimensions] = useState({ width: 0, height: 0 }); // dimensions of the suite
+    const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false); // If theme modal is open
     const roomRefs = useRef({}); // references to all the room divs
+    const [showFloorplans, setShowFloorplans] = useState(false);
+
+    const suiteUUIDs = ["b546e959-fdd3-41a0-aecb-73dc4a7b1814","6aac00eb-7a31-4687-b6a9-c22572e479a2", "768b576c-391a-414a-9e73-4e9f1b8d2b59", "50ef0150-7abf-47ca-afa6-165ecfed1f95", "dbb293ae-a9af-444d-b3a9-f2a3b4524bef", "06a1ed92-53cb-42c6-9d80-759ab263d0c0", "14e1d2dc-5472-4e00-880b-b2c405cdf326"]; // Fill this array with the suite UUIDs you want to split
+    const floorNames = ["LRL (Topless)", "LLL", "URL", "ULL"]; // Fill this array with the custom floor names
+
     // Initialize active tab state from localStorage or default to 'Atwood'
 
     const getRoomUUIDFromUserID = (userID) => {
         if (rooms) {
-          for (let room of rooms) {
-    
-            if (room.Occupants && room.Occupants.includes(Number(userID))) {
-              // they are this room
-    
-              return room.RoomUUID;
+            for (let room of rooms) {
+
+                if (room.Occupants && room.Occupants.includes(Number(userID))) {
+                    // they are this room
+
+                    return room.RoomUUID;
+                }
             }
-          }
-    
-    
+
+
         }
         return null;
-      }
+    }
 
     const [activeTab, setActiveTab] = useState(() => {
         const savedTab = localStorage.getItem('activeTab');
@@ -172,6 +178,7 @@ export const MyContextProvider = ({ children }) => {
                 };
                 console.log("reached here");
                 console.log(data.floors[0].suites);
+                data = splitFloorsForCaseDorm(data, suiteUUIDs, floorNames);
 
 
                 if (Array.isArray(data.floors[0].suites)) {
@@ -216,6 +223,10 @@ export const MyContextProvider = ({ children }) => {
                     if (handleErrorFromTokenExpiry(data)) {
                         return;
                     };
+                    
+                    console.log("Surely");
+                    data = splitFloorsForCaseDorm(data, suiteUUIDs, floorNames);
+
 
                     if (Array.isArray(data.floors[0].suites)) {
                         data.floors.forEach(floor => {
@@ -259,6 +270,49 @@ export const MyContextProvider = ({ children }) => {
             });
     }
 
+    function splitFloorsForCaseDorm(dormData, suiteUUIDs, floorNames) {
+        print(dormData.dormName);
+        
+        if (dormData.dormName !== 'Case') {
+            return dormData;
+        }
+
+        const newFloors = [];
+        dormData.floors.forEach((floor, index) => {
+            const firstHalfSuites = [];
+            const secondHalfSuites = [];
+
+            floor.suites.forEach(suite => {
+                if (suiteUUIDs.includes(suite.suiteUUID)) {
+                    firstHalfSuites.push(suite);
+                } else {
+                    secondHalfSuites.push(suite);
+                }
+            });
+
+            newFloors.push({
+                ...floor,
+                floorNumber: index,
+                floorName: floorNames[index * 2],
+                suites: firstHalfSuites,
+            });
+
+            newFloors.push({
+                ...floor,
+                floorNumber: index,
+                floorName: floorNames[index * 2 + 1],
+                suites: secondHalfSuites,
+            });
+        });
+        console.log("new floors")
+        console.log(newFloors);
+
+        return {
+            ...dormData,
+            floors: newFloors,
+        };
+    }
+
     // fixed mapping from dorms to numbers
 
     const dormMapping = {
@@ -276,6 +330,7 @@ export const MyContextProvider = ({ children }) => {
 
 
     const cellColors = {
+        name: "Default",
         unbumpableRoom: "black",
         roomNumber: "#ffd6ff",
         pullMethod: "#ffbbf2",
@@ -284,6 +339,43 @@ export const MyContextProvider = ({ children }) => {
         myRoom: "#a2d2ff",
 
     };
+    const cellColors2 = {
+        name: "Starburst",
+        unbumpableRoom: "#390099",
+        roomNumber: "#9e0059",
+        pullMethod: "#ff7d00",
+        evenSuite: "#ffbd00",
+        oddSuite: "#ff5400",
+        myRoom: "#ff0054",
+    };
+    const cellColors3 = {
+        name: "High contrast",
+        unbumpableRoom: "#003844",
+        roomNumber: "#9fb8ad",
+        pullMethod: "#FF7B25",
+        evenSuite: "#ffebc6",
+        oddSuite: "#ffb100",
+        myRoom: "#f194b4",
+    };
+    const cellColors4 = {
+        name: "Earth Tones",
+        unbumpableRoom: "#588157",
+        roomNumber: "#faedcd",
+        pullMethod: "#fefae0",
+        evenSuite: "#e9edc9",
+        oddSuite: "#ccd5ae",
+        myRoom: "#d4a373",
+    };
+
+    const colorPalettes = [
+        cellColors, cellColors4, cellColors3, cellColors2
+    ]
+
+    const [selectedPalette, setSelectedPalette] = useState(() => {
+        const storedPalette = localStorage.getItem('selectedPalette');
+        return storedPalette ? JSON.parse(storedPalette) : colorPalettes[0];
+    });
+
 
     const getNameById = (id) => {
         if (id === -1) {
@@ -349,7 +441,14 @@ export const MyContextProvider = ({ children }) => {
         setSuiteDimensions,
         getRoomUUIDFromUserID,
         roomRefs,
- 
+        colorPalettes,
+        selectedPalette,
+        setSelectedPalette,
+        setIsSettingsModalOpen,
+        isSettingsModalOpen,
+        showFloorplans,
+        setShowFloorplans
+
     };
 
     return (

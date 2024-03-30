@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 )
 
 type IntArray []int
@@ -100,17 +101,18 @@ type RoomRaw struct {
 }
 
 type SuiteRaw struct {
-	SuiteUUID       uuid.UUID `db:"suite_uuid"`
-	Dorm            int       `db:"dorm"`
-	DormName        string    `db:"dorm_name"`
-	Floor           int       `db:"floor"`
-	RoomCount       int       `db:"room_count"`
-	Rooms           UUIDArray `db:"rooms"`
-	AlternativePull bool      `db:"alternative_pull"`
-	SuiteDesign     string    `db:"suite_design"`
-	CanLockPull     bool      `db:"can_lock_pull"`
-	LockPulledRoom  uuid.UUID `db:"lock_pulled_room"`
-	ReslifeRoom     uuid.UUID `db:"reslife_room"`
+	SuiteUUID        uuid.UUID `db:"suite_uuid"`
+	Dorm             int       `db:"dorm"`
+	DormName         string    `db:"dorm_name"`
+	Floor            int       `db:"floor"`
+	RoomCount        int       `db:"room_count"`
+	Rooms            UUIDArray `db:"rooms"`
+	AlternativePull  bool      `db:"alternative_pull"`
+	SuiteDesign      string    `db:"suite_design"`
+	CanLockPull      bool      `db:"can_lock_pull"`
+	LockPulledRoom   uuid.UUID `db:"lock_pulled_room"`
+	ReslifeRoom      uuid.UUID `db:"reslife_room"`
+	GenderPreference string    `db:"gender_preference"`
 }
 
 type DormSimple struct {
@@ -133,11 +135,12 @@ type FloorSimpler struct {
 }
 
 type SuiteSimple struct {
-	Rooms           []RoomSimple `json:"rooms"`
-	SuiteDesign     string       `json:"suiteDesign"`
-	SuiteUUID       uuid.UUID    `json:"suiteUUID"`
-	AlternativePull bool         `json:"alternative_pull"`
-	CanLockPull     bool         `json:"can_lock_pull"`
+	Rooms            []RoomSimple `json:"rooms"`
+	SuiteDesign      string       `json:"suiteDesign"`
+	SuiteUUID        uuid.UUID    `json:"suiteUUID"`
+	GenderPreference string       `json:"genderPreference"`
+	AlternativePull  bool         `json:"alternative_pull"`
+	CanLockPull      bool         `json:"can_lock_pull"`
 }
 
 type SuiteSimpler struct {
@@ -165,17 +168,19 @@ type RoomSimpler struct {
 }
 
 type UserRaw struct {
-	Id           int       `db:"id"`
-	Year         string    `db:"year"`
-	FirstName    string    `db:"first_name"`
-	LastName     string    `db:"last_name"`
-	Email        string    `db:"email"`
-	DrawNumber   float64   `db:"draw_number"`
-	Preplaced    bool      `db:"preplaced"`
-	InDorm       int       `db:"in_dorm"`
-	SGroupUUID   uuid.UUID `db:"sgroup_uuid"`
-	Participated bool      `db:"participated"`
-	RoomUUID     uuid.UUID `db:"room_uuid"`
+	Id                int         `db:"id"`
+	Year              string      `db:"year"`
+	FirstName         string      `db:"first_name"`
+	LastName          string      `db:"last_name"`
+	Email             string      `db:"email"`
+	DrawNumber        float64     `db:"draw_number"`
+	Preplaced         bool        `db:"preplaced"`
+	InDorm            int         `db:"in_dorm"`
+	SGroupUUID        uuid.UUID   `db:"sgroup_uuid"`
+	Participated      bool        `db:"participated"`
+	PartitipationTime pq.NullTime `db:"participation_time"`
+	RoomUUID          uuid.UUID   `db:"room_uuid"`
+	ReslifeRole       string      `db:"reslife_role"`
 }
 
 type SuiteGroupRaw struct {
@@ -247,4 +252,9 @@ type BumpFroshRequest struct {
 
 type GeneralRequest struct {
 	UserJWT string `json:"userJWT"`
+}
+
+type PreplacedRequest struct {
+	ProposedOccupants []int  `json:"proposedOccupants"`
+	UserJWT           string `json:"userJWT"`
 }

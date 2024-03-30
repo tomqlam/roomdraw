@@ -17,6 +17,7 @@ import (
 )
 
 func SetSuiteDesign(c *gin.Context) {
+	var err error
 	// Retrieve the doneChan from the context
 	doneChanInterface, exists := c.Get("doneChan")
 	if !exists {
@@ -64,7 +65,9 @@ func SetSuiteDesign(c *gin.Context) {
 	// constantly listen for the doneChan to be closed (meaning the request was timed out) and return error
 	go func() {
 		<-doneChan
-		log.Println("Request was fulfilled")
+		log.Println("Request was fulfilled or timed out")
+		// write to global error variable
+		err = errors.New("request was fulfilled or timed out")
 	}()
 
 	suiteUUID := c.Param("suiteuuid")
@@ -110,6 +113,7 @@ func SetSuiteDesign(c *gin.Context) {
 }
 
 func SetSuiteDesignNew(c *gin.Context) {
+	var err error
 	// Retrieve the doneChan from the context
 	doneChanInterface, exists := c.Get("doneChan")
 	if !exists {
@@ -157,7 +161,9 @@ func SetSuiteDesignNew(c *gin.Context) {
 	// constantly listen for the doneChan to be closed (meaning the request was timed out) and return error
 	go func() {
 		<-doneChan
-		log.Println("Request was fulfilled")
+		log.Println("Request was fulfilled or timed out")
+		// write to global error variable
+		err = errors.New("request was fulfilled or timed out")
 	}()
 
 	suiteUUID := c.Param("suiteuuid")
@@ -331,6 +337,7 @@ func SetSuiteDesignNew(c *gin.Context) {
 }
 
 func DeleteSuiteDesign(c *gin.Context) {
+	var err error
 	// Retrieve the doneChan from the context
 	doneChanInterface, exists := c.Get("doneChan")
 	if !exists {
@@ -378,7 +385,9 @@ func DeleteSuiteDesign(c *gin.Context) {
 	// constantly listen for the doneChan to be closed (meaning the request was timed out) and return error
 	go func() {
 		<-doneChan
-		log.Println("Request was fulfilled")
+		log.Println("Request was fulfilled or timed out")
+		// write to global error variable
+		err = errors.New("request was fulfilled or timed out")
 	}()
 
 	suiteUUID := c.Param("suiteuuid")

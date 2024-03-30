@@ -24,11 +24,17 @@ function FloorGrid({ gridData }) {
     selectedRoomObject,
     setIsFroshModalOpen,
     setIsSuiteNoteModalOpen,
+    selectedPalette,
 
     roomRefs,
     activeTab
   } = useContext(MyContext);
 
+  function capitalizeFirstLetterOfEachWord(str) {
+    return str.split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  }
 
   async function getOccupantsByRoomNumber(roomNumber) {
     return new Promise((resolve, reject) => {
@@ -126,21 +132,21 @@ function FloorGrid({ gridData }) {
   const getGridItemStyle = (room, occupancy, maxOccupancy, suiteIndex, pullPriority) => {
 
     // Not valid for pulling
-    if (occupancy < maxOccupancy) {
+    if (occupancy < maxOccupancy || !userMap[selectedID]) {
       return {
         ...gridItemStyle,
-        backgroundColor: cellColors.unbumpableRoom
+        backgroundColor: selectedPalette.unbumpableRoom
       };
     }
     // Selected person lives in this room
     if (room.roomUUID === userMap[selectedID].RoomUUID) {
       return {
         ...gridItemStyle,
-        backgroundColor: cellColors.myRoom,
+        backgroundColor: selectedPalette.myRoom,
       };
     }
 
-    let backgroundColor = (suiteIndex % 2 === 0 ? cellColors.evenSuite : cellColors.oddSuite);
+    let backgroundColor = (suiteIndex % 2 === 0 ? selectedPalette.evenSuite : selectedPalette.oddSuite);
 
     if (!checkBumpable(pullPriority) && onlyShowBumpableRooms) {
       backgroundColor = darken(backgroundColor, 100); // darken the color by 10%
@@ -154,11 +160,11 @@ function FloorGrid({ gridData }) {
 
   const roomNumberStyle = {
     ...gridItemStyle,
-    backgroundColor: cellColors.roomNumber,
+    backgroundColor: selectedPalette.roomNumber,
   };
   const pullMethodStyle = {
     ...gridItemStyle,
-    backgroundColor: cellColors.pullMethod,
+    backgroundColor: selectedPalette.pullMethod,
   };
   const handleCellClick = async (roomNumber) => {
     setSelectedItem(roomNumber);
@@ -201,7 +207,25 @@ function FloorGrid({ gridData }) {
           pullPriority = pullPriority.inherited;
         }
         if (pullPriority.isPreplaced) {
-          finalString += "Preplaced";
+          let shortestOccupant = null;
+          // console.log(room)
+          const roomOccupants = [room.occupant1, room.occupant2, room.occupant3, room.occupant4];
+
+          roomOccupants.forEach(occupant => {
+            if (occupant !== 0) {
+              if (userMap[occupant].ReslifeRole !== 'none') {
+                if (shortestOccupant === null || userMap[occupant].ReslifeRole.length < shortestOccupant.length) {
+                  shortestOccupant = userMap[occupant].ReslifeRole;
+                }
+              }
+            }
+          });
+
+          if (shortestOccupant !== null) {
+            return capitalizeFirstLetterOfEachWord(shortestOccupant);
+          } else {
+            return "Preplaced";
+          }
         }
         if (pullPriority.hasInDorm) {
           finalString += `In-Dorm ${pullPriority.drawNumber}`;
@@ -299,8 +323,8 @@ function FloorGrid({ gridData }) {
           roomIndex === 0
           && <div style={{
             ...pullMethodStyle, gridRow: `span ${suite.rooms.length}`, backgroundColor: suiteIndex % 2 === 0
-              ? cellColors.evenSuite // color for even suiteIndex
-              : cellColors.oddSuite
+              ? selectedPalette.evenSuite // color for even suiteIndex
+              : selectedPalette.oddSuite
           }} ref={divRefs.current[suiteIndex]} onClick={() => updateSuiteNotes(room.roomNumber, divRefs.current[suiteIndex])}>{suite.suiteDesign && <img src={suite.suiteDesign} alt={suite.suiteDesign} />}</div>
         }
         <div style={getGridItemStyle(room, room.maxOccupancy, 1, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{room.hasFrosh ? 'Frosh' : getNameById(room.occupant1)}</div>
