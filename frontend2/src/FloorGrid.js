@@ -202,7 +202,24 @@ function FloorGrid({ gridData }) {
           pullPriority = pullPriority.inherited;
         }
         if (pullPriority.isPreplaced) {
-          finalString += "Preplaced";
+          let shortestOccupant = null;
+
+          room.Occupants.forEach(occupant => {
+            if (userMap[occupant].ReslifeRole !== null) {
+              if (shortestOccupant === null || userMap[occupant].ReslifeRole.length < shortestOccupant.length) {
+                shortestOccupant = userMap[occupant].ReslifeRole;
+              }
+            }
+          });
+
+          if (shortestOccupant !== null) {
+            return shortestOccupant;
+          } else 
+          {
+            return "Preplaced";
+          }
+
+          
         }
         if (pullPriority.hasInDorm) {
           finalString += `In-Dorm ${pullPriority.drawNumber}`;
