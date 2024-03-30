@@ -27,7 +27,7 @@ export const MyContextProvider = ({ children }) => {
     const roomRefs = useRef({}); // references to all the room divs
     const [showFloorplans, setShowFloorplans] = useState(false);
 
-    const suiteUUIDs = ["b546e959-fdd3-41a0-aecb-73dc4a7b1814","6aac00eb-7a31-4687-b6a9-c22572e479a2", "768b576c-391a-414a-9e73-4e9f1b8d2b59", "50ef0150-7abf-47ca-afa6-165ecfed1f95", "dbb293ae-a9af-444d-b3a9-f2a3b4524bef", "06a1ed92-53cb-42c6-9d80-759ab263d0c0", "14e1d2dc-5472-4e00-880b-b2c405cdf326"]; // Fill this array with the suite UUIDs you want to split
+    const roomNumbers = ["101", "Q1D", "118", "201", "Q2C", "Q2D", "218"]; // Fill this array with the suite UUIDs you want to split
     const floorNames = ["LRL (Topless)", "LLL", "URL", "ULL"]; // Fill this array with the custom floor names
 
     // Initialize active tab state from localStorage or default to 'Atwood'
@@ -72,7 +72,7 @@ export const MyContextProvider = ({ children }) => {
             if (credentials && !document.hidden) {
                 setRefreshKey(prevKey => prevKey + 1);
                 setLastRefreshedTime(new Date());
-                console.log("refreshed ONE DORM");
+                // commented console.log ("refreshed ONE DORM");
             }
         }, 60000);
         return () => {
@@ -108,7 +108,7 @@ export const MyContextProvider = ({ children }) => {
 
     // debug print function
     function print(text) {
-        console.log(text);
+        // commented console.log (text);
     }
 
 
@@ -130,7 +130,7 @@ export const MyContextProvider = ({ children }) => {
                     setUserMap(data);
                 })
                 .catch(err => {
-                    console.log(err);
+                    // commented console.log (err);
                 })
         }
 
@@ -150,7 +150,7 @@ export const MyContextProvider = ({ children }) => {
                         return;
                     };
                     setRooms(data);
-                    console.log(data);
+                    // commented console.log (data);
                     if (data.error) {
                         print("There was an error printing rooms");
                         setCredentials(null); // nullify the credentials if there was an error, they're probably failing
@@ -158,8 +158,8 @@ export const MyContextProvider = ({ children }) => {
                     }
                 })
                 .catch(err => {
-                    console.log(err);
-                    console.log(err.error);
+                    // commented console.log (err);
+                    // commented console.log (err.error);
                 })
         }
     }
@@ -176,9 +176,9 @@ export const MyContextProvider = ({ children }) => {
                 if (handleErrorFromTokenExpiry(data)) {
                     return;
                 };
-                console.log("reached here");
-                console.log(data.floors[0].suites);
-                data = splitFloorsForCaseDorm(data, suiteUUIDs, floorNames);
+                // commented console.log ("reached here");
+                // commented console.log (data.floors[0].suites);
+                data = splitFloorsForCaseDorm(data, roomNumbers, floorNames);
 
 
                 if (Array.isArray(data.floors[0].suites)) {
@@ -201,7 +201,7 @@ export const MyContextProvider = ({ children }) => {
                     console.error("data.floors[0].suites is not an array:", data.floors[0].suites);
                 }
 
-                console.log(data);
+                // commented console.log (data);
                 setGridData(prevGridData => prevGridData.map(item => item.dormName === dorm ? data : item));
             })
             .catch(err => {
@@ -224,8 +224,8 @@ export const MyContextProvider = ({ children }) => {
                         return;
                     };
                     
-                    console.log("Surely");
-                    data = splitFloorsForCaseDorm(data, suiteUUIDs, floorNames);
+                    // commented console.log ("Surely");
+                    data = splitFloorsForCaseDorm(data, roomNumbers, floorNames);
 
 
                     if (Array.isArray(data.floors[0].suites)) {
@@ -261,7 +261,7 @@ export const MyContextProvider = ({ children }) => {
                     print(dataArray);
                     print("fetching roosm for dorms");
                     setGridData(dataArray);
-                    console.log(gridData);
+                    // commented console.log (gridData);
                 }
 
             })
@@ -269,9 +269,8 @@ export const MyContextProvider = ({ children }) => {
                 console.error("Error in Promise.all:", err);
             });
     }
-
-    function splitFloorsForCaseDorm(dormData, suiteUUIDs, floorNames) {
-        print(dormData.dormName);
+    function splitFloorsForCaseDorm(dormData, roomNumbers, floorNames) {
+        // commented console.log (dormData.dormName);
         
         if (dormData.dormName !== 'Case') {
             return dormData;
@@ -283,7 +282,8 @@ export const MyContextProvider = ({ children }) => {
             const secondHalfSuites = [];
 
             floor.suites.forEach(suite => {
-                if (suiteUUIDs.includes(suite.suiteUUID)) {
+                const suiteHasMatchingRoom = suite.rooms.some(room => roomNumbers.includes(room.roomNumber));
+                if (suiteHasMatchingRoom) {
                     firstHalfSuites.push(suite);
                 } else {
                     secondHalfSuites.push(suite);
@@ -304,15 +304,14 @@ export const MyContextProvider = ({ children }) => {
                 suites: secondHalfSuites,
             });
         });
-        console.log("new floors")
-        console.log(newFloors);
+        // commented console.log ("new floors")
+        // commented console.log (newFloors);
 
         return {
             ...dormData,
             floors: newFloors,
         };
     }
-
     // fixed mapping from dorms to numbers
 
     const dormMapping = {

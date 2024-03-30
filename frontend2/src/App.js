@@ -59,8 +59,8 @@ function App() {
 
     const thisRoom = getRoomObjectFromUserID(selectedID);
     if (thisRoom) {
-      console.log(thisRoom);
-      console.log(thisRoom.PullPriority);
+      // commented console.log (thisRoom);
+      // commented console.log (thisRoom.PullPriority);
       var pullPriority = thisRoom.PullPriority;
       if (pullPriority.inherited.valid) {
         pullPriority = pullPriority.inherited;
@@ -78,9 +78,9 @@ function App() {
   useEffect(() => {
     const storedCredentials = localStorage.getItem('jwt');
     if (storedCredentials) {
-      console.log("use effect");
-      console.log(storedCredentials);
-      console.log("end use efect");
+      // commented console.log ("use effect");
+      // commented console.log (storedCredentials);
+      // commented console.log ("end use efect");
       setCredentials(storedCredentials);
     }
   }, []);
@@ -98,16 +98,16 @@ function App() {
     // decode the credential
 
     const decoded = jwtDecode(credentialResponse.credential);
-    console.log(decoded);
+    // commented console.log (decoded);
 
     setCredentials(credentialResponse.credential);
     localStorage.setItem('jwt', credentialResponse.credential); // originally stored credentialREsponse
     // localStorage.setItem('jwt', credentials); // originally stored credentialREsponse
-    console.log(typeof credentialResponse.credential);
+    // commented console.log (typeof credentialResponse.credential);
   };
 
   const handleError = () => {
-    console.log('Login Failed');
+    // commented console.log ('Login Failed');
     // Optionally, handle login failure (e.g., by clearing stored credentials)
   };
 
@@ -271,14 +271,14 @@ function App() {
             return;
           };
           const thisRoom = getRoomObjectFromUserID(selectedID);
-          console.log("BRUHMOMENT");
-          console.log(thisRoom);
-          console.log(thisRoom.PullPriority.hasInDorm);
+          // commented console.log ("BRUHMOMENT");
+          // commented console.log (thisRoom);
+          // commented console.log (thisRoom.PullPriority.hasInDorm);
           setIsInDorm(prev => !prev);
 
         })
         .catch(err => {
-          console.log(err);
+          // commented console.log (err);
         })
 
 

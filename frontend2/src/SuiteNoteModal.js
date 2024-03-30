@@ -71,7 +71,7 @@ function SuiteNoteModal() {
                                 // updated suite successfully 
                                 setIsSuiteNoteModalOpen(false);
                                 setRefreshKey(prevKey => prevKey + 1);
-                                console.log("refreshing");
+                                // commented console.log ("refreshing");
                             }
                         })
                         .catch((error) => {
@@ -94,7 +94,7 @@ function SuiteNoteModal() {
             .then(response => response.json())
             .then(data => {
                 if (data.error) {
-                    console.log(data.error);
+                    // commented console.log (data.error);
                 } else {
                     // updated suite successfully 
                     setIsSuiteNoteModalOpen(false);
@@ -150,7 +150,7 @@ function SuiteNoteModal() {
             // const url = canvas.toDataURL('image/png');
             if (selectedSuiteObject.suiteDesign) {
                 const url = selectedSuiteObject.suiteDesign;
-                console.log(selectedSuiteObject);
+                // commented console.log (selectedSuiteObject);
 
                 // Open the image in the ImageEditorComponent
                 imgObj.current.open(url);
@@ -198,7 +198,8 @@ function SuiteNoteModal() {
                     <button className="delete" aria-label="close" onClick={() => setIsSuiteNoteModalOpen(false)}></button>
                 </header>
                 <section className="modal-card-body">
-                    <p>First you must upload any picture, then crop & overlay text on top!</p> <br/>
+                    <p>First you must upload any picture, then crop & overlay text on top!</p>
+                    <p>Please do not submit inappropriate pictures, or pictures too thin/tall.</p> <br/>
                     {/* <input type="file" id="fileUpload" /> */}
                     <div id="container" style={{ width: '100%', height: '50vh' }}>
                         <ImageEditorComponent toolbar={['Crop', 'Transform', 'Annotate', 'Image', 'ZoomIn', 'ZoomOut',]} ref={imgObj} />
