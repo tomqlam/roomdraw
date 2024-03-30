@@ -130,9 +130,9 @@ function FloorGrid({ gridData }) {
   }
   // given parameters, return grid item style with correct background color shading
   const getGridItemStyle = (room, occupancy, maxOccupancy, suiteIndex, pullPriority) => {
-
+  
     // Not valid for pulling
-    if (occupancy < maxOccupancy || !userMap[selectedID]) {
+    if (occupancy < maxOccupancy || !userMap || !userMap[selectedID]) {
       return {
         ...gridItemStyle,
         backgroundColor: selectedPalette.unbumpableRoom
@@ -329,10 +329,10 @@ function FloorGrid({ gridData }) {
             {suite.suiteDesign && <img src={suite.suiteDesign} alt={suite.suiteDesign} style={{ maxWidth: '100%', maxHeight: '50vh', objectFit: 'contain', width: 'auto', height: 'auto' }} />}
           </div>
         }
-        <div style={getGridItemStyle(room, room.maxOccupancy, 1, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{room.hasFrosh ? 'Frosh' : getNameById(room.occupant1)}</div>
-        <div style={getGridItemStyle(room, room.maxOccupancy, 2, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{room.hasFrosh ? 'Frosh' : getNameById(room.occupant2)}</div>
-        {((activeTab === 'Atwood' || activeTab === 'Drinkward')|| activeTab === 'Case') && <div style={getGridItemStyle(room, room.maxOccupancy, 3, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{room.hasFrosh ? 'Frosh' : getNameById(room.occupant3)}</div>}
-        {activeTab === "Case" && <div style={getGridItemStyle(room, room.maxOccupancy, 4, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{room.hasFrosh ? 'Frosh' : getNameById(room.occupant4)}</div>}
+        <div style={getGridItemStyle(room, room.maxOccupancy, 1, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{room.maxOccupancy >= 1 && (room.hasFrosh ? 'Frosh' : getNameById(room.occupant1))}</div>
+        <div style={getGridItemStyle(room, room.maxOccupancy, 2, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{room.maxOccupancy >= 2 && (room.hasFrosh ? 'Frosh' : getNameById(room.occupant2))}</div>
+        {((activeTab === 'Atwood' || activeTab === 'Drinkward')|| activeTab === 'Case') && <div style={getGridItemStyle(room, room.maxOccupancy, 3, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{room.maxOccupancy >= 3 && (room.hasFrosh ? 'Frosh' : getNameById(room.occupant3))}</div>}
+        {activeTab === "Case" && <div style={getGridItemStyle(room, room.maxOccupancy, 4, suiteIndex, room.pullPriority)} onClick={() => handleCellClick(room.roomNumber)}>{room.maxOccupancy >= 4 && (room.hasFrosh ? 'Frosh' : getNameById(room.occupant4))}</div>}
       </React.Fragment>
     );
   })

@@ -459,7 +459,7 @@ function App() {
           </ul>
         </div>
 
-        <div class="columns">
+        {userMap && <div class="columns">
           {!showFloorplans && gridData
             .filter(dorm => dorm.dormName === activeTab)
             .flatMap(dorm => dorm.floors)
@@ -487,7 +487,7 @@ function App() {
                 ))}
             </div>
           )}
-        </div>
+        </div>}
 
 
       </section>}
