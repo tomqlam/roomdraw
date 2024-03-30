@@ -379,11 +379,12 @@ function BumpModal() {
                             const nameB = `${userMap[b].FirstName} ${userMap[b].LastName}`;
                             return nameA.localeCompare(nameB);
                           })
+                          .filter((key) => !userMap[key].Preplaced) // Replace 'YourCondition' with the condition you want to check
                           .map((key) => ({
                             value: key,
                             label: `${userMap[key].FirstName} ${userMap[key].LastName}`
                           }))}
-                      />
+                        />
                     </div>
                   </div>
                 </div>
