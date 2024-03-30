@@ -132,7 +132,7 @@ function FloorGrid({ gridData }) {
   const getGridItemStyle = (room, occupancy, maxOccupancy, suiteIndex, pullPriority) => {
 
     // Not valid for pulling
-    if (occupancy < maxOccupancy || !userMap[selectedID]) {
+    if (occupancy < maxOccupancy || !userMap || !userMap[selectedID]) {
       return {
         ...gridItemStyle,
         backgroundColor: selectedPalette.unbumpableRoom
