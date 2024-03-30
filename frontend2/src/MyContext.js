@@ -289,7 +289,13 @@ export const MyContextProvider = ({ children }) => {
                     secondHalfSuites.push(suite);
                 }
             });
+            // Sort rooms within the suites
+            firstHalfSuites.forEach(suite => suite.rooms.sort((a, b) => a.roomNumber.localeCompare(b.roomNumber, undefined, { numeric: true })));
+            secondHalfSuites.forEach(suite => suite.rooms.sort((a, b) => a.roomNumber.localeCompare(b.roomNumber, undefined, { numeric: true })));
 
+            // Sort suites within the floor by the first room number
+            firstHalfSuites.sort((a, b) => a.rooms[0].roomNumber.localeCompare(b.rooms[0].roomNumber, undefined, { numeric: true }));
+            secondHalfSuites.sort((a, b) => a.rooms[0].roomNumber.localeCompare(b.rooms[0].roomNumber, undefined, { numeric: true }));
             newFloors.push({
                 ...floor,
                 floorNumber: index,
