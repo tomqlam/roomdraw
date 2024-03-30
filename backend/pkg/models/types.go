@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -165,17 +166,19 @@ type RoomSimpler struct {
 }
 
 type UserRaw struct {
-	Id           int       `db:"id"`
-	Year         string    `db:"year"`
-	FirstName    string    `db:"first_name"`
-	LastName     string    `db:"last_name"`
-	Email        string    `db:"email"`
-	DrawNumber   float64   `db:"draw_number"`
-	Preplaced    bool      `db:"preplaced"`
-	InDorm       int       `db:"in_dorm"`
-	SGroupUUID   uuid.UUID `db:"sgroup_uuid"`
-	Participated bool      `db:"participated"`
-	RoomUUID     uuid.UUID `db:"room_uuid"`
+	Id                int       `db:"id"`
+	Year              string    `db:"year"`
+	FirstName         string    `db:"first_name"`
+	LastName          string    `db:"last_name"`
+	Email             string    `db:"email"`
+	DrawNumber        float64   `db:"draw_number"`
+	Preplaced         bool      `db:"preplaced"`
+	InDorm            int       `db:"in_dorm"`
+	SGroupUUID        uuid.UUID `db:"sgroup_uuid"`
+	Participated      bool      `db:"participated"`
+	PartitipationTime time.Time `db:"participation_time"`
+	RoomUUID          uuid.UUID `db:"room_uuid"`
+	ReslifeRole       string    `db:"reslife_role"`
 }
 
 type SuiteGroupRaw struct {
@@ -247,4 +250,9 @@ type BumpFroshRequest struct {
 
 type GeneralRequest struct {
 	UserJWT string `json:"userJWT"`
+}
+
+type PreplacedRequest struct {
+	ProposedOccupants []int  `json:"proposedOccupants"`
+	UserJWT           string `json:"userJWT"`
 }

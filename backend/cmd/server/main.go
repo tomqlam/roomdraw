@@ -71,6 +71,7 @@ func main() {
 		// Define write routes here
 		writeGroupAdmin.POST("/frosh/:roomuuid", handlers.AddFroshHandler)
 		writeGroupAdmin.POST("/frosh/remove/:roomuuid", handlers.RemoveFroshHandler)
+		writeGroupAdmin.POST("/rooms/preplace/:roomuuid", handlers.PreplaceOccupants)
 	}
 
 	// Start the server

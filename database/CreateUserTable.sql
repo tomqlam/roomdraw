@@ -11,9 +11,10 @@ CREATE TABLE Users (
     in_dorm int NOT NULL,
     sgroup_uuid uuid,
     participated boolean NOT NULL DEFAULT false,
+    participation_time timestamp,
     room_uuid uuid,
-    pulled_users int array,
-    pulled_by_users int array,
+    reslife_role varchar,
+    
     PRIMARY KEY (id),
     FOREIGN KEY (sgroup_uuid) REFERENCES SuiteGroups(sgroup_uuid)
 );
