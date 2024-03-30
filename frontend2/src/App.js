@@ -75,67 +75,6 @@ function App() {
 
   }, [selectedID, rooms]);
 
-  const allowedEmails = ['ltwicken@g.hmc.edu',
-  'tlam@g.hmc.edu',
-  'smao@g.hmc.edu',
-  'simyang@g.hmc.edu',
-  'yukyang@g.hmc.edu',
-  'jeshuang@g.hmc.edu',
-  'opick@g.hmc.edu',
-  'twigder@g.hmc.edu',
-  'asilver@g.hmc.edu',
-  'agruian@g.hmc.edu',
-  'kirajesh@g.hmc.edu',
-  'adye@g.hmc.edu',
-  'jchopra@g.hmc.edu',
-  'amcintoshlombardo@g.hmc.edu',
-  'audavis@g.hmc.edu',
-  'ktu@g.hmc.edu',
-  'lvairus@g.hmc.edu',
-  'cdiazruiz@g.hmc.edu',
-  'apechkamnerd@g.hmc.edu',
-  'ddada@g.hmc.edu',
-  'arajan@g.hmc.edu',
-  'allbarker@g.hmc.edu',
-  'johnho@g.hmc.edu',
-  'mbazan@g.hmc.edu',
-  'tbaugh@g.hmc.edu',
-  'wkirkland@g.hmc.edu',
-  'dipark@g.hmc.edu',
-  'dgangwar@g.hmc.edu',
-  'alezhu@g.hmc.edu',
-  'mikmann@g.hmc.edu',
-  'skimsuzuki@g.hmc.edu',
-  'lstone@g.hmc.edu',
-  'geverts@g.hmc.edu',
-  'jluu@g.hmc.edu',
-  'jfain@g.hmc.edu',
-  'alrosenberg@g.hmc.edu',
-  'ttounesi@g.hmc.edu',
-  'cnolasco@g.hmc.edu',
-  'conjones@g.hmc.edu',
-  'asenapati@g.hmc.edu',
-  'jelin@g.hmc.edu',
-  'mmoralesparedes@g.hmc.edu',
-  'slammert@g.hmc.edu',
-  'edonson@g.hmc.edu',
-  'svora@g.hmc.edu',
-  'cmorales@g.hmc.edu',
-  'szaozerska@g.hmc.edu',
-  'erli@g.hmc.edu',
-  'ravjones@g.hmc.edu',
-  'saan@g.hmc.edu',
-  'njobanputra@g.hmc.edu',
-  'lhilkemeyer@g.hmc.edu',
-  'ebarr@g.hmc.edu',
-  'vkrishna@g.hmc.edu',
-  'nphillips@g.hmc.edu',
-  'igodoy@g.hmc.edu',
-  'rpreis@g.hmc.edu',
-  'chschofield@g.hmc.edu',
-  'hkenyatta@g.hmc.edu',
-  'wosong@g.hmc.edu',
-    ]
   useEffect(() => {
     const storedCredentials = localStorage.getItem('jwt');
     if (storedCredentials) {
@@ -428,14 +367,14 @@ function App() {
           <h2 className="subtitle">Please log in with your HMC email to continue.</h2>
         </div>
       </section>}
-      {(credentials && !allowedEmails.includes(jwtDecode(credentials).email)) &&
+      {(credentials) &&
       <section class="section">
       <div style={{ textAlign: 'center' }}>
         <h1 className="title">Welcome to Digital Draw!</h1>
         <h2 className="subtitle">You're not authorized to test the website. Plese contact Serena or Tom if this is a mistake!</h2>
       </div>
     </section>}
-      {((credentials && allowedEmails.includes(jwtDecode(credentials).email))) && <section class="section">
+      {(credentials) && <section class="section">
         <div style={{ textAlign: 'center' }}>
           <h1 className="title">Welcome to DigiDraw!</h1>
           <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: "center", flexWrap: 'wrap' }}>
@@ -507,7 +446,7 @@ function App() {
         </div>
       </section>}
 
-      {(credentials && allowedEmails.includes(jwtDecode(credentials).email) && currPage === "Home") && <section class="section">
+      {(credentials && currPage === "Home") && <section class="section">
         <label className="checkbox" style={{ display: 'flex', alignItems: 'center' }}>
           <input
             type="checkbox"
