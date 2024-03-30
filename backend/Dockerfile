@@ -17,5 +17,8 @@ COPY . .
 # Air configuration file
 COPY .air.toml ./
 
+# Set Gin to release mode
+ENV GIN_MODE=release
+
 # Use Air for live reloading
 CMD ["air"]
