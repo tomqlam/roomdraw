@@ -30,6 +30,11 @@ function FloorGrid({ gridData }) {
     activeTab
   } = useContext(MyContext);
 
+  function capitalizeFirstLetterOfEachWord(str) {
+    return str.split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  }
 
   async function getOccupantsByRoomNumber(roomNumber) {
     return new Promise((resolve, reject) => {
@@ -203,23 +208,24 @@ function FloorGrid({ gridData }) {
         }
         if (pullPriority.isPreplaced) {
           let shortestOccupant = null;
+          // console.log(room)
+          const roomOccupants = [room.occupant1, room.occupant2, room.occupant3, room.occupant4];
 
-          room.Occupants.forEach(occupant => {
-            if (userMap[occupant].ReslifeRole !== null) {
-              if (shortestOccupant === null || userMap[occupant].ReslifeRole.length < shortestOccupant.length) {
-                shortestOccupant = userMap[occupant].ReslifeRole;
+          roomOccupants.forEach(occupant => {
+            if (occupant !== 0) {
+              if (userMap[occupant].ReslifeRole !== 'none') {
+                if (shortestOccupant === null || userMap[occupant].ReslifeRole.length < shortestOccupant.length) {
+                  shortestOccupant = userMap[occupant].ReslifeRole;
+                }
               }
             }
           });
 
           if (shortestOccupant !== null) {
-            return shortestOccupant;
-          } else 
-          {
+            return capitalizeFirstLetterOfEachWord(shortestOccupant);
+          } else {
             return "Preplaced";
           }
-
-          
         }
         if (pullPriority.hasInDorm) {
           finalString += `In-Dorm ${pullPriority.drawNumber}`;
