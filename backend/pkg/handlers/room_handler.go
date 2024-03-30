@@ -2120,7 +2120,6 @@ func PreplaceOccupants(c *gin.Context) {
 		}
 	}()
 
-	// check that the room is empty
 	var currentRoomInfo models.RoomRaw
 	err = tx.QueryRow("SELECT room_uuid, dorm, dorm_name, room_id, suite_uuid, max_occupancy, current_occupancy, occupants, pull_priority, has_frosh FROM rooms WHERE room_uuid = $1", roomUUIDParam).Scan(
 		&currentRoomInfo.RoomUUID,
@@ -2153,6 +2152,17 @@ func PreplaceOccupants(c *gin.Context) {
 	if currentRoomInfo.PullPriority.IsPreplaced {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Cannot pull into a preplaced room"})
 		err = errors.New("room is already preplaced")
+		return
+	}
+
+	// if proposed occupants is empty, clear the room
+	if len(request.ProposedOccupants) == 0 {
+		err = clearRoom(currentRoomInfo.RoomUUID, tx)
+		if err != nil {
+			log.Println(err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to remove the current occupants of the room"})
+			return
+		}
 		return
 	}
 
