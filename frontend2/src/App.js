@@ -314,11 +314,6 @@ function App() {
               <h2 >Last refresh: {lastRefreshedTime.toLocaleTimeString()}</h2>
 
             </div>
-
-
-
-
-
           </div>
 
           <div className="navbar-end">
@@ -367,13 +362,6 @@ function App() {
           <h2 className="subtitle">Please log in with your HMC email to continue.</h2>
         </div>
       </section>}
-      {(credentials) &&
-      <section class="section">
-      <div style={{ textAlign: 'center' }}>
-        <h1 className="title">Welcome to Digital Draw!</h1>
-        <h2 className="subtitle">You're not authorized to test the website. Plese contact Serena or Tom if this is a mistake!</h2>
-      </div>
-    </section>}
       {(credentials) && <section class="section">
         <div style={{ textAlign: 'center' }}>
           <h1 className="title">Welcome to DigiDraw!</h1>
