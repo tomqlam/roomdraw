@@ -38,7 +38,7 @@ func GetUsers(c *gin.Context) {
 
 func GetUsersIdMap(c *gin.Context) {
 	// Example SQL query
-	rows, err := database.DB.Query("SELECT id, year, first_name, last_name, draw_number, preplaced, in_dorm, sgroup_uuid, participated, room_uuid FROM users")
+	rows, err := database.DB.Query("SELECT id, year, first_name, last_name, draw_number, preplaced, in_dorm, sgroup_uuid, participated, participation_time,room_uuid, reslife_role FROM users")
 	if err != nil {
 
 		log.Println(err)
@@ -50,7 +50,7 @@ func GetUsersIdMap(c *gin.Context) {
 	var users []models.UserRaw
 	for rows.Next() {
 		var user models.UserRaw
-		if err := rows.Scan(&user.Id, &user.Year, &user.FirstName, &user.LastName, &user.DrawNumber, &user.Preplaced, &user.InDorm, &user.SGroupUUID, &user.Participated, &user.RoomUUID); err != nil {
+		if err := rows.Scan(&user.Id, &user.Year, &user.FirstName, &user.LastName, &user.DrawNumber, &user.Preplaced, &user.InDorm, &user.SGroupUUID, &user.Participated, &user.PartitipationTime, &user.RoomUUID, &user.ReslifeRole); err != nil {
 			// Handle scan error
 			log.Println(err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Database scan failed"})
