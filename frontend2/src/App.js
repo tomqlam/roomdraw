@@ -10,6 +10,8 @@ import SuiteNoteModal from './SuiteNoteModal';
 import { googleLogout } from '@react-oauth/google';
 import BumpFroshModal from './BumpFroshModal';
 import Select from 'react-select';
+import SettingsModal from './SettingsModal';
+
 
 function App() {
   const options = [
@@ -40,76 +42,39 @@ function App() {
     getRoomUUIDFromUserID,
     roomRefs,
     setRefreshKey,
-    handleErrorFromTokenExpiry
+    handleErrorFromTokenExpiry,
+    isSettingsModalOpen,
+    setIsSettingsModalOpen,
+    showFloorplans,
+    setShowFloorplans,
 
   } = useContext(MyContext);
 
   // const [showNotification, setShowNotification] = useState(false);
   const [myRoom, setMyRoom] = useState("You are not in a room yet."); // to show what room current user is in
-  const [showFloorplans, setShowFloorplans] = useState(false);
   const [isBurgerClicked, setIsBurgerClicked] = useState(false);
+  const [isInDorm, setIsInDorm] = useState(true);
 
-  const allowedEmails = ['ltwicken@g.hmc.edu',
-  'tlam@g.hmc.edu',
-  'smao@g.hmc.edu',
-  'simyang@g.hmc.edu',
-  'yukyang@g.hmc.edu',
-  'jeshuang@g.hmc.edu',
-  'opick@g.hmc.edu',
-  'twigder@g.hmc.edu',
-  'asilver@g.hmc.edu',
-  'agruian@g.hmc.edu',
-  'kirajesh@g.hmc.edu',
-  'adye@g.hmc.edu',
-  'jchopra@g.hmc.edu',
-  'amcintoshlombardo@g.hmc.edu',
-  'audavis@g.hmc.edu',
-  'ktu@g.hmc.edu',
-  'lvairus@g.hmc.edu',
-  'cdiazruiz@g.hmc.edu',
-  'apechkamnerd@g.hmc.edu',
-  'ddada@g.hmc.edu',
-  'arajan@g.hmc.edu',
-  'allbarker@g.hmc.edu',
-  'johnho@g.hmc.edu',
-  'mbazan@g.hmc.edu',
-  'tbaugh@g.hmc.edu',
-  'wkirkland@g.hmc.edu',
-  'dipark@g.hmc.edu',
-  'dgangwar@g.hmc.edu',
-  'alezhu@g.hmc.edu',
-  'mikmann@g.hmc.edu',
-  'skimsuzuki@g.hmc.edu',
-  'lstone@g.hmc.edu',
-  'geverts@g.hmc.edu',
-  'jluu@g.hmc.edu',
-  'jfain@g.hmc.edu',
-  'alrosenberg@g.hmc.edu',
-  'ttounesi@g.hmc.edu',
-  'cnolasco@g.hmc.edu',
-  'conjones@g.hmc.edu',
-  'asenapati@g.hmc.edu',
-  'jelin@g.hmc.edu',
-  'mmoralesparedes@g.hmc.edu',
-  'slammert@g.hmc.edu',
-  'edonson@g.hmc.edu',
-  'svora@g.hmc.edu',
-  'cmorales@g.hmc.edu',
-  'szaozerska@g.hmc.edu',
-  'erli@g.hmc.edu',
-  'ravjones@g.hmc.edu',
-  'saan@g.hmc.edu',
-  'njobanputra@g.hmc.edu',
-  'lhilkemeyer@g.hmc.edu',
-  'ebarr@g.hmc.edu',
-  'vkrishna@g.hmc.edu',
-  'nphillips@g.hmc.edu',
-  'igodoy@g.hmc.edu',
-  'rpreis@g.hmc.edu',
-  'chschofield@g.hmc.edu',
-  'hkenyatta@g.hmc.edu',
-  'wosong@g.hmc.edu',
-    ]
+  useEffect(() => {
+
+    const thisRoom = getRoomObjectFromUserID(selectedID);
+    if (thisRoom) {
+      console.log(thisRoom);
+      console.log(thisRoom.PullPriority);
+      var pullPriority = thisRoom.PullPriority;
+      if (pullPriority.inherited.valid) {
+        pullPriority = pullPriority.inherited;
+      }
+      if (pullPriority.hasInDorm === true) {
+        setIsInDorm(false);
+      } else {
+        setIsInDorm(true);
+      }
+
+    }
+
+  }, [selectedID, rooms]);
+
   useEffect(() => {
     const storedCredentials = localStorage.getItem('jwt');
     if (storedCredentials) {
@@ -171,11 +136,10 @@ function App() {
   const canUserToggleInDorm = (userID) => {
     userID = Number(userID);
     const usersRoom = getRoomObjectFromUserID(userID);
-    console.log(usersRoom);
-    if (!userMap){
+    if (!userMap) {
       return -1;
     }
-    
+
     if (!usersRoom) {
       if (dormMapping[userMap[userID].InDorm]) {
         return 0;
@@ -207,11 +171,11 @@ function App() {
         if (room.Occupants && room.Occupants.includes(Number(selectedID))) {
 
 
-          setMyRoom(`You are in ${room.DormName} ${room.RoomID}. `);
+          setMyRoom(`${room.DormName} ${room.RoomID}`);
           return;
         }
       }
-      setMyRoom("You are not in a room yet.");
+      setMyRoom(`no room yet`);
 
 
     }
@@ -248,29 +212,34 @@ function App() {
 
 
   // Component for each floor, to show even and odd floors separately
-  const FloorDisplay = ({ gridData, filterCondition }) => (
-    <div style={showFloorplans ? { width: '50vw' } : {}}>
-      {gridData.map((dorm) => (
-        <div key={dorm.dormName} className={activeTab === dorm.dormName ? '' : 'is-hidden'}>
-          {dorm.floors
-            .filter((floor) => filterCondition(floor.floorNumber))
-            .sort((a, b) => Number(a.floorNumber) - Number(b.floorNumber))  // Convert to numbers before comparing
-            .map((floor, floorIndex) => (
-              <div style={{ paddingBottom: 20 }} className="container" key={floorIndex}>
-                <h2 class="subtitle has-text-centered">Floor {floor.floorNumber + 1}</h2>
-                <FloorGrid gridData={floor} />
-              </div>
-            ))}
-        </div>
-      ))}
-    </div>
-  );
+  const FloorDisplay = ({ gridData, filterCondition }) => {
+    const filteredFloors = gridData.flatMap(dorm => dorm.floors.filter(floor => filterCondition(floor.floorNumber)));
 
+    return (
+      <div className="column">
+        <div style={showFloorplans ? { width: '50vw' } : {}}>
+          {gridData.map((dorm) => (
+            <div key={dorm.dormName} className={activeTab === dorm.dormName ? '' : 'is-hidden'}>
+              {dorm.floors
+                .filter((floor) => filterCondition(floor.floorNumber))
+                .sort((a, b) => Number(a.floorNumber) - Number(b.floorNumber))  // Convert to numbers before comparing
+                .map((floor, floorIndex) => (
+                  <div style={{ paddingBottom: 20 }} className="container" key={floorIndex}>
+                    <h2 className="subtitle has-text-centered">Floor {floor.floorNumber + 1}</h2>
+                    {floor.floorName && <p className="subtitle has-text-centered">{floor.floorName}</p>}
+                    <FloorGrid gridData={floor} />
+                  </div>
+                ))}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
   const handleTakeMeThere = (myLocationString) => {
     const words = myLocationString.split(' ');
-    console.log(words);
-    if (words[3] !== "in") {
-      setActiveTab(words[3]);
+    if (words.length === 2) {
+      setActiveTab(words[0]);
     }
 
     // Assume `selectedID` is the ID of the selected room
@@ -293,19 +262,27 @@ function App() {
               'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
           },
       })
-          .then(res => {
-              return res.json();
-          })
-          .then(data => {
-              setRefreshKey(prevKey => prevKey + 1);
-              if (handleErrorFromTokenExpiry(data)) {
-                  return;
-              };
-          })
-          .catch(err => {
-              console.log(err);
-          })
-  }
+        .then(res => {
+          return res.json();
+        })
+        .then(data => {
+          setRefreshKey(prevKey => prevKey + 1);
+          if (handleErrorFromTokenExpiry(data)) {
+            return;
+          };
+          const thisRoom = getRoomObjectFromUserID(selectedID);
+          console.log("BRUHMOMENT");
+          console.log(thisRoom);
+          console.log(thisRoom.PullPriority.hasInDorm);
+          setIsInDorm(prev => !prev);
+
+        })
+        .catch(err => {
+          console.log(err);
+        })
+
+
+    }
   }
 
   return (
@@ -333,25 +310,44 @@ function App() {
 
         <div id="navbarBasicExample" class="navbar-menu">
           <div class="navbar-start">
+            <div class="navbar-item">
+              <h2 >Last refresh: {lastRefreshedTime.toLocaleTimeString()}</h2>
+
+            </div>
+
+
 
 
 
           </div>
 
-          <div class="navbar-end">
-            <div class="navbar-item">
-              <div class="buttons">
+          <div className="navbar-end">
+            <div className="navbar-item">
+              <div className="buttons">
+                {credentials &&
+                  <div>
+
+                    <a className="button is-secondary">
+
+                      <strong>Welcome, {jwtDecode(credentials).given_name} </strong>
+                    </a>
+                    <button className="button is-primary" onClick={() => setIsSettingsModalOpen(prev => !prev)}>
+                      Settings
+                    </button>
+                    <a className="button is-danger" onClick={handleLogout}>
+
+                      <strong>Log Out</strong>
+                    </a>
+                  </div>
+
+                }
+
                 {!credentials &&
                   <GoogleLogin auto_select={true}
                     onSuccess={handleSuccess}
                     onError={handleError}
                   />}
-                {credentials && <a class="button is-secondary">
-                  <strong>Welcome, {jwtDecode(credentials).given_name} </strong>
-                </a>}
-                {credentials && <a class="button is-danger" onClick={handleLogout}>
-                  <strong>Log Out</strong>
-                </a>}
+
               </div>
             </div>
           </div>
@@ -360,6 +356,8 @@ function App() {
       {isModalOpen && <BumpModal />}
       {isSuiteNoteModalOpen && <SuiteNoteModal />}
       {isFroshModalOpen && <BumpFroshModal />}
+      {isSettingsModalOpen && <SettingsModal />}
+
 
 
 
@@ -369,80 +367,86 @@ function App() {
           <h2 className="subtitle">Please log in with your HMC email to continue.</h2>
         </div>
       </section>}
-      {(credentials && !allowedEmails.includes(jwtDecode(credentials).email)) &&
+      {(credentials) &&
       <section class="section">
       <div style={{ textAlign: 'center' }}>
         <h1 className="title">Welcome to Digital Draw!</h1>
         <h2 className="subtitle">You're not authorized to test the website. Plese contact Serena or Tom if this is a mistake!</h2>
       </div>
     </section>}
-      {((credentials && allowedEmails.includes(jwtDecode(credentials).email))) && <section class="section">
+      {(credentials) && <section class="section">
         <div style={{ textAlign: 'center' }}>
+          <h1 className="title">Welcome to DigiDraw!</h1>
+          <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: "center", flexWrap: 'wrap' }}>
 
-          <h1 className="title">You're viewing DigiDraw as {getNameById(selectedID)}. <br /> </h1>
-          <h2 className="subtitle">
-            You are <strong>{getDrawNumberAndYear(selectedID)}</strong>. {myRoom}
-            {myRoom !== "You are not in a room yet." && <a href="#" onClick={() => handleTakeMeThere(myRoom)} style={{ textDecoration: 'underline' }}>Click to jump there!</a>}            <br />Click on any room you'd like to change! <br/>
-            {canUserToggleInDorm(selectedID) === 1 && <a onClick={handleForfeit} style={{ textDecoration: 'underline' }}>Click to toggle in-dorm on/off for my current single<br/></a>}
-            {canUserToggleInDorm(selectedID) === 0 && <p>Pull into a single to toggle your in-dorm.</p>}             Last refreshed at {lastRefreshedTime.toLocaleTimeString()}.
-          </h2>
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-            <span style={{ marginRight: '10px' }}>View as:  </span>
             <Select
-                        placeholder={`Select a user`}
-                        value={userMap && 
-                          {
-                            value: selectedID,
-                            label: `${userMap[selectedID].FirstName} ${userMap[selectedID].LastName}`
-                          }
-                        }
-                        menuPortalTarget={document.body}
-                        styles={{
-                          menuPortal: base => ({ ...base, zIndex: 9999 }),
-                          option: (provided, state) => ({
-                            ...provided,
-                            // color: 'red',
-                            // backgroundColor: 'blue'
-                          }),
-                        }}
-                        onChange={(selectedOption) => handleNameChange(selectedOption.value)}
-                        options={userMap && Object.keys(userMap)
-                          .sort((a, b) => {
-                            const nameA = `${userMap[a].FirstName} ${userMap[a].LastName}`;
-                            const nameB = `${userMap[b].FirstName} ${userMap[b].LastName}`;
-                            return nameA.localeCompare(nameB);
-                          })
-                          .map((key) => ({
-                            value: key,
-                            label: `${userMap[key].FirstName} ${userMap[key].LastName}`
-                          }))}
-                      />
-            {/* <select className="select" value={selectedID} onChange={handleNameChange}>
-              {userMap && Object.keys(userMap)
+              placeholder={`Select a user`}
+              value={userMap &&
+              {
+                value: selectedID,
+                label: `${userMap[selectedID].FirstName} ${userMap[selectedID].LastName}`
+              }
+              }
+              menuPortalTarget={document.body}
+              styles={{
+                menuPortal: base => ({ ...base, zIndex: 9999 }),
+                option: (provided, state) => ({
+                  ...provided,
+                  // color: 'red',
+                  // backgroundColor: 'blue'
+                }),
+              }}
+              onChange={(selectedOption) => handleNameChange(selectedOption.value)}
+              options={userMap && Object.keys(userMap)
                 .sort((a, b) => {
-                  const nameA = `${userMap[a].FirstName} ${userMap[a].LastName}`.toUpperCase();
-                  const nameB = `${userMap[b].FirstName} ${userMap[b].LastName}`.toUpperCase();
-                  if (nameA < nameB) {
-                    return -1;
-                  }
-                  if (nameA > nameB) {
-                    return 1;
-                  }
-                  return 0;
+                  const nameA = `${userMap[a].FirstName} ${userMap[a].LastName}`;
+                  const nameB = `${userMap[b].FirstName} ${userMap[b].LastName}`;
+                  return nameA.localeCompare(nameB);
                 })
-                .map((key, index) => (
-                  <option key={index} value={key}>
-                    {userMap[key].FirstName} {userMap[key].LastName}
-                  </option>
-                ))}
-            </select> */}
+                .filter((key) => Number(userMap[key].Year) !== 0) // Replace 'YourCondition' with the condition you want to check
+                .map((key) => ({
+                  value: key,
+                  label: `${userMap[key].FirstName} ${userMap[key].LastName}`
+                }))}
+            />
+            <div style={{ marginLeft: "10px" }}>
+              <h3 className="subtitle is-5">
+                is <strong>{getDrawNumberAndYear(selectedID)}</strong>,
+                in <strong>
+                  {myRoom !== `no room yet` ?
+                    <a href="#" onClick={() => handleTakeMeThere(myRoom)} style={{ textDecoration: 'underline' }}>{myRoom}</a>
+                    : 'no room yet'}
+                </strong>
+
+              </h3>
+
+
+            </div>
+
+
           </div>
-
+          {canUserToggleInDorm(selectedID) !== -1 &&
+            <div>
+              <input
+                type="checkbox"
+                id="toggleInDorm"
+                name="toggleInDorm"
+                disabled={canUserToggleInDorm(selectedID) === 0}
+                checked={isInDorm}
+                onChange={handleForfeit}
+              />
+              {canUserToggleInDorm(selectedID) === 1 &&
+                <label htmlFor="toggleInDorm" style={{ marginLeft: '5px' }}>Forfeit In-Dorm for their current single</label>
+              }
+              {canUserToggleInDorm(selectedID) === 0 &&
+                <label htmlFor="toggleInDorm" style={{ marginLeft: '5px' }}>To forfeit their in-dorm, pull into a single.</label>
+              }
+            </div>
+          }
         </div>
-
       </section>}
 
-      {(credentials && allowedEmails.includes(jwtDecode(credentials).email) && currPage === "Home") && <section class="section">
+      {(credentials && currPage === "Home") && <section class="section">
         <label className="checkbox" style={{ display: 'flex', alignItems: 'center' }}>
           <input
             type="checkbox"
@@ -452,14 +456,6 @@ function App() {
           <span style={{ marginLeft: '0.5rem' }}>Darken rooms I can't pull</span>
         </label>
 
-        <label className="checkbox">
-          <input
-            type="checkbox"
-            checked={showFloorplans}
-            onChange={() => setShowFloorplans(!showFloorplans)}
-          />
-          <span style={{ marginLeft: '0.5rem' }}>Show floorplans</span>
-        </label>
 
         <div className="tabs is-centered">
           <ul>
@@ -483,9 +479,11 @@ function App() {
             .filter(dorm => dorm.dormName === activeTab)
             .flatMap(dorm => dorm.floors)
             .map((_, floorIndex) => (
-              <div class="column" key={floorIndex}>
+              activeTab === "Case" ? (
+                floorIndex < 2 && <FloorDisplay gridData={gridData} filterCondition={(floorNumber) => floorNumber === floorIndex} />
+              ) : (
                 <FloorDisplay gridData={gridData} filterCondition={(floorNumber) => floorNumber === floorIndex} />
-              </div>
+              )
             ))}
           {showFloorplans && (
             <div style={{ display: 'flex', flexDirection: 'column' }}>
