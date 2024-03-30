@@ -13,7 +13,7 @@ CREATE TABLE Users (
     participated boolean NOT NULL DEFAULT false,
     participation_time timestamp,
     room_uuid uuid,
-    reslife_role varchar,
+    reslife_role varchar NOT NULL DEFAULT 'none',
     
     PRIMARY KEY (id),
     FOREIGN KEY (sgroup_uuid) REFERENCES SuiteGroups(sgroup_uuid)
