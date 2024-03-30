@@ -2,13 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { useContext } from 'react';
 import { MyContext } from './MyContext';
 
-const ThemeSelectModal = () => {
+const SettingsModal = () => {
     const {
         colorPalettes,
         setIsFroshModalOpen,
         selectedPalette,
         setSelectedPalette,
-        setIsThemeModalOpen
+        setIsSettingsModalOpen,
+        onlyShowBumpableRooms,
+        setOnlyShowBumpableRooms,
+        showFloorplans,
+        setShowFloorplans,
+
     } = useContext(MyContext);
 
     // Store selectedPalette in local storage whenever it changes
@@ -32,10 +37,36 @@ const ThemeSelectModal = () => {
             <div className="modal-background"></div>
             <div className="modal-card">
                 <header className="modal-card-head">
-                    <p className="modal-card-title">Edit DigiDraw Theme</p>
-                    <button className="delete" aria-label="close" onClick={() => setIsThemeModalOpen(false)}></button>
+                    <p className="modal-card-title">Settings</p>
+                                            
+
+                    <button className="delete" aria-label="close" onClick={() => setIsSettingsModalOpen(false)}></button>
                 </header>
+                
                 <section className="modal-card-body">
+                <label className="label">Appearance</label>
+
+                <div >
+              <label className="checkbox" style={{ display: 'flex'}}>
+                <input
+                  type="checkbox"
+                  checked={onlyShowBumpableRooms}
+                  onChange={() => setOnlyShowBumpableRooms(!onlyShowBumpableRooms)}
+                />
+                <span style={{ marginLeft: '0.5rem' }}>Darken rooms I can't pull</span>
+              </label>
+            </div>
+
+            <div >
+              <label className="checkbox" style={{ display: 'flex'}}>
+                <input
+                  type="checkbox"
+                  checked={showFloorplans}
+                  onChange={() => setShowFloorplans(!showFloorplans)}
+                />
+                <span style={{ marginLeft: '0.5rem' }}>Show floorplans</span>
+              </label>
+            </div>
                     <div className="field">
                         <label className="label">Set to a preset palette</label>
                         <div className="control">
@@ -92,7 +123,7 @@ const ThemeSelectModal = () => {
                 </section>
                 <footer className="modal-card-foot" style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <button className="button is-primary" onClick={() => {
-                        setIsThemeModalOpen(false);
+                        setIsSettingsModalOpen(false);
                     }}>Done</button>
 
                 </footer>
@@ -101,4 +132,4 @@ const ThemeSelectModal = () => {
     );
 };
 
-export default ThemeSelectModal;
+export default SettingsModal;

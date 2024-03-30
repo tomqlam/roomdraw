@@ -10,7 +10,7 @@ import SuiteNoteModal from './SuiteNoteModal';
 import { googleLogout } from '@react-oauth/google';
 import BumpFroshModal from './BumpFroshModal';
 import Select from 'react-select';
-import ThemeSelectModal from './ThemeSelectModal';
+import SettingsModal from './SettingsModal';
 
 
 function App() {
@@ -43,15 +43,37 @@ function App() {
     roomRefs,
     setRefreshKey,
     handleErrorFromTokenExpiry,
-    isThemeModalOpen,
-    setIsThemeModalOpen
+    isSettingsModalOpen,
+    setIsSettingsModalOpen,
+    showFloorplans,
+    setShowFloorplans,
 
   } = useContext(MyContext);
 
   // const [showNotification, setShowNotification] = useState(false);
   const [myRoom, setMyRoom] = useState("You are not in a room yet."); // to show what room current user is in
-  const [showFloorplans, setShowFloorplans] = useState(false);
   const [isBurgerClicked, setIsBurgerClicked] = useState(false);
+  const [isInDorm, setIsInDorm] = useState(true);
+
+  useEffect(() => {
+
+    const thisRoom = getRoomObjectFromUserID(selectedID);
+    if (thisRoom) {
+      console.log(thisRoom);
+      console.log(thisRoom.PullPriority);
+      var pullPriority = thisRoom.PullPriority;
+      if (pullPriority.inherited.valid) {
+        pullPriority = pullPriority.inherited;
+      }
+      if (pullPriority.hasInDorm === true) {
+        setIsInDorm(false);
+      } else {
+        setIsInDorm(true);
+      }
+
+    }
+
+  }, [selectedID, rooms]);
 
   useEffect(() => {
     const storedCredentials = localStorage.getItem('jwt');
@@ -114,7 +136,6 @@ function App() {
   const canUserToggleInDorm = (userID) => {
     userID = Number(userID);
     const usersRoom = getRoomObjectFromUserID(userID);
-    console.log(usersRoom);
     if (!userMap) {
       return -1;
     }
@@ -154,7 +175,7 @@ function App() {
           return;
         }
       }
-      setMyRoom(`None yet`);
+      setMyRoom(`no room yet`);
 
 
     }
@@ -191,29 +212,34 @@ function App() {
 
 
   // Component for each floor, to show even and odd floors separately
-  const FloorDisplay = ({ gridData, filterCondition }) => (
-    <div style={showFloorplans ? { width: '50vw' } : {}}>
-      {gridData.map((dorm) => (
-        <div key={dorm.dormName} className={activeTab === dorm.dormName ? '' : 'is-hidden'}>
-          {dorm.floors
-            .filter((floor) => filterCondition(floor.floorNumber))
-            .sort((a, b) => Number(a.floorNumber) - Number(b.floorNumber))  // Convert to numbers before comparing
-            .map((floor, floorIndex) => (
-              <div style={{ paddingBottom: 20 }} className="container" key={floorIndex}>
-                <h2 class="subtitle has-text-centered">Floor {floor.floorNumber + 1}</h2>
-                <FloorGrid gridData={floor} />
-              </div>
-            ))}
-        </div>
-      ))}
-    </div>
-  );
+  const FloorDisplay = ({ gridData, filterCondition }) => {
+    const filteredFloors = gridData.flatMap(dorm => dorm.floors.filter(floor => filterCondition(floor.floorNumber)));
 
+    return (
+      <div className="column">
+        <div style={showFloorplans ? { width: '50vw' } : {}}>
+          {gridData.map((dorm) => (
+            <div key={dorm.dormName} className={activeTab === dorm.dormName ? '' : 'is-hidden'}>
+              {dorm.floors
+                .filter((floor) => filterCondition(floor.floorNumber))
+                .sort((a, b) => Number(a.floorNumber) - Number(b.floorNumber))  // Convert to numbers before comparing
+                .map((floor, floorIndex) => (
+                  <div style={{ paddingBottom: 20 }} className="container" key={floorIndex}>
+                    <h2 className="subtitle has-text-centered">Floor {floor.floorNumber + 1}</h2>
+                    {floor.floorName && <p className="subtitle has-text-centered">{floor.floorName}</p>}
+                    <FloorGrid gridData={floor} />
+                  </div>
+                ))}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
   const handleTakeMeThere = (myLocationString) => {
     const words = myLocationString.split(' ');
-    console.log(words);
-    if (words[3] !== "in") {
-      setActiveTab(words[3]);
+    if (words.length === 2) {
+      setActiveTab(words[0]);
     }
 
     // Assume `selectedID` is the ID of the selected room
@@ -244,10 +270,18 @@ function App() {
           if (handleErrorFromTokenExpiry(data)) {
             return;
           };
+          const thisRoom = getRoomObjectFromUserID(selectedID);
+          console.log("BRUHMOMENT");
+          console.log(thisRoom);
+          console.log(thisRoom.PullPriority.hasInDorm);
+          setIsInDorm(prev => !prev);
+
         })
         .catch(err => {
           console.log(err);
         })
+
+
     }
   }
 
@@ -276,25 +310,44 @@ function App() {
 
         <div id="navbarBasicExample" class="navbar-menu">
           <div class="navbar-start">
+            <div class="navbar-item">
+              <h2 >Last refresh: {lastRefreshedTime.toLocaleTimeString()}</h2>
+
+            </div>
+
+
 
 
 
           </div>
 
-          <div class="navbar-end">
-            <div class="navbar-item">
-              <div class="buttons">
+          <div className="navbar-end">
+            <div className="navbar-item">
+              <div className="buttons">
+                {credentials &&
+                  <div>
+
+                    <a className="button is-secondary">
+
+                      <strong>Welcome, {jwtDecode(credentials).given_name} </strong>
+                    </a>
+                    <button className="button is-primary" onClick={() => setIsSettingsModalOpen(prev => !prev)}>
+                      Settings
+                    </button>
+                    <a className="button is-danger" onClick={handleLogout}>
+
+                      <strong>Log Out</strong>
+                    </a>
+                  </div>
+
+                }
+
                 {!credentials &&
                   <GoogleLogin auto_select={true}
                     onSuccess={handleSuccess}
                     onError={handleError}
                   />}
-                {credentials && <a class="button is-secondary">
-                  <strong>Welcome, {jwtDecode(credentials).given_name} </strong>
-                </a>}
-                {credentials && <a class="button is-danger" onClick={handleLogout}>
-                  <strong>Log Out</strong>
-                </a>}
+
               </div>
             </div>
           </div>
@@ -303,7 +356,7 @@ function App() {
       {isModalOpen && <BumpModal />}
       {isSuiteNoteModalOpen && <SuiteNoteModal />}
       {isFroshModalOpen && <BumpFroshModal />}
-      {isThemeModalOpen && <ThemeSelectModal  />}
+      {isSettingsModalOpen && <SettingsModal />}
 
 
 
@@ -317,9 +370,8 @@ function App() {
       {credentials && <section class="section">
         <div style={{ textAlign: 'center' }}>
           <h1 className="title">Welcome to DigiDraw!</h1>
-          <h2 className="subtitle">Last refreshed at {lastRefreshedTime.toLocaleTimeString()}.</h2>
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-            <span style={{ marginRight: '10px' }}><h2 className='subtitle'>Get helpful info for: </h2> </span>
+          <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: "center", flexWrap: 'wrap' }}>
+
             <Select
               placeholder={`Select a user`}
               value={userMap &&
@@ -349,52 +401,41 @@ function App() {
                   label: `${userMap[key].FirstName} ${userMap[key].LastName}`
                 }))}
             />
-          </div>
-          <div className="has-text-centered">
-            <h3 className="subtitle is-5">
-              Draw Number: <strong>{getDrawNumberAndYear(selectedID)}</strong>  Room: <strong>{myRoom}</strong>
-              {myRoom !== `None yet` && <a href="#" onClick={() => handleTakeMeThere(myRoom)} style={{ textDecoration: 'underline' }}>Click to jump there!</a>}            
-              {canUserToggleInDorm(selectedID) === 1 && <a onClick={handleForfeit} style={{ textDecoration: 'underline' }}>Click to toggle in-dorm on/off for my current single</a>}
-              {canUserToggleInDorm(selectedID) === 0 && <p>Pull into a single to toggle your in-dorm.</p>}
-            </h3>
-            
-          </div>
+            <div style={{ marginLeft: "10px" }}>
+              <h3 className="subtitle is-5">
+                is <strong>{getDrawNumberAndYear(selectedID)}</strong>,
+                in <strong>
+                  {myRoom !== `no room yet` ?
+                    <a href="#" onClick={() => handleTakeMeThere(myRoom)} style={{ textDecoration: 'underline' }}>{myRoom}</a>
+                    : 'no room yet'}
+                </strong>
 
-          <div className="has-text-centered">
-            <label className="checkbox" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              </h3>
+
+
+            </div>
+
+
+          </div>
+          {canUserToggleInDorm(selectedID) !== -1 &&
+            <div>
               <input
                 type="checkbox"
-                checked={onlyShowBumpableRooms}
-                onChange={() => setOnlyShowBumpableRooms(!onlyShowBumpableRooms)}
+                id="toggleInDorm"
+                name="toggleInDorm"
+                disabled={canUserToggleInDorm(selectedID) === 0}
+                checked={isInDorm}
+                onChange={handleForfeit}
               />
-              <span style={{ marginLeft: '0.5rem' }}>Darken rooms I can't pull</span>
-            </label>
-          </div>
-
-          <div className="has-text-centered">
-            <label className="checkbox" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <input
-                type="checkbox"
-                checked={showFloorplans}
-                onChange={() => setShowFloorplans(!showFloorplans)}
-              />
-              <span style={{ marginLeft: '0.5rem' }}>Show floorplans</span>
-            </label>
-          </div>
-
-
-          <button className="button is-primary" onClick={() => setIsThemeModalOpen(prev => !prev)}>
-          Toggle Theme Modal
-        </button>
-
-
-          
-
-
-
-
+              {canUserToggleInDorm(selectedID) === 1 &&
+                <label htmlFor="toggleInDorm" style={{ marginLeft: '5px' }}>Forfeit In-Dorm for their current single</label>
+              }
+              {canUserToggleInDorm(selectedID) === 0 &&
+                <label htmlFor="toggleInDorm" style={{ marginLeft: '5px' }}>To forfeit their in-dorm, pull into a single.</label>
+              }
+            </div>
+          }
         </div>
-
       </section>}
 
       {(credentials && currPage === "Home") && <section class="section">
@@ -422,9 +463,11 @@ function App() {
             .filter(dorm => dorm.dormName === activeTab)
             .flatMap(dorm => dorm.floors)
             .map((_, floorIndex) => (
-              <div class="column" key={floorIndex}>
+              activeTab === "Case" ? (
+                floorIndex < 2 && <FloorDisplay gridData={gridData} filterCondition={(floorNumber) => floorNumber === floorIndex} />
+              ) : (
                 <FloorDisplay gridData={gridData} filterCondition={(floorNumber) => floorNumber === floorIndex} />
-              </div>
+              )
             ))}
           {showFloorplans && (
             <div style={{ display: 'flex', flexDirection: 'column' }}>
