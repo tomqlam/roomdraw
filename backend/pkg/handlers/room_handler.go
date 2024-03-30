@@ -42,8 +42,7 @@ func GetRoomsHandler(c *gin.Context) {
 	// Example SQL query
 	rows, err := tx.Query("SELECT room_uuid, dorm, dorm_name, room_id, suite_uuid, max_occupancy, current_occupancy, occupants, pull_priority, sgroup_uuid, has_frosh, frosh_room_type FROM rooms")
 	if err != nil {
-		// Handle query error
-		// print the error to the console
+
 		log.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database query failed"})
 		return
@@ -88,8 +87,7 @@ func GetSimpleFormattedDorm(c *gin.Context) {
 
 	rows, err := tx.Query("SELECT room_uuid, dorm, dorm_name, room_id, suite_uuid, max_occupancy, current_occupancy, occupants, pull_priority, has_frosh, frosh_room_type FROM rooms WHERE UPPER(dorm_name) = UPPER($1)", dormNameParam)
 	if err != nil {
-		// Handle query error
-		// print the error to the console
+
 		log.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database query failed on rooms"})
 		return
@@ -106,7 +104,7 @@ func GetSimpleFormattedDorm(c *gin.Context) {
 		rooms = append(rooms, d)
 	}
 
-	rows, err = tx.Query("SELECT suite_uuid, dorm, dorm_name, floor, room_count, rooms, alternative_pull, suite_design, can_lock_pull FROM suites WHERE UPPER(dorm_name) = UPPER($1)", dormNameParam)
+	rows, err = tx.Query("SELECT suite_uuid, dorm, dorm_name, floor, room_count, rooms, alternative_pull, suite_design, can_lock_pull, reslife_room, gender_preference FROM suites WHERE UPPER(dorm_name) = UPPER($1)", dormNameParam)
 	if err != nil {
 		log.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database query failed on suites"})
@@ -116,7 +114,7 @@ func GetSimpleFormattedDorm(c *gin.Context) {
 	var suites []models.SuiteRaw
 	for rows.Next() {
 		var s models.SuiteRaw
-		if err := rows.Scan(&s.SuiteUUID, &s.Dorm, &s.DormName, &s.Floor, &s.RoomCount, &s.Rooms, &s.AlternativePull, &s.SuiteDesign, &s.CanLockPull); err != nil {
+		if err := rows.Scan(&s.SuiteUUID, &s.Dorm, &s.DormName, &s.Floor, &s.RoomCount, &s.Rooms, &s.AlternativePull, &s.SuiteDesign, &s.CanLockPull, &s.ReslifeRoom, &s.GenderPreference); err != nil {
 			log.Println(err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Database scan failed on suites"})
 			return
@@ -169,11 +167,12 @@ func GetSimpleFormattedDorm(c *gin.Context) {
 		suiteUUIDString := s.SuiteUUID.String()
 		floor := suiteUUIDToFloorMap[s.SuiteUUID]
 		suite := models.SuiteSimple{
-			Rooms:           suiteToRoomMap[suiteUUIDString],
-			SuiteDesign:     s.SuiteDesign,
-			SuiteUUID:       s.SuiteUUID,
-			AlternativePull: s.AlternativePull,
-			CanLockPull:     s.CanLockPull,
+			Rooms:            suiteToRoomMap[suiteUUIDString],
+			SuiteDesign:      s.SuiteDesign,
+			SuiteUUID:        s.SuiteUUID,
+			AlternativePull:  s.AlternativePull,
+			CanLockPull:      s.CanLockPull,
+			GenderPreference: s.GenderPreference,
 		}
 
 		floorMap[floor] = append(floorMap[floor], suite)
@@ -220,8 +219,7 @@ func GetSimplerFormattedDorm(c *gin.Context) {
 
 	rows, err := tx.Query("SELECT room_uuid, dorm, dorm_name, room_id, suite_uuid, max_occupancy, current_occupancy, occupants, pull_priority FROM rooms WHERE UPPER(dorm_name) = UPPER($1)", dormNameParam)
 	if err != nil {
-		// Handle query error
-		// print the error to the console
+
 		log.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database query failed on rooms"})
 		return
@@ -658,10 +656,8 @@ func SelfPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 
 	log.Println("Self pull")
 	var occupantsInfo []models.UserRaw
-	rows, err = tx.Query("SELECT id, draw_number, year, in_dorm, participated FROM users WHERE id = ANY($1)", pq.Array(proposedOccupants))
+	rows, err = tx.Query("SELECT id, draw_number, year, in_dorm, participated, preplaced FROM users WHERE id = ANY($1)", pq.Array(proposedOccupants))
 	if err != nil {
-		// Handle query error
-		// print the error to the console
 		log.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database query failed on users for pull priority"})
 		tx.Rollback()
@@ -669,14 +665,32 @@ func SelfPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 	}
 	for rows.Next() {
 		var u models.UserRaw
-		if err := rows.Scan(&u.Id, &u.DrawNumber, &u.Year, &u.InDorm, &u.Participated); err != nil {
+		if err := rows.Scan(&u.Id, &u.DrawNumber, &u.Year, &u.InDorm, &u.Participated, &u.Preplaced); err != nil {
 			// Handle scan error
 			log.Println(err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Database scan failed on users for pull priority"})
 			tx.Rollback()
 			return err
 		}
+
+		// if any of the proposed occupants are preplaced, return an error
+		if u.Preplaced {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Cannot pull with a preplaced user"})
+			err = errors.New("cannot pull with a preplaced user")
+			tx.Rollback()
+			return err
+		}
+
 		occupantsInfo = append(occupantsInfo, u)
+	}
+
+	// for all users who currently have not participated, set their participated field to true and partitipation time to now
+	_, err = tx.Exec("UPDATE users SET participated = true, participation_time = NOW() WHERE id = ANY($1) AND participated = false", pq.Array(proposedOccupants))
+	if err != nil {
+		log.Println(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update participated field in users table"})
+		tx.Rollback()
+		return err
 	}
 
 	sortedOccupants := sortUsersByPriority(occupantsInfo, currentRoomInfo.Dorm)
@@ -912,7 +926,7 @@ func NormalPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 	pullLeaderRoomUUID := request.PullLeaderRoom
 
 	var occupantsInfo []models.UserRaw
-	rows, err = tx.Query("SELECT id, draw_number, year, in_dorm, participated FROM users WHERE id = ANY($1)", pq.Array(proposedOccupants))
+	rows, err = tx.Query("SELECT id, draw_number, year, in_dorm, participated, preplaced FROM users WHERE id = ANY($1)", pq.Array(proposedOccupants))
 	if err != nil {
 		log.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database query failed on users for pull priority"})
@@ -922,13 +936,31 @@ func NormalPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 
 	for rows.Next() {
 		var u models.UserRaw
-		if err := rows.Scan(&u.Id, &u.DrawNumber, &u.Year, &u.InDorm, &u.Participated); err != nil {
+		if err := rows.Scan(&u.Id, &u.DrawNumber, &u.Year, &u.InDorm, &u.Participated, &u.Preplaced); err != nil {
 			log.Println(err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Database scan failed on users for pull priority"})
 			tx.Rollback()
 			return err
 		}
+
+		// if any of the proposed occupants are preplaced, return an error
+		if u.Preplaced {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Cannot pull with a preplaced user"})
+			err = errors.New("cannot pull with a preplaced user")
+			tx.Rollback()
+			return err
+		}
+
 		occupantsInfo = append(occupantsInfo, u)
+	}
+
+	// for all users who currently have not participated, set their participated field to true and partitipation time to now
+	_, err = tx.Exec("UPDATE users SET participated = true, participation_time = NOW() WHERE id = ANY($1) AND participated = false", pq.Array(proposedOccupants))
+	if err != nil {
+		log.Println(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update participated field in users table"})
+		tx.Rollback()
+		return err
 	}
 
 	var suiteUUID = currentRoomInfo.SuiteUUID
@@ -1349,8 +1381,7 @@ func LockPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 
 	rows, err = tx.Query("SELECT room_uuid, dorm, dorm_name, room_id, suite_uuid, max_occupancy, current_occupancy, occupants, pull_priority, sgroup_uuid, has_frosh FROM rooms WHERE suite_uuid = $1", currentRoomInfo.SuiteUUID)
 	if err != nil {
-		// Handle query error
-		// print the error to the console
+
 		log.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database query failed on rooms for pull priority"})
 		tx.Rollback()
@@ -1378,10 +1409,8 @@ func LockPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 	}
 
 	var occupantsInfo []models.UserRaw
-	rows, err = tx.Query("SELECT id, draw_number, year, in_dorm, participated FROM users WHERE id = ANY($1)", pq.Array(proposedOccupants))
+	rows, err = tx.Query("SELECT id, draw_number, year, in_dorm, participated, preplaced FROM users WHERE id = ANY($1)", pq.Array(proposedOccupants))
 	if err != nil {
-		// Handle query error
-		// print the error to the console
 		log.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database query failed on users for pull priority"})
 		tx.Rollback()
@@ -1389,14 +1418,32 @@ func LockPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 	}
 	for rows.Next() {
 		var u models.UserRaw
-		if err := rows.Scan(&u.Id, &u.DrawNumber, &u.Year, &u.InDorm, &u.Participated); err != nil {
+		if err := rows.Scan(&u.Id, &u.DrawNumber, &u.Year, &u.InDorm, &u.Participated, &u.Preplaced); err != nil {
 			// Handle scan error
 			log.Println(err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Database scan failed on users for pull priority"})
 			tx.Rollback()
 			return err
 		}
+
+		// if any of the proposed occupants are preplaced, return an error
+		if u.Preplaced {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Cannot pull with a preplaced user"})
+			err = errors.New("cannot pull with a preplaced user")
+			tx.Rollback()
+			return err
+		}
+
 		occupantsInfo = append(occupantsInfo, u)
+	}
+
+	// for all users who currently have not participated, set their participated field to true and partitipation time to now
+	_, err = tx.Exec("UPDATE users SET participated = true, participation_time = NOW() WHERE id = ANY($1) AND participated = false", pq.Array(proposedOccupants))
+	if err != nil {
+		log.Println(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update participated field in users table"})
+		tx.Rollback()
+		return err
 	}
 
 	sortedOccupants := sortUsersByPriority(occupantsInfo, currentRoomInfo.Dorm)
@@ -1644,7 +1691,7 @@ func AlternativePull(c *gin.Context, request models.OccupantUpdateRequest) error
 
 	pullLeaderRoomUUID := request.PullLeaderRoom
 	var occupantsInfo []models.UserRaw
-	rows, err = tx.Query("SELECT id, draw_number, year, in_dorm, participated FROM users WHERE id = ANY($1)", pq.Array(proposedOccupants))
+	rows, err = tx.Query("SELECT id, draw_number, year, in_dorm, participated, preplaced FROM users WHERE id = ANY($1)", pq.Array(proposedOccupants))
 	if err != nil {
 		log.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database query failed on users for pull priority"})
@@ -1654,17 +1701,26 @@ func AlternativePull(c *gin.Context, request models.OccupantUpdateRequest) error
 
 	for rows.Next() {
 		var u models.UserRaw
-		if err := rows.Scan(&u.Id, &u.DrawNumber, &u.Year, &u.InDorm, &u.Participated); err != nil {
+		if err := rows.Scan(&u.Id, &u.DrawNumber, &u.Year, &u.InDorm, &u.Participated, &u.Preplaced); err != nil {
 			log.Println(err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Database scan failed on users for pull priority"})
 			tx.Rollback()
 			return err
 		}
+
+		// if any of the proposed occupants are preplaced, return an error
+		if u.Preplaced {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Cannot pull with a preplaced user"})
+			err = errors.New("cannot pull with a preplaced user")
+			tx.Rollback()
+			return err
+		}
+
 		occupantsInfo = append(occupantsInfo, u)
 	}
 
-	// for all users who currently have not participated, set their participated field to true
-	_, err = tx.Exec("UPDATE users SET participated = true WHERE id = ANY($1) AND participated = false", pq.Array(proposedOccupants))
+	// for all users who currently have not participated, set their participated field to true and partitipation time to now
+	_, err = tx.Exec("UPDATE users SET participated = true, participation_time = NOW() WHERE id = ANY($1) AND participated = false", pq.Array(proposedOccupants))
 	if err != nil {
 		log.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update participated field in users table"})

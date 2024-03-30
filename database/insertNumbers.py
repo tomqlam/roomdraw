@@ -10,6 +10,8 @@
 # 9 = Linde
 
 import pandas as pd
+# the CSV columns should be:
+# First Name, Last Name, Year, In Dorm, Number, Email
 
 # read file numbers.csv
 numbers = pd.read_csv('numbers.csv')
