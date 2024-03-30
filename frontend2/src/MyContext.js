@@ -299,14 +299,14 @@ export const MyContextProvider = ({ children }) => {
             newFloors.push({
                 ...floor,
                 floorNumber: floor.floorNumber,
-                floorName: floorNames[index * 2],
+                floorName: floorNames[floor.floorNumber * 2],
                 suites: firstHalfSuites,
             });
 
             newFloors.push({
                 ...floor,
                 floorNumber: floor.floorNumber,
-                floorName: floorNames[index * 2 + 1],
+                floorName: floorNames[floor.floorNumber * 2 + 1],
                 suites: secondHalfSuites,
             });
         });
