@@ -25,7 +25,7 @@ const BumpFroshModal = () => {
 
     const handleSelectChange = (event) => {
         setTargetRoom(event.target.value);
-        console.log("Selected room: " + event.target.value);
+        // commented console.log ("Selected room: " + event.target.value);
     };
 
     
@@ -38,12 +38,12 @@ const BumpFroshModal = () => {
     })
       .then(response => response.json())
       .then(data => {
-        console.log(data);
+        // commented console.log (data);
         if (data.error){
-            console.log(data.error);
+            // commented console.log (data.error);
         } else {
             setIsFroshModalOpen(false);
-            console.log("refreshing");
+            // commented console.log ("refreshing");
         }
         setRefreshKey(prev => prev + 1);
         if (handleErrorFromTokenExpiry(data)) {
@@ -57,7 +57,7 @@ const BumpFroshModal = () => {
 
     const handleBumpFrosh = () => {
         setFroshBumpLoading(true);
-        console.log("Bumping frosh to room " + targetRoom + "from room " + selectedRoomObject.roomUUID);
+        // commented console.log ("Bumping frosh to room " + targetRoom + "from room " + selectedRoomObject.roomUUID);
         // make an api call to bump the frosh to the target room
         if (localStorage.getItem('jwt')) {
             fetch(`/frosh/bump/${selectedRoomObject.roomUUID}`, {
@@ -73,7 +73,7 @@ const BumpFroshModal = () => {
                     return res.json();
                 })
                 .then(data => {
-                    console.log(data);
+                    // commented console.log (data);
                     if (data.error) {
                         setFroshBumpError(data.error);
                         setFroshBumpLoading(false);
@@ -88,7 +88,7 @@ const BumpFroshModal = () => {
                     };
                 })
                 .catch(err => {
-                    console.log(err);
+                    // commented console.log (err);
                 })
         }
     }
@@ -134,7 +134,7 @@ const BumpFroshModal = () => {
 
         //             {selectedRoomObject.hasFrosh && (
         //                 <div className="select" style={{ marginRight: "10px" }}>
-        //                     <select value={selectedRoomObject} onChange={() => console.log("lol")}>
+        //                     <select value={selectedRoomObject} onChange={() => // commented console.log ("lol")}>
         //                         <option value="">Select a room to bump frosh to</option>
         //                         {rooms && rooms
         //                             .filter(room => !room.HasFrosh && room.FroshRoomType === selectedRoomObject.froshRoomType && dormMapping[room.Dorm] === activeTab)

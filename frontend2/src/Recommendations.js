@@ -89,7 +89,7 @@ const Recommendations = () => {
       const handleOnClickRecommendationHandler = (e) => {
         // setCurrPage('Home');
         setIsModalOpen(true);
-        console.log(e);
+        // commented console.log (e);
 
       }
     

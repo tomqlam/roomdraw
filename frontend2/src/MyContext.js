@@ -72,7 +72,7 @@ export const MyContextProvider = ({ children }) => {
             if (credentials && !document.hidden) {
                 setRefreshKey(prevKey => prevKey + 1);
                 setLastRefreshedTime(new Date());
-                console.log("refreshed ONE DORM");
+                // commented console.log ("refreshed ONE DORM");
             }
         }, 60000);
         return () => {
@@ -108,7 +108,7 @@ export const MyContextProvider = ({ children }) => {
 
     // debug print function
     function print(text) {
-        console.log(text);
+        // commented console.log (text);
     }
 
 
@@ -130,7 +130,7 @@ export const MyContextProvider = ({ children }) => {
                     setUserMap(data);
                 })
                 .catch(err => {
-                    console.log(err);
+                    // commented console.log (err);
                 })
         }
 
@@ -150,7 +150,7 @@ export const MyContextProvider = ({ children }) => {
                         return;
                     };
                     setRooms(data);
-                    console.log(data);
+                    // commented console.log (data);
                     if (data.error) {
                         print("There was an error printing rooms");
                         setCredentials(null); // nullify the credentials if there was an error, they're probably failing
@@ -158,13 +158,13 @@ export const MyContextProvider = ({ children }) => {
                     }
                 })
                 .catch(err => {
-                    console.log(err);
-                    console.log(err.error);
+                    // commented console.log (err);
+                    // commented console.log (err.error);
                 })
         }
     }
     function fetchRoomsForOneDorm(dorm) {
-        console.log("fetching one dorm");
+        // commented console.log ("fetching one dorm");
         fetch(`/rooms/simple/${dorm}`, {
             method: 'GET',
             headers: {
@@ -176,8 +176,8 @@ export const MyContextProvider = ({ children }) => {
                 if (handleErrorFromTokenExpiry(data)) {
                     return;
                 };
-                console.log("reached here");
-                console.log(data.floors[0].suites);
+                // commented console.log ("reached here");
+                // commented console.log (data.floors[0].suites);
                 data = splitFloorsForCaseDorm(data, roomNumbers, floorNames);
 
 
@@ -201,7 +201,7 @@ export const MyContextProvider = ({ children }) => {
                     console.error("data.floors[0].suites is not an array:", data.floors[0].suites);
                 }
 
-                console.log(data);
+                // commented console.log (data);
                 setGridData(prevGridData => prevGridData.map(item => item.dormName === dorm ? data : item));
             })
             .catch(err => {
@@ -224,7 +224,7 @@ export const MyContextProvider = ({ children }) => {
                         return;
                     };
                     
-                    console.log("Surely");
+                    // commented console.log ("Surely");
                     data = splitFloorsForCaseDorm(data, roomNumbers, floorNames);
 
 
@@ -261,7 +261,7 @@ export const MyContextProvider = ({ children }) => {
                     print(dataArray);
                     print("fetching roosm for dorms");
                     setGridData(dataArray);
-                    console.log(gridData);
+                    // commented console.log (gridData);
                 }
 
             })
@@ -270,7 +270,7 @@ export const MyContextProvider = ({ children }) => {
             });
     }
     function splitFloorsForCaseDorm(dormData, roomNumbers, floorNames) {
-        console.log(dormData.dormName);
+        // commented console.log (dormData.dormName);
         
         if (dormData.dormName !== 'Case') {
             return dormData;
@@ -304,8 +304,8 @@ export const MyContextProvider = ({ children }) => {
                 suites: secondHalfSuites,
             });
         });
-        console.log("new floors")
-        console.log(newFloors);
+        // commented console.log ("new floors")
+        // commented console.log (newFloors);
 
         return {
             ...dormData,

@@ -61,7 +61,7 @@ function FloorGrid({ gridData }) {
           return;
         }
       }
-      console.log("Did not find the occupants");
+      // commented console.log ("Did not find the occupants");
       // If the room does not exist in any suite, resolve the Promise with an empty array and null
       resolve({
         occupants: ['', '', '', ''],
@@ -95,9 +95,9 @@ function FloorGrid({ gridData }) {
 
   // useEffect(() => {
   //   if (divRef.current && isSuiteNoteModalOpen && divRef.current.offsetWidth !== 0 && divRef.current.offsetHeight !== 0) {
-  //     console.log("Selected room object;");
-  //     console.log('Width:', divRef.current.offsetWidth);
-  //     console.log('Height:', divRef.current.offsetHeight);
+  //     // commented console.log ("Selected room object;");
+  //     // commented console.log ('Width:', divRef.current.offsetWidth);
+  //     // commented console.log ('Height:', divRef.current.offsetHeight);
   //     // setSuiteDimensions({
   //     //   width: divRef.current.offsetWidth,
   //     //   height: divRef.current.offsetHeight
@@ -120,7 +120,7 @@ function FloorGrid({ gridData }) {
   const updateSuiteNotes = (room, ref) => {
     getOccupantsByRoomNumber(room);
     setIsSuiteNoteModalOpen(true);
-    console.log(ref.current);
+    // commented console.log (ref.current);
     setSuiteDimensions({
       width: ref.current.offsetWidth,
       height: ref.current.offsetHeight
@@ -168,17 +168,17 @@ function FloorGrid({ gridData }) {
   };
   const handleCellClick = async (roomNumber) => {
     setSelectedItem(roomNumber);
-    console.log("Room number: " + roomNumber);
+    // commented console.log ("Room number: " + roomNumber);
     const { occupants, roomObject } = await getOccupantsByRoomNumber(roomNumber);
     setSelectedOccupants(occupants);
     setSelectedRoomObject(roomObject);
-    console.log("has frosh?");
-    console.log(roomObject);
-    console.log(roomObject.hasFrosh);
+    // commented console.log ("has frosh?");
+    // commented console.log (roomObject);
+    // commented console.log (roomObject.hasFrosh);
     if (roomObject && roomObject.hasFrosh) {
       setIsFroshModalOpen(true);
     } else {
-      console.log(occupants);
+      // commented console.log (occupants);
       setPullMethod("Pulled themselves");
       setIsModalOpen(true);
     }
@@ -208,7 +208,7 @@ function FloorGrid({ gridData }) {
         }
         if (pullPriority.isPreplaced) {
           let shortestOccupant = null;
-          // console.log(room)
+          // // commented console.log (room)
           const roomOccupants = [room.occupant1, room.occupant2, room.occupant3, room.occupant4];
 
           roomOccupants.forEach(occupant => {

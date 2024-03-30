@@ -43,8 +43,8 @@ function BumpModal() {
 
   useEffect(() => {
     // If the selected suite or room changes, change the people who can pull 
-    console.log(selectedRoomObject.froshRoomType);
-    console.log(rooms);
+    // commented console.log (selectedRoomObject.froshRoomType);
+    // commented console.log (rooms);
     if (selectedSuiteObject) {
       const otherRooms = selectedSuiteObject.rooms;
       const otherOccupants = [];
@@ -58,7 +58,7 @@ function BumpModal() {
         }
 
       }
-      //console.log(otherRoomsWhoCanAlternatePull);
+      //// commented console.log (otherRoomsWhoCanAlternatePull);
       setRoomsWhoCanAlternatePull(otherRoomsWhoCanAlternatePull);
       setPeopleWhoCanPullSingle(otherOccupants);
     }
@@ -73,7 +73,7 @@ function BumpModal() {
     })
       .then(response => response.json())
       .then(data => {
-        console.log(data);
+        // commented console.log (data);
         closeModal();
         setRefreshKey(prev => prev + 1);
         if (handleErrorFromTokenExpiry(data)) {
@@ -127,7 +127,7 @@ function BumpModal() {
       }
     }
     else if (/^\d+$/.test(pullMethod)) {
-      console.log("Pull method is a number");
+      // commented console.log ("Pull method is a number");
       // pullMethod only includes number, implying that you were pulled by someone else
       if (await canIBePulled()) {  // Wait for canIBePulled to complete
         print("This room was successfully pulled by someone else in the suite");
@@ -172,7 +172,7 @@ function BumpModal() {
   };
 
   const performRoomAction = (pullType, pullLeaderRoom = null) => {
-    console.log("performing room actoin");
+    // commented console.log ("performing room actoin");
     setLoadingSubmit(true);
     return new Promise((resolve) => {
       fetch(`/rooms/${selectedRoomObject.roomUUID}`, {
@@ -196,8 +196,8 @@ function BumpModal() {
               return;
             };
             if (data.error === "One or more of the proposed occupants is already in a room") {
-              console.log("Someone's already there rrror:");
-              console.log(data.occupants);
+              // commented console.log ("Someone's already there rrror:");
+              // commented console.log (data.occupants);
 
               // But wait: if these are the same people in the current room, handle clearing the room in the backend
               // Check if all occupants are in the current room
@@ -208,16 +208,16 @@ function BumpModal() {
                 handleClearRoom(selectedRoomObject.roomUUID, false, -1)
                   .then(() => performRoomAction(pullType, pullLeaderRoom))
                   .then((data) => {
-                    console.log(data);
+                    // commented console.log (data);
                     if (data === true) {
                       setRefreshKey(prev => prev + 1);
                       closeModal();
-                      console.log("THERE HAS NOT BEEN A ERROR");
+                      // commented console.log ("THERE HAS NOT BEEN A ERROR");
 
                     } else {
                       setLoadingSubmit(false);
                       setShowModalError(true);
-                      console.log("THERE HAS BEEN A ERROR");
+                      // commented console.log ("THERE HAS BEEN A ERROR");
                       resolve(false);
                     }
                     resolve(true);
@@ -242,7 +242,7 @@ function BumpModal() {
             setShowModalError(true);
             resolve(false);
           } else {
-            console.log("Refreshing and setting");
+            // commented console.log ("Refreshing and setting");
             setRefreshKey(prev => prev + 1);
             resolve(true);
           }
@@ -262,10 +262,10 @@ function BumpModal() {
     // const otherRoomInSuite = selectedSuiteObject.rooms.find(room => room.roomUUID !== selectedRoomObject.roomUUID);
     return performRoomAction(4, roomUUID);
     // if (otherRoomInSuite) {
-    //   console.log("Successfully found other room");
+    //   // commented console.log ("Successfully found other room");
     //   return performRoomAction(4, otherRoomInSuite.roomUUID);
     // } else {
-    //   console.log("No other room in suite, can't alternate pull");
+    //   // commented console.log ("No other room in suite, can't alternate pull");
     //   return false;
     // }
   };
@@ -284,11 +284,11 @@ function BumpModal() {
         }),
       })
         .then(response => {
-          console.log("Fetch response status:", response.status);  // Add this line
+          // commented console.log ("Fetch response status:", response.status);  // Add this line
           return response;
         })
         .then(data => {
-          console.log("Received response from clearing room");
+          // commented console.log ("Received response from clearing room");
           if (data.error) {
             if (handleErrorFromTokenExpiry(data)) {
               return;
@@ -301,7 +301,7 @@ function BumpModal() {
 
           } else {
             // no error 
-            console.log("Refreshing and settingloadClearPeron");
+            // commented console.log ("Refreshing and settingloadClearPeron");
             setRefreshKey(prev => prev + 1);
             resolve(true);
             if (personIndex !== -1) {

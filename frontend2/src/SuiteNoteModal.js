@@ -71,7 +71,7 @@ function SuiteNoteModal() {
                                 // updated suite successfully 
                                 setIsSuiteNoteModalOpen(false);
                                 setRefreshKey(prevKey => prevKey + 1);
-                                console.log("refreshing");
+                                // commented console.log ("refreshing");
                             }
                         })
                         .catch((error) => {
@@ -94,7 +94,7 @@ function SuiteNoteModal() {
             .then(response => response.json())
             .then(data => {
                 if (data.error) {
-                    console.log(data.error);
+                    // commented console.log (data.error);
                 } else {
                     // updated suite successfully 
                     setIsSuiteNoteModalOpen(false);
@@ -150,7 +150,7 @@ function SuiteNoteModal() {
             // const url = canvas.toDataURL('image/png');
             if (selectedSuiteObject.suiteDesign) {
                 const url = selectedSuiteObject.suiteDesign;
-                console.log(selectedSuiteObject);
+                // commented console.log (selectedSuiteObject);
 
                 // Open the image in the ImageEditorComponent
                 imgObj.current.open(url);
