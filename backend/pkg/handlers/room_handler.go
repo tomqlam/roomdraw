@@ -1400,12 +1400,26 @@ func LockPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 		roomsInSuite = append(roomsInSuite, r)
 	}
 
+	nonPreplacedRooms := 0
+
 	for _, roomInSuite := range roomsInSuite {
 		if roomInSuite.CurrentOccupancy < roomInSuite.MaxOccupancy && !roomInSuite.HasFrosh && roomInSuite.RoomUUID != currentRoomInfo.RoomUUID {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "One or more rooms in the suite are not full " + roomInSuite.RoomID})
 			tx.Rollback()
 			return err
 		}
+
+		// check if pull priority is not preplace
+		if !roomInSuite.PullPriority.IsPreplaced && !roomInSuite.HasFrosh && roomInSuite.RoomUUID != currentRoomInfo.RoomUUID {
+			nonPreplacedRooms++
+		}
+	}
+
+	if nonPreplacedRooms == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Cannot lock pull into a suite with all preplaced rooms"}) // all rooms in the suite are preplaced
+		err = errors.New("cannot lock pull into a suite with all preplaced rooms")
+		tx.Rollback()
+		return err
 	}
 
 	var occupantsInfo []models.UserRaw
