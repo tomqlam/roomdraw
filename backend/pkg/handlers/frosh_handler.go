@@ -410,11 +410,11 @@ func BumpFroshHandler(c *gin.Context) {
 		case 6:
 			err = BumpFroshSontagHelper(tx, originalRoom, targetRoom)
 		case 7:
-			err = BumpFroshLindeHelper(tx, originalRoom, targetRoom)
-		case 8:
 			err = BumpFroshCaseHelper(tx, originalRoom, targetRoom)
-		case 9:
+		case 8:
 			err = BumpFroshDrinkwardHelper(tx, originalRoom, targetRoom)
+		case 9:
+			err = BumpFroshLindeHelper(tx, originalRoom, targetRoom)
 		default:
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid dorm"})
 			err = errors.New("invalid dorm")
