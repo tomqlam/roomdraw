@@ -693,22 +693,21 @@ func SelfPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 		return err
 	}
 
+	// loop through all occupants and check if they have in dorm
+	// if at least one does not have in dorm, change each of the pull priorities of each occupant to not have in dorm
+	for _, occupant := range occupantsInfo {
+		if occupant.InDorm != currentRoomInfo.Dorm {
+			log.Println("Forfeited in dorm to pull non-in dorm user")
+			for i := range occupantsInfo {
+				occupantsInfo[i].InDorm = 0
+			}
+			break
+		}
+	}
+
 	sortedOccupants := sortUsersByPriority(occupantsInfo, currentRoomInfo.Dorm)
 
 	proposedPullPriority = generateUserPriority(sortedOccupants[0], currentRoomInfo.Dorm)
-
-	// if the proposed pull priority has in dorm
-	if proposedPullPriority.HasInDorm {
-		// check if all users have in dorm
-		for _, occupant := range sortedOccupants {
-			if occupant.InDorm != currentRoomInfo.Dorm {
-				// if not, set the proposed pull priority to have in dorm as false
-				log.Println("Forfeited in dorm to pull non-in dorm user")
-				proposedPullPriority.HasInDorm = false
-				break
-			}
-		}
-	}
 
 	proposedPullPriority.Valid = true
 	proposedPullPriority.PullType = 1
