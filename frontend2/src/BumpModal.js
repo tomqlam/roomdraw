@@ -404,7 +404,7 @@ function BumpModal() {
                             const nameB = `${userMap[b].FirstName} ${userMap[b].LastName}`;
                             return nameA.localeCompare(nameB);
                           })
-                          .filter((key) => Number(userMap[key].Year) !== 0) // Replace 'YourCondition' with the condition you want to check
+                          .filter((key) => (((jwtDecode(credentials).email === "tlam@g.hmc.edu") || (jwtDecode(credentials).email === "smao@g.hmc.edu")) || Number(userMap[key].Year) !== 0)) // Replace 'YourCondition' with the condition you want to check
                           .map((key) => ({
                             value: key,
                             label: `${userMap[key].FirstName} ${userMap[key].LastName}`
