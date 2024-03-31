@@ -553,6 +553,11 @@ func BumpFroshDrinkwardHelper(tx *sql.Tx, originalRoom models.RoomRaw, targetRoo
 
 func BumpFroshInnerDormHelper(tx *sql.Tx, originalRoom models.RoomRaw, targetRoom models.RoomRaw) error {
 	var err error
+
+	if targetRoom.CurrentOccupancy != 0 {
+		return errors.New("target room is not empty")
+	}
+
 	// in the inner dorms, the entire suite of frosh must be moved
 	// check that all the other rooms in the target suite are empty
 	var count int

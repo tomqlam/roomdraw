@@ -85,8 +85,31 @@ function BumpModal() {
       });
   }
 
-
-
+  function preplaceOccupants(roomObject) {
+    fetch(`/rooms/preplace/${roomObject.roomUUID}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
+      },
+      body: JSON.stringify({
+        proposedOccupants: selectedOccupants
+          .filter(occupant => occupant !== '')
+          .map(occupant => Number(occupant.value)),
+      }),
+    })
+      .then(response => response.json())
+      .then(data => {
+        // commented console.log (data);
+        closeModal();
+        setRefreshKey(prev => prev + 1);
+        if (handleErrorFromTokenExpiry(data)) {
+          return;
+        };
+      })
+      .catch((error) => {
+        console.error('Error:', error);
+      });
+  }
 
   const handlePullMethodChange = (e) => {
     print(pullMethod);
@@ -350,7 +373,7 @@ function BumpModal() {
 
 
           {((jwtDecode(credentials).email === "tlam@g.hmc.edu") || (jwtDecode(credentials).email === "smao@g.hmc.edu")) && <button onClick={() => postToFrosh(selectedRoomObject)}>Add Frosh</button>}
-
+          {((jwtDecode(credentials).email === "tlam@g.hmc.edu") || (jwtDecode(credentials).email === "smao@g.hmc.edu")) && <button onClick={() => preplaceOccupants(selectedRoomObject)}>Pre-Place Occupants</button>}
 
           {!selectedRoomObject.pullPriority.isPreplaced && <div>
             <div>
