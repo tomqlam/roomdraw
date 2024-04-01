@@ -1793,7 +1793,32 @@ func AlternativePull(c *gin.Context, request models.OccupantUpdateRequest) error
 		pullLeaderOccupantsInfo = append(pullLeaderOccupantsInfo, u)
 	}
 
+	// loop through all occupants and check if they have in dorm
+	// if at least one does not have in dorm, change each of the pull priorities of each occupant to not have in dorm
+	for _, occupant := range occupantsInfo {
+		if occupant.InDorm != currentRoomInfo.Dorm {
+			log.Println("Forfeited in dorm to pull non-in dorm user")
+			for i := range occupantsInfo {
+				occupantsInfo[i].InDorm = 0
+			}
+			break
+		}
+	}
+
 	var allOccupantsInfo = append(occupantsInfo, pullLeaderOccupantsInfo...)
+
+	// loop through all occupants and check if they have in dorm
+	// if at least one does not have in dorm, change each of the pull priorities of each occupant to not have in dorm
+	for _, occupant := range allOccupantsInfo {
+		if occupant.InDorm != currentRoomInfo.Dorm {
+			log.Println("Forfeited in dorm to pull non-in dorm user")
+			for i := range allOccupantsInfo {
+				allOccupantsInfo[i].InDorm = 0
+			}
+			break
+		}
+	}
+
 	// sort all of the occupants by priority and get the second highest priority
 	sortedAllOccupants := sortUsersByPriority(allOccupantsInfo, currentRoomInfo.Dorm)
 
