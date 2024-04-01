@@ -53,7 +53,7 @@ const SettingsModal = () => {
                   checked={onlyShowBumpableRooms}
                   onChange={() => setOnlyShowBumpableRooms(!onlyShowBumpableRooms)}
                 />
-                <span style={{ marginLeft: '0.5rem' }}>Darken rooms I can't pull</span>
+                <span style={{ marginLeft: '0.5rem' }}>Darken rooms selected person can't pull <br/>(This will darken preplaced rooms extra) </span>
               </label>
             </div>
 
