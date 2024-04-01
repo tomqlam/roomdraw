@@ -492,7 +492,13 @@ func BumpFroshLindeHelper(tx *sql.Tx, originalRoom models.RoomRaw, targetRoom mo
 	}
 
 	if count > 0 {
-		return errors.New("target suite already has frosh")
+		if originalRoom.SuiteUUID != targetRoom.SuiteUUID {
+			return errors.New("target suite already has frosh")
+		} else {
+			if count > 1 {
+				return errors.New("target suite already has more than one frosh room")
+			}
+		}
 	}
 
 	// set the has_frosh field to false for the original room and true for the target room

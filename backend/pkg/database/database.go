@@ -3,7 +3,6 @@ package database
 import (
 	"database/sql"
 	"fmt"
-	"log"
 	"net/url"
 	"os"
 	"strings"
@@ -34,7 +33,7 @@ func InitDB() error {
 	// Construct the connection string
 	connStr := fmt.Sprintf("postgresql://%s:%s@%s/%s?sslmode=%s", cloudSQLUser, encodedPass, cloudSQLIP, cloudSQLDBName, useSSL)
 
-	log.Println("connStr", connStr)
+	// log.Println("connStr", connStr)
 
 	// Open the database connection
 	DB, err = sql.Open("postgres", connStr)
