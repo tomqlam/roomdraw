@@ -308,12 +308,12 @@ function App() {
             <span aria-hidden="true"></span>
             <span aria-hidden="true"></span>
           </a> */}
-          {(!credentials && window.innerWidth <= 768) &&
+          {(!credentials && window.innerWidth < 1024) &&
             <GoogleLogin auto_select={true}
               onSuccess={handleSuccess}
               onError={handleError}
             />}
-          {(credentials && window.innerWidth <= 768) && <a class="button is-danger" onClick={handleLogout}>
+          {(credentials && window.innerWidth < 1024) && <a class="button is-danger" onClick={handleLogout}>
             <strong>Log Out</strong>
           </a>}
         </div>
