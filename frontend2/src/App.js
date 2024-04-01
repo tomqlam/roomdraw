@@ -50,7 +50,19 @@ function App() {
 
   } = useContext(MyContext);
 
-  // const [showNotification, setShowNotification] = useState(false);
+  const [showNotification, setShowNotification] = useState(false);
+
+  useEffect(() => {
+    const hasClosedNotification = localStorage.getItem('hasClosedNotification');
+    setShowNotification(hasClosedNotification !== 'true');
+  }, []);
+
+  const handleCloseNotification = () => {
+    // Store the notification state in local storage when the user closes the notification
+    localStorage.setItem('hasClosedNotification', 'true');
+    setShowNotification(false);
+  };
+
   const [myRoom, setMyRoom] = useState("You are not in a room yet."); // to show what room current user is in
   const [isBurgerClicked, setIsBurgerClicked] = useState(false);
   const [isInDorm, setIsInDorm] = useState(true);
@@ -296,12 +308,12 @@ function App() {
             <span aria-hidden="true"></span>
             <span aria-hidden="true"></span>
           </a> */}
-          {(!credentials && window.innerWidth <= 768) &&
+          {(!credentials && window.innerWidth < 1024) &&
             <GoogleLogin auto_select={true}
               onSuccess={handleSuccess}
               onError={handleError}
             />}
-          {(credentials && window.innerWidth <= 768) && <a class="button is-danger" onClick={handleLogout}>
+          {(credentials && window.innerWidth < 1024) && <a class="button is-danger" onClick={handleLogout}>
             <strong>Log Out</strong>
           </a>}
         </div>
@@ -352,6 +364,11 @@ function App() {
       {isSuiteNoteModalOpen && <SuiteNoteModal />}
       {isFroshModalOpen && <BumpFroshModal />}
       {isSettingsModalOpen && <SettingsModal />}
+
+      {(credentials && showNotification) && <div class="notification is-link" style={{ marginLeft: '20px', marginRight: '20px' }}>
+        <button class="delete" onClick={handleCloseNotification}></button>
+        UI Update: 1) Preplaced rooms now appear slightly darker by default. 2) Unbumpable rooms are now always black.
+      </div>}
 
 
 

@@ -135,7 +135,7 @@ function FloorGrid({ gridData }) {
     if (occupancy < maxOccupancy || !userMap || !userMap[selectedID]) {
       return {
         ...gridItemStyle,
-        backgroundColor: selectedPalette.unbumpableRoom
+        backgroundColor: "black"
       };
     }
     // Selected person lives in this room
@@ -147,9 +147,11 @@ function FloorGrid({ gridData }) {
     }
 
     let backgroundColor = (suiteIndex % 2 === 0 ? selectedPalette.evenSuite : selectedPalette.oddSuite);
-
+    if (pullPriority.isPreplaced) {
+      backgroundColor = darken(backgroundColor, 50); // darken the color by 10%
+    }
     if (!checkBumpable(pullPriority) && onlyShowBumpableRooms) {
-      backgroundColor = darken(backgroundColor, 100); // darken the color by 10%
+      backgroundColor = darken(backgroundColor, 50); // darken the color by 10%
     }
 
     return {
