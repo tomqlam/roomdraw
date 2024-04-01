@@ -135,7 +135,7 @@ function FloorGrid({ gridData }) {
     if (occupancy < maxOccupancy || !userMap || !userMap[selectedID]) {
       return {
         ...gridItemStyle,
-        backgroundColor: selectedPalette.unbumpableRoom
+        backgroundColor: "black"
       };
     }
     // Selected person lives in this room

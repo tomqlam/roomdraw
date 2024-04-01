@@ -100,12 +100,12 @@ const SettingsModal = () => {
                         </div>
                     </div>
 
-                    <div className="field">
+                    {/* <div className="field">
                         <label className="label">Customize UnBumpable Rooms</label>
                         <div className="control">
                             <input className="input" type="color" id="color4" name="color4" value={selectedPalette.unbumpableRoom} onChange={event => handleColorChange('unbumpableRoom', event)}/>
                         </div>
-                    </div>
+                    </div> */}
 
                     <div className="field">
                         <label className="label">Customize My Current Room</label>
