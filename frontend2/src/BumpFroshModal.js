@@ -102,6 +102,7 @@ const BumpFroshModal = () => {
             <div className="modal-card">
                 <header className="modal-card-head">
                     <p className="modal-card-title">Edit Room {selectedItem}</p>
+                    
                     <button className="delete" aria-label="close" onClick={() => setIsFroshModalOpen(false)}></button>
                 </header>
                 <section className="modal-card-body">
@@ -118,6 +119,7 @@ const BumpFroshModal = () => {
                             }
                         </select>
                     </div>}
+                    <p>All the members of the target suite must agree before you can bump frosh there</p>
                     {froshBumpError !== "" && <p class="help is-danger">{froshBumpError}</p>}
 
 

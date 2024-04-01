@@ -2,6 +2,7 @@ import React, { useState, useContext, useEffect } from 'react';
 import { MyContext } from './MyContext';
 import { jwtDecode } from "jwt-decode";
 import Select from "react-select";
+import AdminBumpModalFunctions from './AdminBumpModalFunctions';
 
 
 function BumpModal() {
@@ -64,76 +65,7 @@ function BumpModal() {
     }
   }, [selectedSuiteObject, selectedItem]);
 
-  function postToFrosh(roomObject) {
-    fetch(`/frosh/${roomObject.roomUUID}`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
-      },
-    })
-      .then(response => response.json())
-      .then(data => {
-        // commented console.log (data);
-        closeModal();
-        setRefreshKey(prev => prev + 1);
-        if (handleErrorFromTokenExpiry(data)) {
-          return;
-        };
-      })
-      .catch((error) => {
-        console.error('Error:', error);
-      });
-  }
-
-  function preplaceOccupants(roomObject) {
-    fetch(`/rooms/preplace/${roomObject.roomUUID}`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
-      },
-      body: JSON.stringify({
-        proposedOccupants: selectedOccupants
-          .filter(occupant => occupant !== '')
-          .map(occupant => Number(occupant.value)),
-      }),
-    })
-      .then(response => response.json())
-      .then(data => {
-        // commented console.log (data);
-        closeModal();
-        setRefreshKey(prev => prev + 1);
-        if (handleErrorFromTokenExpiry(data)) {
-          return;
-        };
-      })
-      .catch((error) => {
-        console.error('Error:', error);
-      });
-  }
-
-  function removePreplaceOccupants(roomObject) {
-    fetch(`/rooms/preplace/${roomObject.roomUUID}`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
-      },
-      body: JSON.stringify({
-        proposedOccupants: [],
-      }),
-    })
-      .then(response => response.json())
-      .then(data => {
-        // commented console.log (data);
-        closeModal();
-        setRefreshKey(prev => prev + 1);
-        if (handleErrorFromTokenExpiry(data)) {
-          return;
-        };
-      })
-      .catch((error) => {
-        console.error('Error:', error);
-      });
-  }
+  
 
   const handlePullMethodChange = (e) => {
     print(pullMethod);
@@ -396,9 +328,7 @@ function BumpModal() {
         <section className="modal-card-body">
 
 
-          {((jwtDecode(credentials).email === "tlam@g.hmc.edu") || (jwtDecode(credentials).email === "smao@g.hmc.edu")) && <button onClick={() => postToFrosh(selectedRoomObject)}>Add Frosh</button>}
-          {((jwtDecode(credentials).email === "tlam@g.hmc.edu") || (jwtDecode(credentials).email === "smao@g.hmc.edu")) && <button onClick={() => preplaceOccupants(selectedRoomObject)}>Pre-Place Occupants</button>}
-          {((jwtDecode(credentials).email === "tlam@g.hmc.edu") || (jwtDecode(credentials).email === "smao@g.hmc.edu")) && <button onClick={() => removePreplaceOccupants(selectedRoomObject)}>Remove Pre-Placed Occupants</button>}
+          <AdminBumpModalFunctions closeModal={closeModal}/>
 
           {!selectedRoomObject.pullPriority.isPreplaced && <div>
             <div>
