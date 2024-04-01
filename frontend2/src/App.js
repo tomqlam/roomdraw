@@ -14,10 +14,6 @@ import SettingsModal from './SettingsModal';
 
 
 function App() {
-  const options = [
-    'one', 'two', 'three'
-  ];
-  const defaultOption = options[0];
 
   const {
     currPage,
@@ -50,17 +46,23 @@ function App() {
 
   } = useContext(MyContext);
 
-  const [showNotification, setShowNotification] = useState(false);
+  const [notifications, setNotifications] = useState([]);
 
   useEffect(() => {
-    const hasClosedNotification = localStorage.getItem('hasClosedNotification');
-    setShowNotification(hasClosedNotification !== 'true');
+    const closedNotifications = JSON.parse(localStorage.getItem('closedNotifications')) || [];
+    const newNotifications = [
+      'Reminder: to show/hide floorplans, click Settings in the top right corner and toggle the checkbox.', 
+    // 'Notification 2', 
+  ].filter(notification => !closedNotifications.includes(notification));
+    setNotifications(newNotifications);
   }, []);
 
-  const handleCloseNotification = () => {
+  const handleCloseNotification = (notification) => {
     // Store the notification state in local storage when the user closes the notification
-    localStorage.setItem('hasClosedNotification', 'true');
-    setShowNotification(false);
+    const closedNotifications = JSON.parse(localStorage.getItem('closedNotifications')) || [];
+    closedNotifications.push(notification);
+    localStorage.setItem('closedNotifications', JSON.stringify(closedNotifications));
+    setNotifications(notifications.filter(n => n !== notification));
   };
 
   const [myRoom, setMyRoom] = useState("You are not in a room yet."); // to show what room current user is in
@@ -365,10 +367,16 @@ function App() {
       {isFroshModalOpen && <BumpFroshModal />}
       {isSettingsModalOpen && <SettingsModal />}
 
-      {(credentials && showNotification) && <div class="notification is-link" style={{ marginLeft: '20px', marginRight: '20px' }}>
+      {/* {(credentials && showNotification) && <div class="notification is-link" style={{ marginLeft: '20px', marginRight: '20px' }}>
         <button class="delete" onClick={handleCloseNotification}></button>
         UI Update: 1) Preplaced rooms now appear slightly darker by default. 2) Unbumpable rooms are now always black.
-      </div>}
+      </div>} */}
+      {credentials && notifications.map((notification, index) => (
+        <div key={index} className="notification is-info" style={{ marginLeft: '20px', marginRight: '20px' }}>
+          <button className="delete" onClick={() => handleCloseNotification(notification)}></button>
+          {notification}
+        </div>
+      ))}
 
 
 

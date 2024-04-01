@@ -32,6 +32,8 @@ export const MyContextProvider = ({ children }) => {
 
     // Initialize active tab state from localStorage or default to 'Atwood'
 
+    const adminList = ["smao@g.hmc.edu", "tlam@g.hmc.edu"]
+
     const getRoomUUIDFromUserID = (userID) => {
         if (rooms) {
             for (let room of rooms) {
@@ -452,7 +454,8 @@ export const MyContextProvider = ({ children }) => {
         setIsSettingsModalOpen,
         isSettingsModalOpen,
         showFloorplans,
-        setShowFloorplans
+        setShowFloorplans,
+        adminList
 
     };
 
