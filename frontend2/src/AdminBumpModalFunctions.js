@@ -18,7 +18,7 @@ const AdminBumpModalFunctions = ({closeModal}) => {
     } = useContext(MyContext);
 
     function postToFrosh(roomObject) {
-        fetch(`/frosh/${roomObject.roomUUID}`, {
+        fetch(`https://www.cs.hmc.edu/~tlam/digitaldraw/api/frosh/${roomObject.roomUUID}`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
@@ -39,7 +39,7 @@ const AdminBumpModalFunctions = ({closeModal}) => {
       }
     
       function preplaceOccupants(roomObject) {
-        fetch(`/rooms/preplace/${roomObject.roomUUID}`, {
+        fetch(`https://www.cs.hmc.edu/~tlam/digitaldraw/api/rooms/preplace/${roomObject.roomUUID}`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
@@ -65,7 +65,7 @@ const AdminBumpModalFunctions = ({closeModal}) => {
       }
     
       function removePreplaceOccupants(roomObject) {
-        fetch(`/rooms/preplace/${roomObject.roomUUID}`, {
+        fetch(`https://www.cs.hmc.edu/~tlam/digitaldraw/api/rooms/preplace/${roomObject.roomUUID}`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
