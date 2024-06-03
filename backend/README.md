@@ -50,9 +50,3 @@ To run the RoomDraw backend, follow these steps:
 4. Once the container is running, you can access the backend API at `http://localhost:8080`.
 
 That's it! You have successfully set up and run the RoomDraw backend.
-
-## Additional Information
-
-- If you encounter any issues or have questions, please refer to the [backend documentation](/path/to/backend/documentation).
-
-- For more advanced configuration options, please consult the [backend configuration guide](/path/to/backend/configuration).
