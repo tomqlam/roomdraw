@@ -14,12 +14,12 @@ print(dotenv_path)
 
 load_dotenv(dotenv_path=dotenv_path, verbose=True)
 
-cloud_sql_pass = os.environ.get('CLOUD_SQL_PASS')
-cloud_sql_ip = os.environ.get('CLOUD_SQL_IP')
-cloud_sql_db_name = os.environ.get('CLOUD_SQL_DB_NAME')
-cloud_sql_user = os.environ.get('CLOUD_SQL_USER')
+sql_pass = os.environ.get('SQL_PASS')
+sql_ip = os.environ.get('SQL_IP')
+sql_db_name = os.environ.get('SQL_DB_NAME')
+sql_user = os.environ.get('SQL_USER')
 
-CONNSTR = f'postgresql://{cloud_sql_user}:{cloud_sql_pass}@{cloud_sql_ip}/{cloud_sql_db_name}'
+CONNSTR = f'postgresql://{sql_user}:{sql_pass}@{sql_ip}/{sql_db_name}'
 
 engine = create_engine(CONNSTR)
 
