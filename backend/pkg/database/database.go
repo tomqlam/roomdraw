@@ -24,6 +24,7 @@ func InitDB() error {
 	SQLIP := os.Getenv("SQL_IP")
 	SQLDBName := os.Getenv("SQL_DB_NAME")
 	SQLUser := os.Getenv("SQL_USER")
+	SQLPort := os.Getenv("SQL_PORT")
 	useSSL := os.Getenv("USE_SSL")
 	// replace every space with %20
 	encodedPass := url.QueryEscape(SQLPass)
@@ -31,7 +32,7 @@ func InitDB() error {
 	encodedPass = strings.Replace(encodedPass, "+", "%20", -1)
 
 	// Construct the connection string
-	connStr := fmt.Sprintf("postgresql://%s:%s@%s/%s?sslmode=%s", SQLUser, encodedPass, SQLIP, SQLDBName, useSSL)
+	connStr := fmt.Sprintf("postgresql://%s:%s@%s:%s/%s?sslmode=%s", SQLUser, encodedPass, SQLIP, SQLPort, SQLDBName, useSSL)
 
 	// log.Println("connStr", connStr)
 

@@ -9,6 +9,10 @@
 # 8 = Drinkward
 # 9 = Linde
 
+import os
+from dotenv import load_dotenv
+from sqlalchemy.sql import text
+from sqlalchemy import create_engine
 import pandas as pd
 # the CSV columns should be:
 # First Name, Last Name, Year, In Dorm, Number, Email
@@ -48,19 +52,7 @@ numbers['Year'] = numbers['Year'].map(year_mapping)
 
 print(numbers)
 
-from typing import List, Dict
-from numpy import NaN
-from sqlalchemy import create_engine
-from sqlalchemy import Table, Column, Integer, String, MetaData, ForeignKey
-from sqlalchemy import inspect
-from sqlalchemy.sql import text
-from uuid import uuid4
-
 # import env variables
-import os
-from dotenv import load_dotenv
-from pathlib import Path
-
 
 dotenv_path = os.path.join(os.getcwd(), '.env')
 print(dotenv_path)

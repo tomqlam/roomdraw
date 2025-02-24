@@ -548,6 +548,9 @@ func SelfPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 		proposedOccupantsMap[occupant] = true
 	}
 
+	// Create notification queue
+	notificationQueue := models.NewBumpNotificationQueue()
+
 	// Start a transaction
 	tx, err := database.DB.Begin()
 	if err != nil {
@@ -567,6 +570,13 @@ func SelfPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 		} else {
 			log.Println("Result for " + userFullName.(string) + ": successfully Self Pulled room " + roomUUIDParam)
 			err = tx.Commit()
+
+			if err == nil {
+				for _, notification := range notificationQueue.Notifications {
+					log.Println("Notifying bumped users ...")
+					SendBumpNotification(notification.UserID, notification.RoomID, notification.DormName)
+				}
+			}
 		}
 	}()
 
@@ -605,7 +615,7 @@ func SelfPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 	}
 
 	if len(proposedOccupants) == 0 {
-		err = clearRoom(currentRoomInfo.RoomUUID, tx)
+		err = clearRoom(currentRoomInfo.RoomUUID, tx, notificationQueue)
 		if err != nil {
 			log.Println(err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to clear room"})
@@ -738,7 +748,7 @@ func SelfPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 
 	if currentRoomInfo.CurrentOccupancy > 0 {
 		// remove the current occupants from the room
-		err = clearRoom(currentRoomInfo.RoomUUID, tx)
+		err = clearRoom(currentRoomInfo.RoomUUID, tx, notificationQueue)
 		if err != nil {
 			log.Println(err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to remove the current occupants of the room"})
@@ -809,6 +819,9 @@ func NormalPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 		proposedOccupantsMap[occupant] = true
 	}
 
+	// Create notification queue
+	notificationQueue := models.NewBumpNotificationQueue()
+
 	// Start a transaction
 	tx, err := database.DB.Begin()
 	if err != nil {
@@ -819,15 +832,18 @@ func NormalPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 	// Ensure the transaction is either committed or rolled back
 	defer func() {
 		if r := recover(); r != nil {
-			log.Println("Result for " + userFullName.(string) + ": failed to Normal Pull room " + roomUUIDParam + " because of panic " + r.(error).Error())
 			tx.Rollback()
 			panic(r)
 		} else if err != nil {
-			log.Println("Result for " + userFullName.(string) + ": failed to Normal Pull room " + roomUUIDParam + " because of error " + err.Error())
 			tx.Rollback()
 		} else {
-			log.Println("Result for " + userFullName.(string) + ": successfully Normal Pulled room " + roomUUIDParam)
 			err = tx.Commit()
+			// Send notifications only after successful commit
+			if err == nil {
+				for _, notification := range notificationQueue.Notifications {
+					SendBumpNotification(notification.UserID, notification.RoomID, notification.DormName)
+				}
+			}
 		}
 	}()
 
@@ -1061,7 +1077,7 @@ func NormalPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 
 	if currentRoomInfo.CurrentOccupancy > 0 {
 		// use clearRoom function to remove the current occupants from the room
-		err = clearRoom(currentRoomInfo.RoomUUID, tx)
+		err = clearRoom(currentRoomInfo.RoomUUID, tx, notificationQueue)
 		if err != nil {
 			log.Println(err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to remove the current occupants of the room"})
@@ -1237,6 +1253,9 @@ func LockPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 		proposedOccupantsMap[occupant] = true
 	}
 
+	// Create notification queue
+	notificationQueue := models.NewBumpNotificationQueue()
+
 	// Start a transaction
 	tx, err := database.DB.Begin()
 	if err != nil {
@@ -1247,15 +1266,18 @@ func LockPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 	// Ensure the transaction is either committed or rolled back
 	defer func() {
 		if r := recover(); r != nil {
-			log.Println("Result for " + userFullName.(string) + ": failed to Lock Pull room " + roomUUIDParam + " because of panic " + r.(error).Error())
 			tx.Rollback()
 			panic(r)
 		} else if err != nil {
-			log.Println("Result for " + userFullName.(string) + ": failed to Lock Pull room " + roomUUIDParam + " because of error " + err.Error())
 			tx.Rollback()
 		} else {
-			log.Println("Result for " + userFullName.(string) + ": successfully Lock Pulled room " + roomUUIDParam)
 			err = tx.Commit()
+			// Send notifications only after successful commit
+			if err == nil {
+				for _, notification := range notificationQueue.Notifications {
+					SendBumpNotification(notification.UserID, notification.RoomID, notification.DormName)
+				}
+			}
 		}
 	}()
 
@@ -1493,11 +1515,12 @@ func LockPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 
 	if currentRoomInfo.CurrentOccupancy > 0 {
 		// use clearRoom function to remove the current occupants from the room
-		err = clearRoom(currentRoomInfo.RoomUUID, tx)
+		err = clearRoom(currentRoomInfo.RoomUUID, tx, notificationQueue)
 		if err != nil {
 			log.Println(err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to remove the current occupants of the room"})
 			tx.Rollback()
+			return err
 		}
 	}
 
@@ -1571,6 +1594,9 @@ func AlternativePull(c *gin.Context, request models.OccupantUpdateRequest) error
 		proposedOccupantsMap[occupant] = true
 	}
 
+	// Create notification queue
+	notificationQueue := models.NewBumpNotificationQueue()
+
 	// Start a transaction
 	tx, err := database.DB.Begin()
 	if err != nil {
@@ -1581,15 +1607,18 @@ func AlternativePull(c *gin.Context, request models.OccupantUpdateRequest) error
 	// Ensure the transaction is either committed or rolled back
 	defer func() {
 		if r := recover(); r != nil {
-			log.Println("Result for " + userFullName.(string) + ": failed to Alternative Pull room " + roomUUIDParam + " because of panic " + r.(error).Error())
 			tx.Rollback()
 			panic(r)
 		} else if err != nil {
-			log.Println("Result for " + userFullName.(string) + ": failed to Alternative Pull room " + roomUUIDParam + " because of error " + err.Error())
 			tx.Rollback()
 		} else {
-			log.Println("Result for " + userFullName.(string) + ": successfully Alternative Pulled room " + roomUUIDParam)
 			err = tx.Commit()
+			// Send notifications only after successful commit
+			if err == nil {
+				for _, notification := range notificationQueue.Notifications {
+					SendBumpNotification(notification.UserID, notification.RoomID, notification.DormName)
+				}
+			}
 		}
 	}()
 
@@ -1863,11 +1892,12 @@ func AlternativePull(c *gin.Context, request models.OccupantUpdateRequest) error
 
 	if currentRoomInfo.CurrentOccupancy > 0 {
 		// remove the current occupants from the room
-		err = clearRoom(currentRoomInfo.RoomUUID, tx)
+		err = clearRoom(currentRoomInfo.RoomUUID, tx, notificationQueue)
 		if err != nil {
 			log.Println(err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to remove the current occupants of the room"})
 			tx.Rollback()
+			return err
 		}
 	}
 
@@ -1915,6 +1945,7 @@ func AlternativePull(c *gin.Context, request models.OccupantUpdateRequest) error
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to marshal pull leader's pull priority"})
 		return err
 	}
+
 	var suiteGroupUUID uuid.UUID = uuid.New()
 	_, err = tx.Exec("INSERT INTO suitegroups (sgroup_uuid, sgroup_size, sgroup_name, sgroup_suite, pull_priority, rooms, disbanded) VALUES ($1, $2, $3, $4, $5, $6, $7)",
 		suiteGroupUUID,
@@ -1979,10 +2010,29 @@ func AlternativePull(c *gin.Context, request models.OccupantUpdateRequest) error
 	return nil
 }
 
-func clearRoom(roomUUID uuid.UUID, tx *sql.Tx) error {
+func clearRoom(roomUUID uuid.UUID, tx *sql.Tx, notificationQueue *models.BumpNotificationQueue) error {
+	// Get current occupants before clearing
+	var currentOccupants models.IntArray
+	err := tx.QueryRow("SELECT occupants FROM rooms WHERE room_uuid = $1", roomUUID).Scan(&currentOccupants)
+	if err != nil {
+		return err
+	}
+
+	// Get room ID and dorm name for notification
+	var roomID, dormName string
+	err = tx.QueryRow("SELECT room_id, dorm_name FROM rooms WHERE room_uuid = $1", roomUUID).Scan(&roomID, &dormName)
+	if err != nil {
+		return err
+	}
+
+	// Queue notifications for each occupant being bumped
+	for _, occupantID := range currentOccupants {
+		notificationQueue.Add(occupantID, roomID, dormName)
+	}
+
 	// get the suite group uuid
 	var suiteGroupUUID uuid.UUID
-	err := tx.QueryRow("SELECT sgroup_uuid FROM rooms WHERE room_uuid = $1", roomUUID).Scan(&suiteGroupUUID)
+	err = tx.QueryRow("SELECT sgroup_uuid FROM rooms WHERE room_uuid = $1", roomUUID).Scan(&suiteGroupUUID)
 	if err != nil {
 		return err
 	}
@@ -2135,6 +2185,8 @@ func PreplaceOccupants(c *gin.Context) {
 		return
 	}
 
+	notificationQueue := models.NewBumpNotificationQueue()
+
 	// Start a transaction
 	tx, err := database.DB.Begin()
 	if err != nil {
@@ -2154,6 +2206,13 @@ func PreplaceOccupants(c *gin.Context) {
 		} else {
 			log.Println("Result for " + userFullName.(string) + ": successfully preplaced occupants in room " + roomUUIDParam)
 			err = tx.Commit()
+
+			if err == nil {
+				for _, notification := range notificationQueue.Notifications {
+					SendBumpNotification(notification.UserID, notification.RoomID, notification.DormName)
+				}
+			}
+
 			c.JSON(http.StatusOK, gin.H{"message": "Successfully preplaced occupants"})
 		}
 	}()
@@ -2189,7 +2248,7 @@ func PreplaceOccupants(c *gin.Context) {
 
 	// if proposed occupants is empty, clear the room
 	if len(request.ProposedOccupants) == 0 {
-		err = clearRoom(currentRoomInfo.RoomUUID, tx)
+		err = clearRoom(currentRoomInfo.RoomUUID, tx, notificationQueue)
 		if err != nil {
 			log.Println(err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to remove the current occupants of the room"})

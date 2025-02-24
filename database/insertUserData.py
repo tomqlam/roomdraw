@@ -1,7 +1,6 @@
 import random
 from sqlalchemy import create_engine
 from sqlalchemy.sql import text
-from uuid import uuid4
 
 # import env variables
 import os
@@ -28,7 +27,8 @@ engine = create_engine(CONNSTR)
 users = []
 results = 700
 
-response = requests.get('https://randomuser.me/api/?nat=au,br,ca,ch,de,dk,es,fi,fr,gb,ie,in,mx,nl,no,nz,rs,tr,ua,us&inc=name&results='+str(results))
+response = requests.get(
+    'https://randomuser.me/api/?nat=au,br,ca,ch,de,dk,es,fi,fr,gb,ie,in,mx,nl,no,nz,rs,tr,ua,us&inc=name&results='+str(results), timeout=10)
 data = response.json()
 
 with engine.connect() as connection:
@@ -38,8 +38,7 @@ with engine.connect() as connection:
     # connection.commit()
 
     # make a list of number from 1-52 and randomise it
-    
-    
+
     seniors = results//3
     juniors = results*2 // 3 - results // 3
     sophomores = results - results*2 // 3
@@ -72,8 +71,8 @@ with engine.connect() as connection:
         else:
             year = 'sophomore'
             draw_number = sophomore_draw_list.pop()
-        in_dorm = random.randint(1, 9) if year =='senior' else 0;
+        in_dorm = random.randint(1, 9) if year == 'senior' else 0
         # generate a uuid
-        query = f"INSERT INTO Users (first_name, last_name, draw_number, year, preplaced, in_dorm) VALUES ('{first_name}', '{last_name}', {draw_number}, '{year}', {False}, {in_dorm});"
+        query = f"INSERT INTO Users (first_name, last_name, draw_number, year, preplaced, in_dorm) VALUES ('{escape_first_name}', '{escape_last_name}', {draw_number}, '{year}', {False}, {in_dorm});"
         result = connection.execute(text(query))
     connection.commit()

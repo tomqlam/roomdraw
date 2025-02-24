@@ -1,7 +1,5 @@
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
-from sqlalchemy import Table, Column, Integer, String, MetaData, ForeignKey
-from sqlalchemy import inspect
 from sqlalchemy.sql import text
 
 # import env variables
@@ -23,29 +21,27 @@ print(CONNSTR)
 engine = create_engine(CONNSTR)
 
 with engine.connect() as connection:
-    with open('DropTables.sql', 'r') as file:
-        query = file.read()
-        result = connection.execute(text(query))
-        connection.commit()
-        
-    with open('CreateSuitesTable.sql', 'r') as file:
+    with open('DropTables.sql', 'r', encoding='utf-8') as file:
         query = file.read()
         result = connection.execute(text(query))
         connection.commit()
 
-    with open('CreateGroupsTable.sql', 'r') as file:
+    with open('CreateSuitesTable.sql', 'r', encoding='utf-8') as file:
         query = file.read()
         result = connection.execute(text(query))
         connection.commit()
 
-    with open('CreateUserTable.sql', 'r') as file:
+    with open('CreateGroupsTable.sql', 'r', encoding='utf-8') as file:
         query = file.read()
         result = connection.execute(text(query))
         connection.commit()
 
-    with open('CreateRoomTable.sql', 'r') as file:
+    with open('CreateUserTable.sql', 'r', encoding='utf-8') as file:
         query = file.read()
         result = connection.execute(text(query))
         connection.commit()
 
-    
+    with open('CreateRoomTable.sql', 'r', encoding='utf-8') as file:
+        query = file.read()
+        result = connection.execute(text(query))
+        connection.commit()

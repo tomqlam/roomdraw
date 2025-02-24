@@ -14,6 +14,9 @@ CREATE TABLE Users (
     participation_time timestamp,
     room_uuid uuid,
     reslife_role varchar NOT NULL DEFAULT 'none',
+    notifications_enabled boolean NOT NULL DEFAULT false,
+    notification_created_at timestamp WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    notification_updated_at timestamp WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     
     PRIMARY KEY (id),
     FOREIGN KEY (sgroup_uuid) REFERENCES SuiteGroups(sgroup_uuid)
