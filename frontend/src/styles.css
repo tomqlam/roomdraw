@@ -1,0 +1,277 @@
+/* Base styles */
+:root {
+    --primary-color: #00d1b2;
+    --primary-hover: #00c4a7;
+    --danger-color: #ff3860;
+    --danger-hover: #ff1443;
+    --light-color: #f5f5f5;
+    --border-color: #dbdbdb;
+    --text-color: #363636;
+    --transition-speed: 0.2s;
+    --component-height: 36px;
+    --min-component-width: 200px;
+    --max-component-width: 300px;
+}
+
+/* Navbar styles */
+.navbar {
+    min-height: 3.25rem;
+    padding: 0.5rem 1rem;
+}
+
+.navbar-item {
+    padding: 0;
+}
+
+.navbar-item .button {
+    height: var(--component-height);
+}
+
+/* Button styles */
+.button {
+    height: var(--component-height);
+    transition: all var(--transition-speed) ease;
+    border-radius: 6px;
+    font-weight: 500;
+    padding: 0 1em;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.button.is-primary {
+    background-color: var(--primary-color);
+}
+
+.button.is-primary:hover {
+    background-color: var(--primary-hover);
+}
+
+.button.is-danger {
+    background-color: var(--danger-color);
+}
+
+.button.is-danger:hover {
+    background-color: var(--danger-hover);
+}
+
+/* Select styles */
+.select select {
+    border-radius: 6px;
+    transition: all var(--transition-speed) ease;
+    border-color: var(--border-color);
+}
+
+.select select:hover {
+    border-color: var(--primary-color);
+}
+
+.select select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.125em rgba(0, 209, 178, 0.25);
+}
+
+/* React-select custom styles */
+.react-select__control {
+    height: var(--component-height) !important;
+    min-height: var(--component-height) !important;
+    min-width: var(--min-component-width) !important;
+    max-width: var(--max-component-width) !important;
+    width: fit-content !important;
+    border-radius: 6px !important;
+    border-color: var(--border-color) !important;
+    transition: all var(--transition-speed) ease !important;
+}
+
+.react-select__control:hover {
+    border-color: var(--primary-color) !important;
+}
+
+.react-select__control--is-focused {
+    border-color: var(--primary-color) !important;
+    box-shadow: 0 0 0 0.125em rgba(0, 209, 178, 0.25) !important;
+}
+
+.react-select__option {
+    transition: background-color var(--transition-speed) ease !important;
+}
+
+.react-select__option--is-focused {
+    background-color: rgba(0, 209, 178, 0.1) !important;
+}
+
+.react-select__option--is-selected {
+    background-color: var(--primary-color) !important;
+}
+
+.react-select__value-container {
+    padding: 0 0.75rem !important;
+}
+
+.react-select__input-container {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* Interactive display boxes */
+.info-display {
+    background-color: white;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 0.4rem 0.75rem;
+    transition: all var(--transition-speed) ease;
+    min-height: var(--component-height);
+    height: var(--component-height);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.95rem;
+    min-width: var(--min-component-width);
+    max-width: var(--max-component-width);
+    width: fit-content;
+}
+
+.info-display:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    transform: translateY(-1px);
+}
+
+.info-display.clickable {
+    cursor: pointer;
+}
+
+.info-display.non-clickable {
+    cursor: default;
+    opacity: 0.9;
+    background-color: var(--light-color);
+    width: auto;
+    min-width: fit-content;
+}
+
+.info-display .separator {
+    color: var(--border-color);
+    margin: 0 0.5rem;
+    opacity: 0.5;
+}
+
+/* Switch styles */
+.switch[type="checkbox"] {
+    display: none;
+}
+
+.switch[type="checkbox"]+label {
+    position: relative;
+    display: inline-block;
+    padding-left: 3.5rem;
+    cursor: pointer;
+    line-height: 24px;
+}
+
+.switch[type="checkbox"]+label::before {
+    content: '';
+    position: absolute;
+    display: block;
+    left: 0;
+    top: 0;
+    width: 3rem;
+    height: 1.5rem;
+    border-radius: 1rem;
+    background: #b5b5b5;
+    transition: background var(--transition-speed) ease-out;
+}
+
+.switch[type="checkbox"]+label::after {
+    content: '';
+    position: absolute;
+    display: block;
+    left: 0.25rem;
+    top: 0.25rem;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 1rem;
+    background: white;
+    transition: left var(--transition-speed) ease-out;
+}
+
+.switch[type="checkbox"]:checked+label::before {
+    background: var(--primary-color);
+}
+
+.switch[type="checkbox"]:checked+label::after {
+    left: 1.75rem;
+}
+
+/* Improve color picker input styles */
+input[type="color"] {
+    -webkit-appearance: none;
+    padding: 0;
+    width: 100%;
+    height: 40px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+input[type="color"]::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+input[type="color"]::-webkit-color-swatch {
+    border: none;
+    border-radius: 4px;
+}
+
+/* Modal improvements */
+.modal-card {
+    border-radius: 8px;
+    box-shadow: 0 0.5em 1em -0.125em rgba(10, 10, 10, 0.1), 0 0 0 1px rgba(10, 10, 10, 0.02);
+}
+
+.modal-card-head {
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+}
+
+.modal-card-foot {
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+}
+
+.box {
+    margin-bottom: 1.5rem;
+    border-radius: 8px;
+}
+
+/* Improve button spacing */
+.buttons {
+    gap: 0.5rem;
+}
+
+.button .icon {
+    margin-right: 0.25rem;
+}
+
+/* Section styles */
+.section {
+    padding: 2rem 1.5rem;
+}
+
+.section .subtitle {
+    margin-bottom: 1.5rem;
+}
+
+/* Search container */
+.search-container {
+    display: flex;
+    justify-content: center;
+    gap: 0.75rem;
+    width: fit-content;
+    max-width: calc((var(--max-component-width) * 2) + 0.75rem);
+    min-width: calc((var(--min-component-width) * 2) + 0.75rem);
+    margin: 0 auto;
+}

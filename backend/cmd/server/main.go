@@ -70,6 +70,7 @@ func main() {
 	readGroup.GET("/rooms/simpler/:dormName", handlers.GetSimplerFormattedDorm)
 	readGroup.GET("/users", handlers.GetUsers)
 	readGroup.GET("/users/idmap", handlers.GetUsersIdMap)
+	readGroup.GET("/users/notifications", handlers.GetNotificationPreference)
 
 	// Define write routes
 	writeGroup.POST("/rooms/:roomuuid", handlers.UpdateRoomOccupants)
@@ -77,6 +78,7 @@ func main() {
 	writeGroup.POST("/suites/design/:suiteuuid", handlers.SetSuiteDesignNew)
 	writeGroup.POST("/suites/design/remove/:suiteuuid", handlers.DeleteSuiteDesign)
 	writeGroup.POST("/frosh/bump/:roomuuid", handlers.BumpFroshHandler)
+	writeGroup.POST("/users/notifications", handlers.SetNotificationPreference)
 
 	// Define admin write routes
 	writeGroupAdmin.POST("/frosh/:roomuuid", handlers.AddFroshHandler)

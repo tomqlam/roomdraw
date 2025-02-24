@@ -19,8 +19,8 @@ func init() {
 
 func SetNotificationPreference(c *gin.Context) {
 	var pref struct {
-		UserID  int  `json:"user_id"`
-		Enabled bool `json:"enabled"`
+		Email   string `json:"email"`
+		Enabled bool   `json:"enabled"`
 	}
 	if err := c.ShouldBindJSON(&pref); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -46,8 +46,8 @@ func SetNotificationPreference(c *gin.Context) {
 		UPDATE users 
 		SET notifications_enabled = $1,
 			notification_updated_at = $2 
-		WHERE id = $3`,
-		pref.Enabled, now, pref.UserID)
+		WHERE email = $3`,
+		pref.Enabled, now, pref.Email)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update notification preferences"})
@@ -58,17 +58,20 @@ func SetNotificationPreference(c *gin.Context) {
 }
 
 func GetNotificationPreference(c *gin.Context) {
-	userID := c.Param("userid")
+	userEmail := c.Query("email")
+	if userEmail == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Email parameter is required"})
+		return
+	}
 
 	var pref struct {
-		UserID  int    `json:"user_id"`
 		Email   string `json:"email"`
 		Enabled bool   `json:"enabled"`
 	}
 	err := database.DB.QueryRow(
-		"SELECT id, email, notifications_enabled FROM users WHERE id = $1",
-		userID,
-	).Scan(&pref.UserID, &pref.Email, &pref.Enabled)
+		"SELECT email, notifications_enabled FROM users WHERE email = $1",
+		userEmail,
+	).Scan(&pref.Email, &pref.Enabled)
 
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Notification preferences not found"})

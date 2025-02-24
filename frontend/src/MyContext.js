@@ -67,6 +67,12 @@ export const MyContextProvider = ({ children }) =>
         return selectedID !== null ? selectedID : '8'; //TODO 
     });
 
+    const [userID, setUserID] = useState(() =>
+    {
+        const userID = localStorage.getItem('userID');
+        return userID !== null ? userID : '-1'; //TODO 
+    });
+
     const handleErrorFromTokenExpiry = (data) =>
     {
         if (data.error === "Invalid token")
@@ -99,7 +105,8 @@ export const MyContextProvider = ({ children }) =>
     useEffect(() =>
     {
         localStorage.setItem('selectedID', selectedID);
-    }, [selectedID]);
+        localStorage.setItem('userID', userID);
+    }, [selectedID, userID]);
 
     // rest of your component
 
@@ -398,8 +405,7 @@ export const MyContextProvider = ({ children }) =>
         "6": "Sontag",
         "7": "Case",
         "8": "Drinkward",
-        "9": "Linde",
-        "10": "Garrett House"
+        "9": "Linde"
     };
 
 
@@ -410,9 +416,9 @@ export const MyContextProvider = ({ children }) =>
         pullMethod: "#ffbbf2",
         evenSuite: "#ffc8dd",
         oddSuite: "#ffbbf2",
-        myRoom: "#a2d2ff",
-
+        selectedUserRoom: "#a2d2ff",
     };
+
     const cellColors2 = {
         name: "Starburst",
         unbumpableRoom: "#390099",
@@ -420,8 +426,9 @@ export const MyContextProvider = ({ children }) =>
         pullMethod: "#ff7d00",
         evenSuite: "#ffbd00",
         oddSuite: "#ff5400",
-        myRoom: "#ff0054",
+        selectedUserRoom: "#ff0054",
     };
+
     const cellColors3 = {
         name: "High contrast",
         unbumpableRoom: "#003844",
@@ -429,8 +436,9 @@ export const MyContextProvider = ({ children }) =>
         pullMethod: "#FF7B25",
         evenSuite: "#ffebc6",
         oddSuite: "#ffb100",
-        myRoom: "#f194b4",
+        selectedUserRoom: "#f194b4",
     };
+
     const cellColors4 = {
         name: "Earth Tones",
         unbumpableRoom: "#588157",
@@ -438,12 +446,59 @@ export const MyContextProvider = ({ children }) =>
         pullMethod: "#fefae0",
         evenSuite: "#e9edc9",
         oddSuite: "#ccd5ae",
-        myRoom: "#d4a373",
+        selectedUserRoom: "#d4a373",
+    };
+
+    const modernPalette = {
+        name: "Modern",
+        unbumpableRoom: "#2d3436",
+        roomNumber: "#81ecec",
+        pullMethod: "#00cec9",
+        evenSuite: "#74b9ff",
+        oddSuite: "#0984e3",
+        selectedUserRoom: "#6c5ce7",
+    };
+
+    const pastelPalette = {
+        name: "Pastel Dream",
+        unbumpableRoom: "#2d3436",
+        roomNumber: "#a8e6cf",
+        pullMethod: "#dcedc1",
+        evenSuite: "#ffd3b6",
+        oddSuite: "#ffaaa5",
+        selectedUserRoom: "#ff8b94",
+    };
+
+    const neonPalette = {
+        name: "Neon Nights",
+        unbumpableRoom: "#2d3436",
+        roomNumber: "#00ff87",
+        pullMethod: "#00b8ff",
+        evenSuite: "#d600ff",
+        oddSuite: "#ff00e1",
+        selectedUserRoom: "#ff3700",
+    };
+
+    const monochromePalette = {
+        name: "Monochrome",
+        unbumpableRoom: "#000000",
+        roomNumber: "#f8f9fa",
+        pullMethod: "#e9ecef",
+        evenSuite: "#dee2e6",
+        oddSuite: "#ced4da",
+        selectedUserRoom: "#adb5bd",
     };
 
     const colorPalettes = [
-        cellColors, cellColors4, cellColors3, cellColors2
-    ]
+        cellColors,
+        modernPalette,
+        pastelPalette,
+        neonPalette,
+        monochromePalette,
+        cellColors4,
+        cellColors3,
+        cellColors2,
+    ];
 
     const [selectedPalette, setSelectedPalette] = useState(() =>
     {
@@ -502,6 +557,8 @@ export const MyContextProvider = ({ children }) =>
         setPullError,
         selectedID,
         setSelectedID,
+        userID,
+        setUserID,
         selectedSuiteObject,
         setSelectedSuiteObject,
         print,

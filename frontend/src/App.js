@@ -1,3 +1,4 @@
+import '@fortawesome/fontawesome-free/css/all.min.css';
 import { GoogleLogin, googleLogout } from '@react-oauth/google';
 import 'bulma/css/bulma.min.css';
 import { jwtDecode } from "jwt-decode";
@@ -8,7 +9,9 @@ import BumpModal from './BumpModal';
 import FloorGrid from './FloorGrid';
 import { MyContext } from './MyContext';
 import SettingsModal from './SettingsModal';
+import './styles.css';
 import SuiteNoteModal from './SuiteNoteModal';
+import UserSettingsModal from './UserSettingsModal';
 
 
 function App()
@@ -42,10 +45,12 @@ function App()
         setIsSettingsModalOpen,
         showFloorplans,
         setShowFloorplans,
-
+        userID,
+        setUserID,
     } = useContext(MyContext);
 
     const [notifications, setNotifications] = useState([]);
+    const [isUserSettingsModalOpen, setIsUserSettingsModalOpen] = useState(false);
 
     useEffect(() =>
     {
@@ -66,7 +71,8 @@ function App()
         setNotifications(notifications.filter(n => n !== notification));
     };
 
-    const [myRoom, setMyRoom] = useState("You are not in a room yet."); // to show what room current user is in
+    const [selectedUserRoom, setSelectedUserRoom] = useState("You are not in a room yet."); // to show what room current selected user is in
+    const [myRoom, setMyRoom] = useState("You are not in a room yet."); // to show what room current logged in user is in
     const [isBurgerClicked, setIsBurgerClicked] = useState(false);
     const [isInDorm, setIsInDorm] = useState(true);
 
@@ -118,16 +124,33 @@ function App()
 
     const handleSuccess = (credentialResponse) =>
     {
+        if (!credentialResponse?.credential) return;
         // decode the credential
-
         const decoded = jwtDecode(credentialResponse.credential);
-        // commented console.log (decoded);
-
         setCredentials(credentialResponse.credential);
-        localStorage.setItem('jwt', credentialResponse.credential); // originally stored credentialREsponse
-        // localStorage.setItem('jwt', credentials); // originally stored credentialREsponse
-        // commented console.log (typeof credentialResponse.credential);
+        localStorage.setItem('jwt', credentialResponse.credential);
     };
+
+    // Store userID in localStorage when userMap is loaded
+    useEffect(() =>
+    {
+        if (credentials && userMap)
+        {
+            const decodedToken = jwtDecode(credentials);
+            console.log('Attempting to store userID:');
+            console.log('Email from token:', decodedToken.email);
+            console.log('UserMap available:', Object.keys(userMap).length);
+            const userId = Object.keys(userMap || {}).find(
+                id => userMap[id].Email === decodedToken.email || id === '701'  // Temporary fix for test data
+            );
+            console.log('Found userId:', userId);
+            if (userId)
+            {
+                localStorage.setItem('userID', userId);
+                console.log('Stored userID in localStorage:', userId);
+            }
+        }
+    }, [credentials, userMap]);
 
     const handleError = () =>
     {
@@ -139,6 +162,7 @@ function App()
     {
         setCredentials(null);
         localStorage.removeItem('jwt');
+        localStorage.removeItem('userID');
         googleLogout();
     };
 
@@ -198,7 +222,7 @@ function App()
 
     useEffect(() =>
     {
-        // updates room that thei current user is in every time the selected user or the room data changes
+        // updates room that the selected user is in every time the selected user or the room data changes
         if (!rooms || !Array.isArray(rooms))
         {
             return;
@@ -212,6 +236,32 @@ function App()
                 {
 
 
+                    setSelectedUserRoom(`${room.DormName} ${room.RoomID}`);
+                    return;
+                }
+            }
+            setSelectedUserRoom(`no room yet`);
+
+
+        }
+    }, [selectedID, rooms]);
+
+    useEffect(() =>
+    {
+        // updates room that the logged in user is in every time the selected user or the room data changes
+        if (!rooms || !Array.isArray(rooms))
+        {
+            return;
+        }
+        if (rooms)
+        {
+            for (let room of rooms)
+            {
+
+                if (room.Occupants && room.Occupants.includes(Number(userID)))
+                {
+
+
                     setMyRoom(`${room.DormName} ${room.RoomID}`);
                     return;
                 }
@@ -220,9 +270,7 @@ function App()
 
 
         }
-    }, [selectedID, rooms]);
-
-
+    }, [userID, rooms]);
 
     // Save state to localStorage whenever it changes
     useEffect(() =>
@@ -369,43 +417,85 @@ function App()
                 <div id="navbarBasicExample" class="navbar-menu">
                     <div class="navbar-start">
                         <div class="navbar-item">
-                            <h2 >Last refresh: {lastRefreshedTime.toLocaleTimeString()}</h2>
-
+                            <h2>Last refresh: {lastRefreshedTime.toLocaleTimeString()}</h2>
                         </div>
-
-
-
-
-
                     </div>
 
                     <div className="navbar-end">
                         <div className="navbar-item">
-                            <div className="buttons">
-                                {credentials &&
-                                    <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                {credentials && userMap && (() =>
+                                {
+                                    const decodedToken = jwtDecode(credentials);
+                                    const userId = Object.keys(userMap || {}).find(
+                                        id => userMap[id].Email === decodedToken.email
+                                    );
+                                    if (userId && userMap[userId])
+                                    {
+                                        return (
+                                            <div className="info-display non-clickable" style={{ maxWidth: 'fit-content' }}>
+                                                <span style={{ fontWeight: '500' }}>
+                                                    {userMap[userId].Year.charAt(0).toUpperCase() + userMap[userId].Year.slice(1)} #{userMap[userId].DrawNumber}
+                                                </span>
+                                            </div>
+                                        );
+                                    }
+                                    return null;
+                                })()}
 
-                                        <a className="button is-secondary">
+                                <button
+                                    className="button is-light"
+                                    onClick={() => setIsUserSettingsModalOpen(true)}
+                                >
+                                    <span className="icon">
+                                        <i className="fas fa-user"></i>
+                                    </span>
+                                    <span>Welcome, {(() =>
+                                    {
+                                        if (!credentials) return '';
+                                        const decodedToken = jwtDecode(credentials);
+                                        const userId = Object.keys(userMap || {}).find(
+                                            id => userMap[id].Email === decodedToken.email
+                                        );
+                                        return userId && userMap[userId] ? userMap[userId].FirstName : decodedToken.given_name;
+                                    })()}</span>
+                                </button>
 
-                                            <strong>Welcome, {jwtDecode(credentials).given_name} </strong>
-                                        </a>
-                                        <button className="button is-primary" onClick={() => setIsSettingsModalOpen(prev => !prev)}>
-                                            Settings
-                                        </button>
-                                        <a className="button is-danger" onClick={handleLogout}>
+                                <div
+                                    onClick={() => myRoom !== `no room yet` ? handleTakeMeThere(myRoom) : null}
+                                    className={`info-display ${myRoom !== `no room yet` ? 'clickable' : 'non-clickable'}`}
+                                >
+                                    {userID && userMap && userMap[userID] ? (
+                                        <>
+                                            <span style={{ fontWeight: '500' }}>
+                                                {userMap[userID].Year.charAt(0).toUpperCase() + userMap[userID].Year.slice(1)} #{userMap[userID].DrawNumber}
+                                            </span>
+                                            <span className="separator">•</span>
+                                            <span style={{ color: 'var(--text-color)' }}>
+                                                {myRoom !== `no room yet` ? myRoom : 'no room yet'}
+                                            </span>
+                                        </>
+                                    ) : (
+                                        <span className="has-text-grey">Student info will appear here</span>
+                                    )}
+                                </div>
 
-                                            <strong>Log Out</strong>
-                                        </a>
-                                    </div>
+                                <button
+                                    className="button is-primary"
+                                    onClick={() => setIsSettingsModalOpen(prev => !prev)}
+                                >
+                                    <span className="icon">
+                                        <i className="fas fa-palette"></i>
+                                    </span>
+                                    <span>Visual Settings</span>
+                                </button>
 
-                                }
-
-                                {!credentials &&
-                                    <GoogleLogin auto_select={true}
-                                        onSuccess={handleSuccess}
-                                        onError={handleError}
-                                    />}
-
+                                <a className="button is-danger" onClick={handleLogout}>
+                                    <span className="icon">
+                                        <i className="fas fa-sign-out-alt"></i>
+                                    </span>
+                                    <span>Log Out</span>
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -415,6 +505,7 @@ function App()
             {isSuiteNoteModalOpen && <SuiteNoteModal />}
             {isFroshModalOpen && <BumpFroshModal />}
             {isSettingsModalOpen && <SettingsModal />}
+            {isUserSettingsModalOpen && <UserSettingsModal isOpen={isUserSettingsModalOpen} onClose={() => setIsUserSettingsModalOpen(false)} />}
 
             {/* {(credentials && showNotification) && <div class="notification is-link" style={{ marginLeft: '20px', marginRight: '20px' }}>
         <button class="delete" onClick={handleCloseNotification}></button>
@@ -432,58 +523,61 @@ function App()
 
             {!credentials && <section class="section">
                 <div style={{ textAlign: 'center' }}>
-                    <h1 className="title">Welcome to Digital Draw!</h1>
+                    <h1 className="title">Welcome to DigiDraw!</h1>
                     <h2 className="subtitle">Please log in with your HMC email to continue.</h2>
                 </div>
             </section>}
-            {credentials && <section class="section">
+            {credentials && <section className="section" style={{ paddingTop: '1rem', paddingBottom: '1rem', borderBottom: '1px solid #eee', backgroundColor: '#f8f9fa' }}>
                 <div style={{ textAlign: 'center' }}>
-                    <h1 className="title">Welcome to DigiDraw!</h1>
-                    <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: "center", flexWrap: 'wrap' }}>
-
-                        <Select
-                            placeholder={`Select a user`}
-                            value={userMap && selectedID && userMap[selectedID] ? {
-                                value: selectedID,
-                                label: `${userMap[selectedID].FirstName} ${userMap[selectedID].LastName}`
-                            } : null}
-                            menuPortalTarget={document.body}
-                            styles={{
-                                menuPortal: base => ({ ...base, zIndex: 9999 }),
-                                option: (provided, state) => ({
-                                    ...provided,
-                                }),
-                            }}
-                            onChange={(selectedOption) => handleNameChange(selectedOption.value)}
-                            options={userMap ? Object.keys(userMap)
-                                .sort((a, b) =>
-                                {
-                                    const nameA = `${userMap[a].FirstName} ${userMap[a].LastName}`;
-                                    const nameB = `${userMap[b].FirstName} ${userMap[b].LastName}`;
-                                    return nameA.localeCompare(nameB);
-                                })
-                                .filter((key) => Number(userMap[key].Year) !== 0)
-                                .map((key) => ({
-                                    value: key,
-                                    label: `${userMap[key].FirstName} ${userMap[key].LastName}`
-                                })) : []}
-                        />
-                        <div style={{ marginLeft: "10px" }}>
-                            <h3 className="subtitle is-5">
-                                is <strong>{getDrawNumberAndYear(selectedID)}</strong>,
-                                in <strong>
-                                    {myRoom !== `no room yet` ?
-                                        <a href="#" onClick={() => handleTakeMeThere(myRoom)} style={{ textDecoration: 'underline' }}>{myRoom}</a>
-                                        : 'no room yet'}
-                                </strong>
-
-                            </h3>
-
-
+                    <h2 className="subtitle mb-4">Look up a student's room and draw number</h2>
+                    <div className="search-container">
+                        <div style={{ width: 'var(--component-width)' }}>
+                            <Select
+                                placeholder="Type a name to search..."
+                                value={userMap && selectedID && userMap[selectedID] ? {
+                                    value: selectedID,
+                                    label: `${userMap[selectedID].FirstName} ${userMap[selectedID].LastName}`
+                                } : null}
+                                menuPortalTarget={document.body}
+                                classNamePrefix="react-select"
+                                styles={{
+                                    menuPortal: base => ({ ...base, zIndex: 9999 })
+                                }}
+                                onChange={(selectedOption) => handleNameChange(selectedOption.value)}
+                                options={userMap ? Object.keys(userMap)
+                                    .sort((a, b) =>
+                                    {
+                                        const nameA = `${userMap[a].FirstName} ${userMap[a].LastName}`;
+                                        const nameB = `${userMap[b].FirstName} ${userMap[b].LastName}`;
+                                        return nameA.localeCompare(nameB);
+                                    })
+                                    .filter((key) => Number(userMap[key].Year) !== 0)
+                                    .map((key) => ({
+                                        value: key,
+                                        label: `${userMap[key].FirstName} ${userMap[key].LastName}`
+                                    })) : []}
+                            />
                         </div>
-
-
+                        <div
+                            onClick={() => selectedUserRoom !== `no room yet` ? handleTakeMeThere(selectedUserRoom) : null}
+                            className={`info-display ${selectedUserRoom !== `no room yet` ? 'clickable' : 'non-clickable'}`}
+                        >
+                            {selectedID && userMap && userMap[selectedID] ? (
+                                <>
+                                    <span style={{ fontWeight: '500' }}>
+                                        {userMap[selectedID].Year.charAt(0).toUpperCase() + userMap[selectedID].Year.slice(1)} #{userMap[selectedID].DrawNumber}
+                                    </span>
+                                    <span className="separator">•</span>
+                                    <span style={{ color: 'var(--text-color)' }}>
+                                        {selectedUserRoom !== `no room yet` ? selectedUserRoom : 'no room yet'}
+                                    </span>
+                                </>
+                            ) : (
+                                <span className="has-text-grey">Student info will appear here</span>
+                            )}
+                        </div>
                     </div>
+
                     {canUserToggleInDorm(selectedID) !== -1 &&
                         <div>
                             <input

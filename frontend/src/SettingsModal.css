@@ -1,0 +1,136 @@
+.color-picker-container {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+}
+
+.color-swatch {
+    width: 100%;
+    height: 40px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    padding: 0;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+    position: relative;
+    overflow: hidden;
+}
+
+.color-swatch:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15), 0 2px 3px rgba(0, 0, 0, 0.3);
+}
+
+.color-value {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    font-size: 12px;
+    padding: 2px 6px;
+    text-align: center;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.color-swatch:hover .color-value {
+    opacity: 1;
+}
+
+.color-picker-popover {
+    position: fixed;
+    z-index: 9999;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    padding: 12px;
+    width: 240px;
+    user-select: none;
+}
+
+.color-input-container {
+    margin-top: 12px;
+    width: 100%;
+}
+
+.color-input-container input {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    color: #333;
+    text-align: center;
+    font-family: monospace;
+}
+
+/* Override react-colorful styles */
+.react-colorful {
+    width: 100% !important;
+    height: 160px !important;
+    touch-action: none;
+}
+
+.react-colorful__saturation {
+    border-radius: 4px 4px 0 0;
+    touch-action: none;
+}
+
+.react-colorful__hue {
+    height: 20px !important;
+    margin-top: 8px;
+    border-radius: 0 0 4px 4px;
+    touch-action: none;
+}
+
+.react-colorful__pointer {
+    width: 20px !important;
+    height: 20px !important;
+    border-width: 2px !important;
+    cursor: grab;
+}
+
+.react-colorful__pointer:active {
+    cursor: grabbing;
+}
+
+.react-colorful__interactive {
+    touch-action: none;
+}
+
+.react-colorful__interactive:focus .react-colorful__pointer {
+    transform: translate3d(-50%, -50%, 0) scale(1.1);
+}
+
+/* Modal improvements */
+.modal-card {
+    border-radius: 8px;
+    box-shadow: 0 0.5em 1em -0.125em rgba(10, 10, 10, 0.1), 0 0 0 1px rgba(10, 10, 10, 0.02);
+}
+
+.modal-card-head {
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+}
+
+.modal-card-foot {
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+}
+
+.box {
+    margin-bottom: 1.5rem;
+    border-radius: 8px;
+}
+
+/* Improve button spacing */
+.buttons {
+    gap: 0.5rem;
+}
+
+.button .icon {
+    margin-right: 0.25rem;
+}
