@@ -68,8 +68,10 @@ func main() {
 	readGroup.GET("/rooms", handlers.GetRoomsHandler)
 	readGroup.GET("/rooms/simple/:dormName", handlers.GetSimpleFormattedDorm)
 	readGroup.GET("/rooms/simpler/:dormName", handlers.GetSimplerFormattedDorm)
+	readGroup.GET("/rooms/:roomuuid", handlers.GetRoom)
 	readGroup.GET("/users", handlers.GetUsers)
 	readGroup.GET("/users/idmap", handlers.GetUsersIdMap)
+	readGroup.GET("/users/:userid", handlers.GetUser)
 	readGroup.GET("/users/notifications", handlers.GetNotificationPreference)
 
 	// Define write routes

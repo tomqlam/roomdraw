@@ -11,6 +11,7 @@
     --component-height: 36px;
     --min-component-width: 200px;
     --max-component-width: 300px;
+    --section-bg: #f8f9fa;
 }
 
 /* Navbar styles */
@@ -259,6 +260,7 @@ input[type="color"]::-webkit-color-swatch {
 /* Section styles */
 .section {
     padding: 2rem 1.5rem;
+    background-color: var(--section-bg);
 }
 
 .section .subtitle {
@@ -274,4 +276,207 @@ input[type="color"]::-webkit-color-swatch {
     max-width: calc((var(--max-component-width) * 2) + 0.75rem);
     min-width: calc((var(--min-component-width) * 2) + 0.75rem);
     margin: 0 auto;
+}
+
+/* Main layout containment */
+.main-content {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.content-wrapper {
+    flex: 1 0 auto;
+    position: relative;
+}
+
+.footer {
+    flex-shrink: 0;
+    visibility: visible;
+    transition: visibility 0s linear 300ms;
+}
+
+/* Floor display fade animations */
+.floor-content-wrapper {
+    min-height: 400px;
+    position: relative;
+    width: 100%;
+    margin-bottom: 2rem;
+}
+
+.transition-group {
+    position: relative;
+    width: 100%;
+    min-height: inherit;
+}
+
+.crossfade-wrapper {
+    will-change: opacity;
+    min-height: inherit;
+}
+
+/* Hide footer during transitions */
+.transition-active .footer {
+    visibility: hidden;
+}
+
+/* Transition states */
+.crossfade-enter {
+    opacity: 0;
+    position: absolute;
+    width: 100%;
+    top: 0;
+    left: 0;
+}
+
+.crossfade-enter-active {
+    opacity: 1;
+    transition: opacity 300ms ease-in;
+}
+
+.crossfade-exit {
+    opacity: 1;
+    position: absolute;
+    width: 100%;
+    top: 0;
+    left: 0;
+}
+
+.crossfade-exit-active {
+    opacity: 0;
+    transition: opacity 300ms ease-out;
+}
+
+/* Floor section styles */
+.floor-section {
+    margin-bottom: 2rem;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.08);
+    padding: 1rem;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.floor-section:last-child {
+    margin-bottom: 0;
+}
+
+.floor-header {
+    text-align: left;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid #f0f0f0;
+    padding-bottom: 0.75rem;
+}
+
+.floor-header h2.subtitle {
+    margin-bottom: 0.25rem !important;
+    font-size: 1.2rem !important;
+    font-weight: 500;
+    color: #2a2a2a;
+    letter-spacing: -0.02em;
+}
+
+.floor-header p.subtitle {
+    margin-bottom: 0 !important;
+    font-size: 1rem !important;
+    color: #666;
+    font-weight: 400;
+}
+
+/* Grid styles */
+.grid-container {
+    border-radius: 6px;
+    overflow: visible;
+    display: grid;
+    grid-template-columns: 70px 100px 1.5fr repeat(auto-fit, minmax(120px, 1fr));
+    gap: 4px;
+}
+
+.grid-header-cell {
+    font-size: 0.9rem !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.02em;
+    padding: 0.5rem 0.4rem !important;
+    background: var(--light-color);
+}
+
+.grid-cell {
+    font-size: 0.9rem !important;
+    padding: 0.5rem 0.4rem !important;
+    transition: all 0.2s ease;
+    position: relative;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    background: inherit;
+    border-radius: 4px;
+}
+
+.grid-cell:hover {
+    overflow: visible;
+    z-index: 100;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    background: inherit;
+}
+
+.grid-cell:hover::after {
+    content: attr(data-full-name);
+    position: absolute;
+    left: 50%;
+    bottom: 100%;
+    transform: translateX(-50%);
+    margin-bottom: 4px;
+    padding: 0.5rem 0.75rem;
+    background: white;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    white-space: nowrap;
+    z-index: 101;
+    font-weight: 500;
+}
+
+/* Suite cell specific styles */
+.suite-cell {
+    min-width: 200px;
+}
+
+/* Container styles */
+.columns.is-centered.is-multiline {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    position: relative;
+    min-height: inherit;
+    gap: 1rem;
+}
+
+/* Floorplan styles */
+.floorplan-container {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    width: 100%;
+    margin-bottom: 1rem;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+    padding: 1rem;
+}
+
+.floorplan-container:last-child {
+    margin-bottom: 0;
+}
+
+.floorplan-image {
+    opacity: 1;
+    transition: opacity 300ms ease-in-out;
+    border-radius: 6px;
+}
+
+/* Floorplan styles */
+.floorplans-section {
+    position: relative;
+    min-height: inherit;
+    width: 100%;
 }

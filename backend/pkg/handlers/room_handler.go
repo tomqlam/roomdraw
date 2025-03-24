@@ -2416,3 +2416,53 @@ func RemoveLockPull(roomUUID uuid.UUID, tx *sql.Tx) error {
 
 	return nil
 }
+
+func GetRoom(c *gin.Context) {
+	roomUUIDParam := c.Param("roomuuid")
+
+	// Start a transaction
+	tx, err := database.DB.Begin()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to start transaction"})
+		return
+	}
+
+	// Ensure the transaction is either committed or rolled back
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+			panic(r)
+		} else if err != nil {
+			tx.Rollback()
+		} else {
+			err = tx.Commit()
+		}
+	}()
+
+	var roomInfo models.RoomRaw
+	err = tx.QueryRow("SELECT room_uuid, dorm, dorm_name, room_id, suite_uuid, max_occupancy, current_occupancy, occupants, pull_priority, sgroup_uuid, has_frosh FROM rooms WHERE room_uuid = $1", roomUUIDParam).Scan(
+		&roomInfo.RoomUUID,
+		&roomInfo.Dorm,
+		&roomInfo.DormName,
+		&roomInfo.RoomID,
+		&roomInfo.SuiteUUID,
+		&roomInfo.MaxOccupancy,
+		&roomInfo.CurrentOccupancy,
+		&roomInfo.Occupants,
+		&roomInfo.PullPriority,
+		&roomInfo.SGroupUUID,
+		&roomInfo.HasFrosh,
+	)
+
+	if err == sql.ErrNoRows {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Room not found"})
+		return
+	}
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to query room info"})
+		return
+	}
+
+	c.JSON(http.StatusOK, roomInfo)
+}

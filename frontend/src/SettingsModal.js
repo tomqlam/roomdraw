@@ -99,9 +99,9 @@ const SettingsModal = () =>
         const [position, setPosition] = useState({ top: 0, left: 0 });
         const buttonRef = useRef(null);
 
-        useEffect(() =>
+        const updatePosition = useCallback(() =>
         {
-            if (activeColorPicker === colorKey && buttonRef.current)
+            if (buttonRef.current)
             {
                 const rect = buttonRef.current.getBoundingClientRect();
                 const spaceBelow = window.innerHeight - rect.bottom;
@@ -127,7 +127,19 @@ const SettingsModal = () =>
 
                 setPosition({ top, left });
             }
-        }, [activeColorPicker, colorKey]);
+        }, []);
+
+        // Update position when color picker is opened
+        useEffect(() =>
+        {
+            if (activeColorPicker === colorKey)
+            {
+                updatePosition();
+                // Add window resize listener
+                window.addEventListener('resize', updatePosition);
+                return () => window.removeEventListener('resize', updatePosition);
+            }
+        }, [activeColorPicker, colorKey, updatePosition]);
 
         return (
             <div className="color-picker-container">
@@ -135,7 +147,18 @@ const SettingsModal = () =>
                     ref={buttonRef}
                     className="color-swatch"
                     style={{ backgroundColor: color }}
-                    onClick={() => setActiveColorPicker(activeColorPicker === colorKey ? null : colorKey)}
+                    onClick={() =>
+                    {
+                        if (activeColorPicker === colorKey)
+                        {
+                            setActiveColorPicker(null);
+                        } else
+                        {
+                            setActiveColorPicker(colorKey);
+                            // Update position immediately when opening
+                            setTimeout(updatePosition, 0);
+                        }
+                    }}
                 >
                     <span className="color-value">{color}</span>
                 </button>
@@ -146,7 +169,9 @@ const SettingsModal = () =>
                         style={{
                             position: 'fixed',
                             top: `${position.top}px`,
-                            left: `${position.left}px`
+                            left: `${position.left}px`,
+                            opacity: position.top === 0 ? 0 : 1,
+                            transition: 'opacity 0.2s ease'
                         }}
                     >
                         <HexColorPicker
