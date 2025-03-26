@@ -97,7 +97,7 @@ function FloorGrid({ gridData })
         padding: '8px 12px',
         textAlign: 'center',
         fontSize: '0.95rem',
-        color: isDarkMode ? '#f5f5f5' : '#2a2a2a',
+        color: isDarkMode ? '#f8f9fa' : '#2a2a2a',
         fontWeight: '500',
         overflow: 'hidden',
         whiteSpace: 'nowrap',
