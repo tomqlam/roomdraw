@@ -7,6 +7,7 @@ const SettingsModal = () =>
 {
     const {
         colorPalettes,
+        darkColorPalettes,
         setIsFroshModalOpen,
         selectedPalette,
         setSelectedPalette,
@@ -15,10 +16,28 @@ const SettingsModal = () =>
         setOnlyShowBumpableRooms,
         showFloorplans,
         setShowFloorplans,
+        isDarkMode,
+        toggleDarkMode
     } = useContext(MyContext);
 
     const [activeColorPicker, setActiveColorPicker] = useState(null);
     const [draftColors, setDraftColors] = useState(selectedPalette);
+    const [isCustomPalette, setIsCustomPalette] = useState(selectedPalette.name === "Custom");
+    const [savedCustomPalette, setSavedCustomPalette] = useState(() =>
+    {
+        const savedPalette = localStorage.getItem('customPalette');
+        return savedPalette ? JSON.parse(savedPalette) : colorPalettes.find(p => p.name === "Custom");
+    });
+
+    // For dark mode
+    const [savedDarkCustomPalette, setSavedDarkCustomPalette] = useState(() =>
+    {
+        const savedPalette = localStorage.getItem('darkCustomPalette');
+        return savedPalette ? JSON.parse(savedPalette) : darkColorPalettes.find(p => p.name === "Custom");
+    });
+
+    const activePalettes = isDarkMode ? darkColorPalettes : colorPalettes;
+
     const timeoutRef = useRef(null);
     const popoverRef = useRef(null);
 
@@ -28,11 +47,46 @@ const SettingsModal = () =>
         localStorage.setItem('selectedPalette', JSON.stringify(selectedPalette));
     }, [selectedPalette]);
 
+    // Store custom palette in local storage whenever it changes
+    useEffect(() =>
+    {
+        if (isCustomPalette)
+        {
+            if (isDarkMode)
+            {
+                localStorage.setItem('darkCustomPalette', JSON.stringify(selectedPalette));
+                setSavedDarkCustomPalette(selectedPalette);
+            } else
+            {
+                localStorage.setItem('customPalette', JSON.stringify(selectedPalette));
+                setSavedCustomPalette(selectedPalette);
+            }
+        }
+    }, [isCustomPalette, selectedPalette, isDarkMode]);
+
+    // Update draft colors when active palettes changes due to dark mode toggle
+    useEffect(() =>
+    {
+        setDraftColors(selectedPalette);
+    }, [isDarkMode, selectedPalette]);
+
     const handlePaletteChange = (event) =>
     {
-        const newPalette = colorPalettes.find(palette => palette.name === event.target.value);
-        setSelectedPalette(newPalette);
-        setDraftColors(newPalette);
+        const selectedName = event.target.value;
+        if (selectedName === "Custom")
+        {
+            // Restore the saved custom palette
+            const customPalette = isDarkMode ? savedDarkCustomPalette : savedCustomPalette;
+            setSelectedPalette(customPalette);
+            setDraftColors(customPalette);
+            setIsCustomPalette(true);
+        } else
+        {
+            const newPalette = activePalettes.find(palette => palette.name === selectedName);
+            setSelectedPalette(newPalette);
+            setDraftColors(newPalette);
+            setIsCustomPalette(false);
+        }
     };
 
     const handleColorChange = useCallback((colorKey, color) =>
@@ -51,12 +105,48 @@ const SettingsModal = () =>
         // Set a new timeout to update the actual palette
         timeoutRef.current = setTimeout(() =>
         {
-            setSelectedPalette(prev => ({
-                ...prev,
-                [colorKey]: color
-            }));
+            // When modifying a predefined palette, create a custom one
+            if (!isCustomPalette)
+            {
+                const customPalette = {
+                    ...draftColors,
+                    [colorKey]: color,
+                    name: "Custom"
+                };
+                setSelectedPalette(customPalette);
+
+                if (isDarkMode)
+                {
+                    setSavedDarkCustomPalette(customPalette);
+                    localStorage.setItem('darkCustomPalette', JSON.stringify(customPalette));
+                } else
+                {
+                    setSavedCustomPalette(customPalette);
+                    localStorage.setItem('customPalette', JSON.stringify(customPalette));
+                }
+
+                setIsCustomPalette(true);
+            } else
+            {
+                // Just update the existing custom palette
+                const updatedPalette = {
+                    ...selectedPalette,
+                    [colorKey]: color
+                };
+                setSelectedPalette(updatedPalette);
+
+                if (isDarkMode)
+                {
+                    setSavedDarkCustomPalette(updatedPalette);
+                    localStorage.setItem('darkCustomPalette', JSON.stringify(updatedPalette));
+                } else
+                {
+                    setSavedCustomPalette(updatedPalette);
+                    localStorage.setItem('customPalette', JSON.stringify(updatedPalette));
+                }
+            }
         }, 100);
-    }, [setSelectedPalette]);
+    }, [setSelectedPalette, draftColors, isCustomPalette, selectedPalette, isDarkMode]);
 
     // Handle clicking outside of color picker
     useEffect(() =>
@@ -93,6 +183,13 @@ const SettingsModal = () =>
             }
         };
     }, []);
+
+    // Handle dark mode toggle
+    const handleDarkModeToggle = () =>
+    {
+        toggleDarkMode();
+        // The palette will be automatically switched in the MyContext useEffect
+    };
 
     const ColorPickerPopover = ({ colorKey, color }) =>
     {
@@ -195,7 +292,7 @@ const SettingsModal = () =>
         <div className="modal is-active">
             <div className="modal-background" onClick={() => setIsSettingsModalOpen(false)}></div>
             <div className="modal-card" style={{ maxWidth: '500px' }}>
-                <header className="modal-card-head" style={{ background: '#f8f9fa' }}>
+                <header className="modal-card-head">
                     <p className="modal-card-title">
                         <span className="icon-text">
                             <span className="icon">
@@ -238,6 +335,23 @@ const SettingsModal = () =>
                                 <p className="help">Display floorplan images next to the room grid</p>
                             </label>
                         </div>
+                        <div className="field mt-4">
+                            <label className="checkbox">
+                                <input
+                                    type="checkbox"
+                                    checked={isDarkMode}
+                                    onChange={handleDarkModeToggle}
+                                    className="mr-2"
+                                />
+                                <span className="icon-text">
+                                    <span className="icon">
+                                        <i className={`fas ${isDarkMode ? 'fa-sun' : 'fa-moon'}`}></i>
+                                    </span>
+                                    <span>{isDarkMode ? 'Light' : 'Dark'} mode</span>
+                                </span>
+                                <p className="help">Toggle to {isDarkMode ? 'Light' : 'Dark'} mode for the application</p>
+                            </label>
+                        </div>
                     </div>
 
                     <div className="box">
@@ -247,10 +361,10 @@ const SettingsModal = () =>
                             <div className="control">
                                 <div className="select is-fullwidth">
                                     <select
-                                        value={selectedPalette.name}
+                                        value={isCustomPalette ? "Custom" : selectedPalette.name}
                                         onChange={handlePaletteChange}
                                     >
-                                        {colorPalettes.map(palette => (
+                                        {activePalettes.map(palette => (
                                             <option key={palette.name} value={palette.name}>
                                                 {palette.name}
                                             </option>
@@ -290,18 +404,27 @@ const SettingsModal = () =>
 
                             <div className="column is-half">
                                 <div className="field">
-                                    <label className="label is-small">My Current Room</label>
+                                    <label className="label is-small">Pull Method</label>
                                     <div className="control">
-                                        <ColorPickerPopover colorKey="selectedUserRoom" color={draftColors.selectedUserRoom} />
+                                        <ColorPickerPopover colorKey="pullMethod" color={draftColors.pullMethod} />
                                     </div>
                                 </div>
                             </div>
 
                             <div className="column is-half">
                                 <div className="field">
-                                    <label className="label is-small">Pull Method</label>
+                                    <label className="label is-small">My Current Room</label>
                                     <div className="control">
-                                        <ColorPickerPopover colorKey="pullMethod" color={draftColors.pullMethod} />
+                                        <ColorPickerPopover colorKey="currentUserRoom" color={draftColors.currentUserRoom} />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="column is-half">
+                                <div className="field">
+                                    <label className="label is-small">Selected User Room</label>
+                                    <div className="control">
+                                        <ColorPickerPopover colorKey="selectedUserRoom" color={draftColors.selectedUserRoom} />
                                     </div>
                                 </div>
                             </div>
@@ -309,7 +432,7 @@ const SettingsModal = () =>
                     </div>
                 </section>
 
-                <footer className="modal-card-foot" style={{ background: '#f8f9fa', justifyContent: 'flex-end' }}>
+                <footer className="modal-card-foot" style={{ justifyContent: 'flex-end' }}>
                     <button
                         className="button is-primary"
                         onClick={() => setIsSettingsModalOpen(false)}

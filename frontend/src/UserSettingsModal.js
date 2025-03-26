@@ -71,7 +71,7 @@ const UserSettingsModal = ({ isOpen, onClose }) =>
         <div className={`modal ${isOpen ? 'is-active' : ''}`}>
             <div className="modal-background" onClick={onClose}></div>
             <div className="modal-card" style={{ maxWidth: '500px' }}>
-                <header className="modal-card-head" style={{ background: '#f8f9fa' }}>
+                <header className="modal-card-head">
                     <p className="modal-card-title">
                         <span className="icon-text">
                             <span className="icon">
@@ -106,7 +106,7 @@ const UserSettingsModal = ({ isOpen, onClose }) =>
                     </div>
                 </section>
 
-                <footer className="modal-card-foot" style={{ background: '#f8f9fa', justifyContent: 'flex-end' }}>
+                <footer className="modal-card-foot" style={{ justifyContent: 'flex-end' }}>
                     <button
                         className="button is-primary"
                         onClick={onClose}

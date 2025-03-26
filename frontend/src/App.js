@@ -7,6 +7,7 @@ import Select from 'react-select';
 import { CSSTransition, TransitionGroup } from 'react-transition-group';
 import BumpFroshModal from './BumpFroshModal';
 import BumpModal from './BumpModal';
+import Navbar from './components/Navbar';
 import FloorGrid from './FloorGrid';
 import { MyContext } from './MyContext';
 import SettingsModal from './SettingsModal';
@@ -49,13 +50,19 @@ function App()
         userID,
         setUserID,
         refreshKey,
+        isDarkMode,
+        toggleDarkMode,
+        isUserSettingsModalOpen,
+        setIsUserSettingsModalOpen,
+        handleTakeMeThere
     } = useContext(MyContext);
 
     const [notifications, setNotifications] = useState([]);
-    const [isUserSettingsModalOpen, setIsUserSettingsModalOpen] = useState(false);
     const [isTransitioning, setIsTransitioning] = useState(false);
     const [selectedUserData, setSelectedUserData] = useState(null);
-    const [currentUserData, setCurrentUserData] = useState(null);
+    const [selectedUserRoom, setSelectedUserRoom] = useState("Unselected"); // to show what room current selected user is in
+    const [isBurgerActive, setIsBurgerActive] = useState(false);
+    const [isInDorm, setIsInDorm] = useState(true);
 
     useEffect(() =>
     {
@@ -75,11 +82,6 @@ function App()
         localStorage.setItem('closedNotifications', JSON.stringify(closedNotifications));
         setNotifications(notifications.filter(n => n !== notification));
     };
-
-    const [selectedUserRoom, setSelectedUserRoom] = useState("Unselected"); // to show what room current selected user is in
-    const [myRoom, setMyRoom] = useState("Unselected"); // to show what room current logged in user is in
-    const [isBurgerClicked, setIsBurgerClicked] = useState(false);
-    const [isInDorm, setIsInDorm] = useState(true);
 
     useEffect(() =>
     {
@@ -127,21 +129,9 @@ function App()
         const storedCredentials = localStorage.getItem('jwt');
         if (storedCredentials)
         {
-            // commented console.log ("use effect");
-            // commented console.log (storedCredentials);
-            // commented console.log ("end use efect");
             setCredentials(storedCredentials);
         }
     }, []);
-
-    // useEffect(() => {
-    //   // Check for stored credentials on component mount
-    //   const storedCredentials = localStorage.getItem('jwt');
-    //   if (storedCredentials) {
-    //     // If credentials exist, decode and set them
-    //     setCredentials(storedCredentials);
-    //   }
-    // }, []);
 
     const handleSuccess = (credentialResponse) =>
     {
@@ -259,60 +249,18 @@ function App()
         updateSelectedUserData();
     }, [selectedID, refreshKey]);
 
-    useEffect(() =>
-    {
-        const updateCurrentUserData = async () =>
-        {
-            if (userID)
-            {
-                const data = await fetchUserData(userID);
-                if (data)
-                {
-                    setCurrentUserData(data);
-                    if (data.RoomUUID)
-                    {
-                        try
-                        {
-                            const roomResponse = await fetch(`/rooms/${data.RoomUUID}`, {
-                                headers: {
-                                    'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
-                                }
-                            });
-                            if (!roomResponse.ok)
-                            {
-                                throw new Error(`HTTP error! status: ${roomResponse.status}`);
-                            }
-                            const roomData = await roomResponse.json();
-                            if (handleErrorFromTokenExpiry(roomData))
-                            {
-                                return;
-                            }
-                            const roomDisplay = `${roomData.DormName} ${roomData.RoomID}`;
-                            setMyRoom(roomDisplay);
-                        } catch (err)
-                        {
-                            console.error('Error fetching room data:', err);
-                            setMyRoom('no room yet');
-                        }
-                    } else
-                    {
-                        setMyRoom('no room yet');
-                    }
-                }
-            }
-        };
-        updateCurrentUserData();
-    }, [userID, refreshKey]);
-
     const getRoomObjectFromUserID = (userID) =>
     {
-        if (userID === selectedID && selectedUserData)
+        if (rooms)
         {
-            return selectedUserData;
-        }
-        if (userID === userID && currentUserData)
-        {
-            return currentUserData;
+            for (let room of rooms)
+            {
+
+                if (room.Occupants && room.Occupants.includes(Number(userID)))
+                {
+                    return room;
+                }
+            }
         }
         return null;
     }
@@ -338,6 +286,11 @@ function App()
         {
             return -1;
         }
+        if (usersRoom.MaxOccupancy > 1)
+        {
+            return 0;
+        }
+
         if (dormMapping[userMap[userID].InDorm] === usersRoom.DormName)
         {
             return 1;
@@ -356,9 +309,15 @@ function App()
     }, [activeTab]);
 
 
-    const handleNameChange = (newID) =>
+    const handleNameChange = (selectedOption) =>
     {
-        setSelectedID(newID);
+        if (selectedOption)
+        {
+            setSelectedID(selectedOption.value);
+        } else
+        {
+            setSelectedID(userID);
+        }
     };
 
     const handleTabClick = (tab) =>
@@ -386,8 +345,6 @@ function App()
     // Component for each floor, to show even and odd floors separately
     const FloorDisplay = ({ gridData, filterCondition }) =>
     {
-        const filteredFloors = gridData.flatMap(dorm => dorm.floors.filter(floor => filterCondition(floor.floorNumber)));
-
         return (
             <div className="column">
                 <div style={showFloorplans ? { width: '50vw' } : {}}>
@@ -411,28 +368,6 @@ function App()
             </div>
         );
     };
-    const handleTakeMeThere = (myLocationString, isCurrentUser = false) =>
-    {
-        const words = myLocationString.split(' ');
-        if (words.length === 2)
-        {
-            setActiveTab(words[0]);
-        }
-
-        // Get the room UUID based on whether it's the current user or selected user
-        const targetUserID = isCurrentUser ? userID : selectedID;
-        const roomUUID = getRoomUUIDFromUserID(targetUserID);
-
-        // Delay the scrolling until after the tab has finished switching
-        setTimeout(() =>
-        {
-            const roomRef = roomRefs.current[roomUUID];
-            if (roomRef)
-            {
-                roomRef.scrollIntoView({ behavior: 'smooth' });
-            }
-        }, 0);
-    }
 
     const handleForfeit = () =>
     {
@@ -456,15 +391,12 @@ function App()
                         return;
                     };
                     const thisRoom = getRoomObjectFromUserID(selectedID);
-                    // commented console.log ("BRUHMOMENT");
-                    // commented console.log (thisRoom);
-                    // commented console.log (thisRoom.PullPriority.hasInDorm);
                     setIsInDorm(prev => !prev);
 
                 })
                 .catch(err =>
                 {
-                    // commented console.log (err);
+                    console.error('Error forfeiting in-dorm:', err);
                 })
 
 
@@ -483,122 +415,28 @@ function App()
 
     return (
         <div className={`main-content ${isTransitioning ? 'transition-active' : ''}`}>
-            <nav className="navbar" role="navigation" aria-label="main navigation">
-                <div className="navbar-brand">
-                    <a className="navbar-item" href="#">
-                        <img src="https://i.ibb.co/SyRVPQN/Screenshot-2023-12-26-at-10-14-31-PM.png" alt="Screenshot-2023-12-26-at-10-14-31-PM" border="0" />
-                    </a>
-                </div>
+            {credentials && <Navbar />}
 
-                <div id="navbarBasicExample" className="navbar-menu">
-                    {credentials && (
-                        <div className="navbar-start">
-                            <div className="navbar-item">
-                                <h2>Last refresh: {lastRefreshedTime.toLocaleTimeString()}</h2>
-                            </div>
-                        </div>
-                    )}
-
-                    <div className="navbar-end">
-                        {!credentials && (
-                            <div className="navbar-item">
+            <div className="content-wrapper">
+                {!credentials && (
+                    <section className="login-section">
+                        <div className="login-card">
+                            <img src="./digidraw.ico" alt="DigiDraw Logo" className="logo" />
+                            <h1 className="title">Welcome to DigiDraw!</h1>
+                            <p className="subtitle">
+                                Sign in with your school Google account to continue.
+                            </p>
+                            <div className="google-login-wrapper">
                                 <GoogleLogin
                                     auto_select={true}
                                     onSuccess={handleSuccess}
                                     onError={handleError}
+                                    className="google-login"
                                 />
                             </div>
-                        )}
-
-                        {credentials && (
-                            <div className="navbar-item">
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                    {userMap && (() =>
-                                    {
-                                        const decodedToken = jwtDecode(credentials);
-                                        const userId = Object.keys(userMap || {}).find(
-                                            id => userMap[id].Email === decodedToken.email
-                                        );
-                                        if (userId && userMap[userId])
-                                        {
-                                            return (
-                                                <div className="info-display non-clickable" style={{ maxWidth: 'fit-content' }}>
-                                                    <span style={{ fontWeight: '500' }}>
-                                                        {userMap[userId].Year.charAt(0).toUpperCase() + userMap[userId].Year.slice(1)} #{userMap[userId].DrawNumber}
-                                                    </span>
-                                                </div>
-                                            );
-                                        }
-                                        return null;
-                                    })()}
-
-                                    <button
-                                        className="button is-light"
-                                        onClick={() => setIsUserSettingsModalOpen(true)}
-                                    >
-                                        <span className="icon">
-                                            <i className="fas fa-user"></i>
-                                        </span>
-                                        <span>Welcome, {(() =>
-                                        {
-                                            if (!credentials) return '';
-                                            const decodedToken = jwtDecode(credentials);
-                                            const userId = Object.keys(userMap || {}).find(
-                                                id => userMap[id].Email === decodedToken.email
-                                            );
-                                            return userId && userMap[userId] ? userMap[userId].FirstName : decodedToken.given_name;
-                                        })()}</span>
-                                    </button>
-
-                                    <div
-                                        onClick={() => myRoom !== `no room yet` ? handleTakeMeThere(myRoom, true) : null}
-                                        className={`info-display ${myRoom !== `no room yet` ? 'clickable' : 'non-clickable'}`}
-                                    >
-                                        {userID && userMap && userMap[userID] ? (
-                                            <>
-                                                <span style={{ fontWeight: '500' }}>
-                                                    {userMap[userID].Year.charAt(0).toUpperCase() + userMap[userID].Year.slice(1)} #{userMap[userID].DrawNumber}
-                                                </span>
-                                                <span className="separator">•</span>
-                                                <span style={{ color: 'var(--text-color)' }}>
-                                                    {myRoom !== `no room yet` ? myRoom : 'no room yet'}
-                                                </span>
-                                            </>
-                                        ) : (
-                                            <span className="has-text-grey">Student info will appear here</span>
-                                        )}
-                                    </div>
-
-                                    <button
-                                        className="button is-primary"
-                                        onClick={() => setIsSettingsModalOpen(prev => !prev)}
-                                    >
-                                        <span className="icon">
-                                            <i className="fas fa-palette"></i>
-                                        </span>
-                                        <span>Visual Settings</span>
-                                    </button>
-
-                                    <a className="button is-danger" onClick={handleLogout}>
-                                        <span className="icon">
-                                            <i className="fas fa-sign-out-alt"></i>
-                                        </span>
-                                        <span>Log Out</span>
-                                    </a>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            </nav>
-
-            <div className="content-wrapper">
-                {!credentials && <section className="section">
-                    <div style={{ textAlign: 'center' }}>
-                        <h1 className="title">Welcome to DigiDraw!</h1>
-                        <h2 className="subtitle">Please log in with your HMC email to continue.</h2>
-                    </div>
-                </section>}
+                        </div>
+                    </section>
+                )}
 
                 {credentials && notifications.map((notification, index) => (
                     <div key={index} className="notification is-info" style={{ marginLeft: '20px', marginRight: '20px' }}>
@@ -607,23 +445,21 @@ function App()
                     </div>
                 ))}
 
-                {credentials && <section className="section" style={{ paddingTop: '1rem', paddingBottom: '1rem', borderBottom: '1px solid #eee', backgroundColor: '#f8f9fa' }}>
+                {credentials && <section className="section search-section" style={{ paddingTop: '1rem', paddingBottom: '1rem', borderBottom: '1px solid var(--border-color)' }}>
                     <div style={{ textAlign: 'center' }}>
                         <h2 className="subtitle mb-4">Look up a student's room and draw number</h2>
                         <div className="search-container">
                             <div style={{ width: 'var(--component-width)' }}>
                                 <Select
-                                    placeholder="Type a name to search..."
-                                    value={userMap && selectedID && userMap[selectedID] ? {
-                                        value: selectedID,
-                                        label: `${userMap[selectedID].FirstName} ${userMap[selectedID].LastName}`
-                                    } : null}
-                                    menuPortalTarget={document.body}
+                                    isClearable
+                                    className="react-select"
                                     classNamePrefix="react-select"
+                                    placeholder="Student name..."
+                                    onChange={handleNameChange}
+                                    menuPortalTarget={document.body}
                                     styles={{
                                         menuPortal: base => ({ ...base, zIndex: 9999 })
                                     }}
-                                    onChange={(selectedOption) => handleNameChange(selectedOption.value)}
                                     options={userMap ? Object.keys(userMap)
                                         .sort((a, b) =>
                                         {
@@ -636,11 +472,14 @@ function App()
                                             value: key,
                                             label: `${userMap[key].FirstName} ${userMap[key].LastName}`
                                         })) : []}
+                                    value={selectedID && userMap && userMap[selectedID] ?
+                                        { value: selectedID, label: `${userMap[selectedID].FirstName} ${userMap[selectedID].LastName}` } : null}
                                 />
                             </div>
                             <div
                                 onClick={() => selectedUserRoom !== `no room yet` ? handleTakeMeThere(selectedUserRoom, false) : null}
                                 className={`info-display ${selectedUserRoom !== `no room yet` ? 'clickable' : 'non-clickable'}`}
+                                title={selectedUserRoom !== `no room yet` ? `View room: ${selectedUserRoom}` : 'No room assigned yet'}
                             >
                                 {selectedID && userMap && userMap[selectedID] ? (
                                     <>
@@ -658,22 +497,29 @@ function App()
                             </div>
                         </div>
 
-                        {canUserToggleInDorm(selectedID) !== -1 &&
-                            <div>
+                        {canUserToggleInDorm(selectedID) === 1 &&
+                            <div style={{ paddingTop: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+                                <label htmlFor="toggleInDorm" className="checkbox-label">
+                                    Keep In-Dorm
+                                </label>
                                 <input
                                     type="checkbox"
+                                    className="switch"
                                     id="toggleInDorm"
                                     name="toggleInDorm"
-                                    disabled={canUserToggleInDorm(selectedID) === 0}
                                     checked={isInDorm}
                                     onChange={handleForfeit}
                                 />
-                                {canUserToggleInDorm(selectedID) === 1 &&
-                                    <label htmlFor="toggleInDorm" style={{ marginLeft: '5px' }}>Forfeit In-Dorm for their current single</label>
-                                }
-                                {canUserToggleInDorm(selectedID) === 0 &&
-                                    <label htmlFor="toggleInDorm" style={{ marginLeft: '5px' }}>To forfeit their in-dorm, pull into a single.</label>
-                                }
+                                <label htmlFor="toggleInDorm" className="checkbox-label">
+                                    Forfeit In-Dorm
+                                </label>
+                            </div>
+                        }
+                        {canUserToggleInDorm(selectedID) === 0 &&
+                            <div style={{ paddingTop: '1rem' }}>
+                                <p className="checkbox-label">
+                                    To forfeit in-dorm, pull into a single in {dormMapping[userMap[selectedID].InDorm]}
+                                </p>
                             </div>
                         }
                     </div>

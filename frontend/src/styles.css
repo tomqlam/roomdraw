@@ -1,5 +1,6 @@
 /* Base styles */
 :root {
+    /* Light mode variables */
     --primary-color: #00d1b2;
     --primary-hover: #00c4a7;
     --danger-color: #ff3860;
@@ -12,16 +13,120 @@
     --min-component-width: 200px;
     --max-component-width: 300px;
     --section-bg: #f8f9fa;
+    --body-bg: #f5f5f5;
+    --card-bg: #ffffff;
+    --header-bg: #f8f9fa;
+    --input-bg: #ffffff;
+    --box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    --floor-section-bg: #ffffff;
+    --floor-section-border: rgba(0, 0, 0, 0.06);
+    --floor-header-border: #f0f0f0;
+    --subtitle-color: #666;
+    --tab-active-color: #363636;
+    --tab-hover-color: #4a4a4a;
+    --tab-color: #7a7a7a;
+    --button-text-light: #363636;
+    --button-text-dark: #ffffff;
+    --grid-container-bg: #f5f5f5;
+    --card-bg-hover: #f7f7f7;
+    --login-bg: #f5f5f5;
+}
+
+body.dark-mode {
+    /* Dark mode variables */
+    --primary-color: #666666;
+    --primary-hover: #777777;
+    --danger-color: #ff3860;
+    --danger-hover: #ff1443;
+    --light-color: #2c2c2c;
+    --border-color: #444444;
+    --text-color: #f8f8f8;
+    --section-bg: #1a1a1a;
+    --body-bg: #121212;
+    --card-bg: #1e1e1e;
+    --header-bg: #1a1a1a;
+    --input-bg: #2c2c2c;
+    --box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    --floor-section-bg: #1e1e1e;
+    --floor-section-border: rgba(255, 255, 255, 0.06);
+    --floor-header-border: #333333;
+    --subtitle-color: #b0b0b0;
+    --tab-active-color: #ffffff;
+    --tab-hover-color: #e0e0e0;
+    --tab-color: #b0b0b0;
+    --button-text-light: #f8f8f8;
+    --button-text-dark: #f8f8f8;
+    --grid-container-bg: #212121;
+    --card-bg-hover: #333333;
+    --login-bg: #121212;
+}
+
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+        'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+        sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: var(--body-bg);
+    color: var(--text-color);
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Navbar styles */
 .navbar {
     min-height: 3.25rem;
     padding: 0.5rem 1rem;
+    background-color: var(--card-bg);
+    box-shadow: var(--box-shadow);
+    transition: background-color 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 31;
+    backdrop-filter: blur(10px);
+}
+
+.navbar-brand {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+}
+
+/* Logo styling for consistency */
+.navbar-brand img {
+    height: 3rem;
+    margin-right: 0.75rem;
+}
+
+.navbar-menu-items {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-left: auto;
+}
+
+.navbar-menu-items.is-active {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    top: 5rem;
+    left: 0;
+    right: 0;
+    background-color: var(--card-bg);
+    padding: 1rem;
+    box-shadow: var(--box-shadow);
+    z-index: 30;
 }
 
 .navbar-item {
-    padding: 0;
+    padding: 0.75rem;
+    border-radius: 8px;
+    transition: background-color 0.2s ease;
 }
 
 .navbar-item .button {
@@ -30,23 +135,24 @@
 
 /* Button styles */
 .button {
-    height: var(--component-height);
     transition: all var(--transition-speed) ease;
     border-radius: 6px;
     font-weight: 500;
-    padding: 0 1em;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
 }
 
-.button:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+.button .icon,
+.info-display .icon {
+    margin-right: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.25rem;
+    min-width: 1.25rem;
 }
 
 .button.is-primary {
     background-color: var(--primary-color);
+    color: white;
 }
 
 .button.is-primary:hover {
@@ -55,14 +161,27 @@
 
 .button.is-danger {
     background-color: var(--danger-color);
+    color: white;
 }
 
 .button.is-danger:hover {
     background-color: var(--danger-hover);
 }
 
+.button.is-light {
+    background-color: var(--light-color);
+    color: var(--text-color);
+}
+
+.button.is-light:hover {
+    background-color: var(--light-color);
+    opacity: 0.9;
+}
+
 /* Select styles */
 .select select {
+    background-color: var(--input-bg);
+    color: var(--text-color);
     border-radius: 6px;
     transition: all var(--transition-speed) ease;
     border-color: var(--border-color);
@@ -77,8 +196,21 @@
     box-shadow: 0 0 0 0.125em rgba(0, 209, 178, 0.25);
 }
 
+/* Select styles in dark mode */
+body.dark-mode .select select {
+    background-color: var(--input-bg);
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+
+body.dark-mode .select:after {
+    border-color: var(--text-color) !important;
+}
+
 /* React-select custom styles */
 .react-select__control {
+    background-color: var(--input-bg) !important;
+    color: var(--text-color) !important;
     height: var(--component-height) !important;
     min-height: var(--component-height) !important;
     min-width: var(--min-component-width) !important;
@@ -93,12 +225,30 @@
     border-color: var(--primary-color) !important;
 }
 
+body.dark-mode .react-select__control:hover {
+    border-color: #666666 !important;
+}
+
 .react-select__control--is-focused {
     border-color: var(--primary-color) !important;
     box-shadow: 0 0 0 0.125em rgba(0, 209, 178, 0.25) !important;
 }
 
+body.dark-mode .react-select__control--is-focused {
+    border-color: #666666 !important;
+    box-shadow: 0 0 0 0.125em rgba(102, 102, 102, 0.25) !important;
+}
+
+.react-select__single-value {
+    color: var(--text-color) !important;
+}
+
+.react-select__menu {
+    background-color: var(--card-bg) !important;
+}
+
 .react-select__option {
+    color: var(--text-color) !important;
     transition: background-color var(--transition-speed) ease !important;
 }
 
@@ -106,8 +256,16 @@
     background-color: rgba(0, 209, 178, 0.1) !important;
 }
 
+body.dark-mode .react-select__option--is-focused {
+    background-color: rgba(102, 102, 102, 0.2) !important;
+}
+
 .react-select__option--is-selected {
     background-color: var(--primary-color) !important;
+}
+
+body.dark-mode .react-select__option--is-selected {
+    background-color: #666666 !important;
 }
 
 .react-select__value-container {
@@ -121,7 +279,7 @@
 
 /* Interactive display boxes */
 .info-display {
-    background-color: white;
+    background-color: var(--input-bg);
     border: 1px solid var(--border-color);
     border-radius: 6px;
     padding: 0.4rem 0.75rem;
@@ -130,17 +288,10 @@
     height: var(--component-height);
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.75rem;
     font-size: 0.95rem;
-    min-width: var(--min-component-width);
-    max-width: var(--max-component-width);
-    width: fit-content;
-}
-
-.info-display:hover {
-    border-color: var(--primary-color);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    transform: translateY(-1px);
+    box-sizing: border-box;
+    width: 100%;
 }
 
 .info-display.clickable {
@@ -151,8 +302,32 @@
     cursor: default;
     opacity: 0.9;
     background-color: var(--light-color);
-    width: auto;
-    min-width: fit-content;
+}
+
+/* Ensure proper width behavior in containers */
+.navbar-item .info-display {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Desktop overrides */
+@media screen and (min-width: 769px) {
+    .info-display {
+        width: auto;
+        min-width: var(--min-component-width);
+        max-width: var(--max-component-width);
+    }
+
+    .info-display.non-clickable {
+        width: auto;
+        min-width: fit-content;
+    }
+}
+
+.info-display:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    transform: translateY(-1px);
 }
 
 .info-display .separator {
@@ -204,6 +379,10 @@
     background: var(--primary-color);
 }
 
+body.dark-mode .switch[type="checkbox"]:checked+label::before {
+    background: #666666;
+}
+
 .switch[type="checkbox"]:checked+label::after {
     left: 1.75rem;
 }
@@ -229,23 +408,83 @@ input[type="color"]::-webkit-color-swatch {
 
 /* Modal improvements */
 .modal-card {
+    background-color: var(--card-bg);
     border-radius: 8px;
     box-shadow: 0 0.5em 1em -0.125em rgba(10, 10, 10, 0.1), 0 0 0 1px rgba(10, 10, 10, 0.02);
+    overflow: hidden;
+    max-width: 550px;
+    width: 95%;
+    margin: 0 auto;
+}
+
+@media screen and (max-width: 768px) {
+    .modal-card {
+        width: 90%;
+        max-width: 90%;
+        margin: 1rem auto;
+    }
+}
+
+body.dark-mode .modal-card {
+    box-shadow: 0 0.5em 1em -0.125em rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(0, 0, 0, 0.1);
 }
 
 .modal-card-head {
+    background-color: var(--header-bg) !important;
+    border-bottom: 1px solid var(--border-color) !important;
     border-top-left-radius: 8px;
     border-top-right-radius: 8px;
+    padding: 20px;
+}
+
+.modal-card-body {
+    background-color: var(--card-bg);
+    color: var(--text-color);
+    padding: 20px;
 }
 
 .modal-card-foot {
+    background-color: var(--header-bg) !important;
+    border-top: 1px solid var(--border-color) !important;
     border-bottom-left-radius: 8px;
     border-bottom-right-radius: 8px;
+    padding: 20px;
 }
 
 .box {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
     margin-bottom: 1.5rem;
     border-radius: 8px;
+    padding: 25px;
+}
+
+/* Fix form elements in dark mode */
+.modal-card .label,
+.modal-card .title,
+.modal-card .subtitle,
+.modal-card-title {
+    color: var(--text-color);
+}
+
+body.dark-mode .modal-card-title {
+    color: var(--text-color);
+    font-weight: 600;
+    margin-left: 8px;
+}
+
+.modal-card .help {
+    color: var(--subtitle-color);
+}
+
+/* Fix checkbox appearance in dark mode */
+body.dark-mode .checkbox {
+    color: var(--text-color);
+}
+
+body.dark-mode input[type="checkbox"] {
+    accent-color: var(--primary-color);
 }
 
 /* Improve button spacing */
@@ -253,18 +492,22 @@ input[type="color"]::-webkit-color-swatch {
     gap: 0.5rem;
 }
 
-.button .icon {
-    margin-right: 0.25rem;
-}
-
 /* Section styles */
 .section {
     padding: 2rem 1.5rem;
     background-color: var(--section-bg);
+    transition: background-color 0.3s ease;
 }
 
 .section .subtitle {
     margin-bottom: 1.5rem;
+    color: var(--text-color);
+}
+
+/* Special styling for the search section */
+.search-section {
+    background-color: var(--section-bg);
+    border-color: var(--border-color);
 }
 
 /* Search container */
@@ -350,11 +593,12 @@ input[type="color"]::-webkit-color-swatch {
 /* Floor section styles */
 .floor-section {
     margin-bottom: 2rem;
-    background: white;
+    background: var(--floor-section-bg);
     border-radius: 8px;
-    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.08);
+    box-shadow: var(--box-shadow);
     padding: 1rem;
-    border: 1px solid rgba(0, 0, 0, 0.06);
+    border: 1px solid var(--floor-section-border);
+    transition: background-color 0.3s ease;
 }
 
 .floor-section:last-child {
@@ -364,7 +608,7 @@ input[type="color"]::-webkit-color-swatch {
 .floor-header {
     text-align: left;
     margin-bottom: 1rem;
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: 1px solid var(--floor-header-border);
     padding-bottom: 0.75rem;
 }
 
@@ -372,14 +616,14 @@ input[type="color"]::-webkit-color-swatch {
     margin-bottom: 0.25rem !important;
     font-size: 1.2rem !important;
     font-weight: 500;
-    color: #2a2a2a;
+    color: var(--text-color);
     letter-spacing: -0.02em;
 }
 
 .floor-header p.subtitle {
     margin-bottom: 0 !important;
     font-size: 1rem !important;
-    color: #666;
+    color: var(--subtitle-color);
     font-weight: 400;
 }
 
@@ -390,14 +634,8 @@ input[type="color"]::-webkit-color-swatch {
     display: grid;
     grid-template-columns: 70px 100px 1.5fr repeat(auto-fit, minmax(120px, 1fr));
     gap: 4px;
-}
-
-.grid-header-cell {
-    font-size: 0.9rem !important;
-    font-weight: 600 !important;
-    letter-spacing: 0.02em;
-    padding: 0.5rem 0.4rem !important;
-    background: var(--light-color);
+    background: var(--grid-container-bg);
+    padding: 4px;
 }
 
 .grid-cell {
@@ -479,4 +717,977 @@ input[type="color"]::-webkit-color-swatch {
     position: relative;
     min-height: inherit;
     width: 100%;
+}
+
+/* Theme toggle button */
+.theme-toggle {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-color);
+    background: none;
+    border: none;
+    padding: 0.5rem;
+    border-radius: 50%;
+    transition: background-color 0.2s ease;
+    min-width: 2.5rem;
+    min-height: 2.5rem;
+}
+
+/* Fix for icon size difference to prevent layout shifting */
+.theme-toggle i {
+    width: 1.25rem;
+    height: 1.25rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    font-size: 1.25rem;
+}
+
+/* Ensure both icons have the same dimensions */
+.theme-toggle i.fa-sun,
+.theme-toggle i.fa-moon {
+    box-sizing: border-box;
+    width: 1.25rem;
+    height: 1.25rem;
+    line-height: 1.25rem;
+}
+
+.toggle-text {
+    display: none;
+    margin-left: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.theme-toggle:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+body.dark-mode .theme-toggle:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Tab styles for dorm names */
+.tabs a {
+    color: var(--tab-color);
+    border-bottom-color: var(--border-color);
+    transition: color 0.3s ease;
+}
+
+.tabs li.is-active a {
+    color: var(--tab-active-color);
+    border-bottom-color: var(--primary-color);
+}
+
+.tabs a:hover {
+    color: var(--tab-hover-color);
+    border-bottom-color: var(--tab-hover-color);
+}
+
+/* Ensure tabs background matches the theme */
+.tabs {
+    background-color: transparent;
+    max-width: 1200px;
+    margin: 0 auto 1.5rem;
+}
+
+.tabs ul {
+    border-bottom: none;
+    background-color: transparent;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 0.5rem;
+}
+
+.tabs li {
+    flex: 0 0 auto;
+    margin: 0 0.25rem;
+}
+
+.tabs a {
+    padding: 0.5rem 1.25rem;
+    min-width: 80px;
+    text-align: center;
+    border-radius: 8px;
+    background-color: var(--card-bg);
+    border: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Light mode active tab */
+.tabs li.is-active a {
+    color: var(--tab-active-color);
+    border-bottom: none;
+    background-color: var(--primary-color);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Dark mode active tab */
+body.dark-mode .tabs li.is-active a {
+    background-color: #404040;
+    color: #ffffff;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
+}
+
+.tabs a:hover {
+    color: var(--tab-hover-color);
+    border-bottom: none;
+    background-color: var(--card-bg-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.08);
+}
+
+body.dark-mode .tabs a {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+body.dark-mode .tabs a:hover {
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+}
+
+/* Banner styling for dark mode */
+.info-display,
+.non-clickable {
+    color: var(--text-color) !important;
+}
+
+/* Dark mode button adjustments */
+body.dark-mode .button.is-primary {
+    color: #ffffff;
+    border-color: transparent;
+    background-color: #363636;
+}
+
+body.dark-mode .button.is-danger {
+    color: #ffffff;
+    border-color: transparent;
+    background-color: #363636;
+}
+
+body.dark-mode .button.is-light {
+    color: #ffffff;
+    background-color: #363636;
+}
+
+/* Logo in dark mode */
+body.dark-mode img[alt="DigiDraw Logo"] {
+    filter: none;
+}
+
+/* Header text in dark mode */
+body.dark-mode .title,
+body.dark-mode .subtitle,
+body.dark-mode h1,
+body.dark-mode h2,
+body.dark-mode h3,
+body.dark-mode h4,
+body.dark-mode h5,
+body.dark-mode h6 {
+    color: var(--text-color);
+}
+
+/* Make tooltips in dark mode more visible */
+body.dark-mode .grid-cell:hover::after {
+    background: #333;
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Ensure header text in grid cells is white in dark mode */
+body.dark-mode .grid-cell strong {
+    color: #ffffff !important;
+}
+
+/* Fixes for floorplan in dark mode */
+body.dark-mode .floorplan-container {
+    background: #2a2a2a;
+}
+
+/* Navbar brand text in dark mode */
+body.dark-mode .navbar-brand .navbar-item,
+body.dark-mode .navbar-brand a.navbar-item,
+body.dark-mode .navbar-brand .navbar-link {
+    color: var(--text-color);
+}
+
+/* Ensure all parts of the navbar respect dark mode */
+body.dark-mode .navbar,
+body.dark-mode .navbar-dropdown {
+    background-color: var(--card-bg);
+    color: var(--text-color);
+}
+
+/* Fix dropdown items in dark mode */
+body.dark-mode .navbar-dropdown a.navbar-item:hover {
+    background-color: var(--light-color);
+}
+
+/* Fix white ul in dark mode */
+body.dark-mode .tabs ul {
+    background-color: transparent;
+    border-bottom-color: var(--border-color);
+}
+
+/* Checkbox label styling */
+.checkbox-label {
+    color: var(--text-color);
+}
+
+/* Modal background in dark mode */
+body.dark-mode .modal-background {
+    background-color: rgba(0, 0, 0, 0.85);
+}
+
+/* Modal title improvements */
+.modal-card-title {
+    display: flex;
+    align-items: center;
+    font-size: 1.25rem !important;
+}
+
+.modal-card-title .icon {
+    margin-right: 10px;
+}
+
+body.dark-mode .modal-card-title {
+    color: var(--text-color);
+    font-weight: 600;
+}
+
+/* Top navbar button styles */
+.navbar-item .button,
+.navbar-item .info-display {
+    margin: 0;
+}
+
+/* Hover effect for all buttons */
+.navbar-item .button:hover,
+.info-display.clickable:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Border styles only for specific buttons */
+.navbar-item .button.is-primary:hover {
+    border-color: var(--primary-color);
+}
+
+/* Logout button special styling */
+.navbar-item .button.is-danger:hover {
+    border-color: var(--danger-color);
+}
+
+/* Ensure Welcome button and room display have no border on hover */
+.navbar-item .button.is-light:hover,
+.info-display.clickable:hover {
+    border-color: transparent;
+}
+
+/* Button background colors - light mode */
+.button.is-primary {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.button.is-danger {
+    background-color: var(--danger-color);
+    color: white;
+}
+
+.button.is-light {
+    background-color: var(--light-color);
+    color: var(--text-color);
+}
+
+/* Info display styles */
+.info-display {
+    min-width: 120px;
+    background-color: var(--card-bg);
+    border-radius: 6px;
+}
+
+.info-display.clickable {
+    cursor: pointer;
+}
+
+.info-display .separator {
+    color: var(--text-color);
+    opacity: 0.5;
+    margin: 0 0.5rem;
+}
+
+/* Dark mode button styling */
+body.dark-mode .navbar-item .button,
+body.dark-mode .info-display {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    background-color: #363636;
+    color: white;
+}
+
+body.dark-mode .navbar-item .button:hover,
+body.dark-mode .info-display.clickable:hover {
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    transform: translateY(-3px);
+}
+
+/* Dark mode borders */
+body.dark-mode .button.is-primary:hover {
+    border-color: var(--primary-color);
+    background-color: #363636;
+}
+
+/* Dark mode logout button special styling */
+body.dark-mode .button.is-danger:hover {
+    border-color: var(--danger-color);
+    background-color: #363636;
+}
+
+/* Ensure Welcome button and room display have no border in dark mode */
+body.dark-mode .button.is-light:hover,
+body.dark-mode .info-display.clickable:hover {
+    border-color: transparent;
+    background-color: #363636;
+}
+
+/* Navbar last refresh display */
+.navbar-last-refresh {
+    margin-left: 0.5rem;
+    display: flex;
+    align-items: center;
+}
+
+.navbar-last-refresh h2 {
+    font-size: 0.9rem;
+    color: var(--text-color);
+    opacity: 0.9;
+    margin: 0;
+    white-space: nowrap;
+}
+
+.desktop-only {
+    display: flex;
+}
+
+/* Desktop styles */
+@media screen and (min-width: 1200px) {
+    .navbar-menu-items {
+        display: flex !important;
+        position: static !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+        background: none !important;
+        flex-direction: row !important;
+    }
+
+    .navbar-item {
+        padding: 0 0.5rem;
+        display: flex;
+        align-items: center;
+    }
+
+    .navbar-item .button,
+    .navbar-item .info-display {
+        height: var(--component-height);
+    }
+
+    .info-display {
+        margin: 0 0.25rem;
+    }
+
+    .user-info-wrapper,
+    .room-info-wrapper,
+    .settings-wrapper,
+    .logout-wrapper {
+        flex-direction: row !important;
+        border: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        width: auto !important;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .mobile-stack-item {
+        width: auto !important;
+        margin: 0 !important;
+    }
+
+    .navbar-burger {
+        display: none;
+    }
+
+    .navbar-mobile-section {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .info-display,
+    .button {
+        width: auto !important;
+        min-width: var(--min-component-width) !important;
+        max-width: var(--max-component-width) !important;
+    }
+
+    .info-display.non-clickable {
+        width: auto !important;
+        min-width: fit-content !important;
+    }
+
+    .icon-only-view {
+        display: none;
+    }
+
+    .navbar-last-refresh {
+        display: flex;
+    }
+}
+
+/* Medium-sized screens - icon only navbar */
+@media screen and (min-width: 769px) and (max-width: 1199px) {
+    .navbar {
+        padding: 0.5rem 1rem;
+        background-color: var(--card-bg);
+        border-bottom: 1px solid var(--border-color);
+        min-height: 3.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .navbar-menu-items {
+        display: flex !important;
+        position: static !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+        background: transparent !important;
+        flex-direction: row !important;
+    }
+
+    .navbar-burger {
+        display: none;
+    }
+
+    /* Icon-only navbar layout */
+    .navbar-mobile-section {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        margin-left: auto;
+        gap: 0.5rem;
+    }
+
+    /* Base styles for all navbar buttons */
+    .navbar-mobile-section .button,
+    .navbar-mobile-section .info-display:not([title*="Go to my room"]) {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 36px !important;
+        height: 36px !important;
+        min-width: 36px !important;
+        max-width: 36px !important;
+        padding: 0 !important;
+        margin: 0 0.25rem !important;
+        position: relative !important;
+        border-radius: 8px !important;
+    }
+
+    /* Properly center the icons within their containers */
+    .navbar-mobile-section .button .icon,
+    .navbar-mobile-section .info-display:not([title*="Go to my room"]) .icon {
+        margin: 0 !important;
+        position: absolute !important;
+        top: 50% !important;
+        left: 50% !important;
+        transform: translate(-50%, -50%) !important;
+    }
+
+    /* Hide text, show only icons */
+    .navbar-mobile-section .button span:not(.icon),
+    .navbar-mobile-section .info-display:not([title*="Go to my room"]) span:not(.icon) {
+        display: none !important;
+    }
+
+    /* Keep room display at normal width */
+    .navbar-mobile-section .info-display[title*="Go to my room"] {
+        display: inline-flex !important;
+        min-width: var(--min-component-width) !important;
+        max-width: var(--max-component-width) !important;
+        padding: 0 0.75rem !important;
+        margin: 0 0.25rem !important;
+        height: 36px !important;
+        border-radius: 8px !important;
+    }
+
+    .navbar-mobile-section .info-display[title*="Go to my room"] .icon {
+        margin-right: 0.5rem !important;
+    }
+
+    .navbar-mobile-section .info-display[title*="Go to my room"] .separator {
+        display: inline-block !important;
+        margin: 0 0.5rem !important;
+    }
+
+    /* Container styling */
+    .user-info-wrapper,
+    .room-info-wrapper,
+    .settings-wrapper,
+    .logout-wrapper {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        border: none !important;
+        gap: 0.5rem !important;
+    }
+
+    .navbar-last-refresh {
+        display: flex;
+        margin-right: 0;
+        margin-left: 0.75rem;
+    }
+
+    .navbar-last-refresh h2 {
+        font-size: 0.8rem;
+    }
+}
+
+/* Mobile navbar styling */
+@media screen and (max-width: 768px) {
+    .navbar {
+        padding: 0.5rem 1rem !important;
+        min-height: 3.25rem !important;
+        position: sticky !important;
+        backdrop-filter: blur(10px) !important;
+        background-color: var(--card-bg) !important;
+        border-bottom: 1px solid var(--border-color) !important;
+        justify-content: space-between;
+    }
+
+    .navbar-brand {
+        width: auto;
+        justify-content: flex-start !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 0.75rem !important;
+        background: transparent !important;
+    }
+
+    .navbar-brand img {
+        height: 2.75rem;
+    }
+
+    .content-wrapper {
+        padding-top: 0;
+    }
+
+    .desktop-only {
+        display: none;
+    }
+
+    .navbar-last-refresh {
+        display: flex;
+        margin-left: 0;
+        margin-right: auto;
+    }
+
+    .navbar-burger {
+        display: flex;
+    }
+
+    .navbar-menu-items {
+        display: none;
+        position: fixed;
+        top: 5rem;
+        left: 0;
+        right: 0;
+        max-height: calc(100vh - 5rem);
+        background-color: var(--card-bg);
+        z-index: 30;
+        overflow-y: auto;
+        padding: 1rem;
+        animation: slideIn 0.3s ease-out;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .navbar-menu-items.is-active {
+        display: block;
+        position: absolute !important;
+        top: 100% !important;
+        left: 0 !important;
+        right: 0 !important;
+        background: var(--body-bg) !important;
+        padding: 0.5rem !important;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 0.5rem !important;
+        z-index: 30 !important;
+    }
+
+    /* Animation for menu slide in */
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .icon-only-view {
+        display: none;
+    }
+
+    .navbar-mobile-section {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 0.5rem !important;
+        width: 100% !important;
+        padding: 0 1rem !important;
+    }
+
+    .button,
+    .info-display,
+    .info-display.non-clickable {
+        width: 100% !important;
+        min-width: 100% !important;
+        max-width: 100% !important;
+        justify-content: flex-start !important;
+        padding: 0 1rem !important;
+        text-align: left !important;
+    }
+
+    .button .icon,
+    .info-display .icon {
+        width: 1.25rem !important;
+        height: 1.25rem !important;
+        margin-right: 1rem !important;
+    }
+
+    .mobile-stack-item {
+        width: 100% !important;
+        min-width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+    }
+
+    .user-info-wrapper,
+    .room-info-wrapper,
+    .settings-wrapper,
+    .logout-wrapper {
+        width: 100% !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 0.5rem !important;
+        padding: 0.5rem 0 !important;
+    }
+
+    /* Mobile Menu Backdrop */
+    .navbar-menu-backdrop {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: transparent;
+        z-index: 29;
+    }
+
+    .navbar-menu-backdrop.is-active {
+        display: block;
+    }
+
+    .navbar-last-refresh {
+        display: flex;
+        margin-left: 0;
+        margin-right: auto;
+    }
+
+    .navbar-last-refresh h2 {
+        font-size: 0.75rem;
+    }
+}
+
+/* Mobile button hover states */
+@media screen and (max-width: 768px) {
+
+    .navbar-item .button:hover,
+    .info-display.clickable:hover,
+    .theme-toggle:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 3px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Log out button - make it full width */
+    .logout-wrapper {
+        padding-bottom: 0 !important;
+    }
+
+    .logout-wrapper .button.is-danger {
+        width: 100% !important;
+        justify-content: center;
+        border-radius: 6px;
+    }
+}
+
+/* ... rest of your existing styles ... */
+body.dark-mode .react-select__input-container {
+    color: #ffffff !important;
+}
+
+body.dark-mode .react-select__input {
+    color: #ffffff !important;
+}
+
+/* Button and info display icon styles */
+.button,
+.info-display {
+    height: var(--component-height);
+    padding: 0 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.95rem;
+}
+
+.button .icon,
+.info-display .icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.25rem;
+    height: 1.25rem;
+    flex-shrink: 0;
+    margin: 0;
+}
+
+.info-display .separator {
+    color: var(--text-color);
+    opacity: 0.5;
+    margin: 0 0.5rem;
+}
+
+/* Mobile view adjustments */
+@media screen and (max-width: 768px) {
+
+    .button,
+    .info-display {
+        width: 100% !important;
+        padding: 0 1rem !important;
+        justify-content: flex-start !important;
+    }
+
+    .button .icon,
+    .info-display .icon {
+        width: 1.25rem !important;
+        height: 1.25rem !important;
+        margin: 0 !important;
+    }
+}
+
+/* Image Editor Dark Mode Styles */
+body.dark-mode .e-image-editor {
+    background-color: var(--card-bg) !important;
+    color: var(--text-color) !important;
+}
+
+body.dark-mode .e-image-editor .e-toolbar {
+    background-color: var(--header-bg) !important;
+    border-color: var(--border-color) !important;
+}
+
+body.dark-mode .e-image-editor .e-toolbar .e-toolbar-items {
+    background-color: var(--header-bg) !important;
+}
+
+body.dark-mode .e-image-editor .e-toolbar .e-toolbar-item .e-tbar-btn {
+    background-color: transparent !important;
+    color: var(--text-color) !important;
+}
+
+body.dark-mode .e-image-editor .e-toolbar .e-toolbar-item .e-tbar-btn:hover {
+    background-color: var(--light-color) !important;
+}
+
+body.dark-mode .e-image-editor .e-canvas-container {
+    background-color: var(--body-bg) !important;
+}
+
+body.dark-mode .e-image-editor .e-popup {
+    background-color: var(--card-bg) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-color) !important;
+}
+
+body.dark-mode .e-image-editor .e-btn {
+    background-color: var(--light-color) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-color) !important;
+}
+
+body.dark-mode .e-image-editor .e-btn:hover {
+    background-color: var(--card-bg-hover) !important;
+}
+
+body.dark-mode .e-image-editor .e-numeric,
+body.dark-mode .e-image-editor .e-input,
+body.dark-mode .e-image-editor .e-dropdownlist {
+    background-color: var(--input-bg) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-color) !important;
+}
+
+body.dark-mode .e-image-editor .e-dropdown-popup {
+    background-color: var(--card-bg) !important;
+    border-color: var(--border-color) !important;
+}
+
+body.dark-mode .e-image-editor .e-dropdown-popup .e-item {
+    color: var(--text-color) !important;
+}
+
+body.dark-mode .e-image-editor .e-dropdown-popup .e-item.e-selected,
+body.dark-mode .e-image-editor .e-dropdown-popup .e-item:hover {
+    background-color: var(--light-color) !important;
+}
+
+/* Style adjustments for App.js info-display */
+.search-container .info-display {
+    min-width: var(--min-component-width) !important;
+    max-width: var(--max-component-width) !important;
+    width: auto !important;
+    padding: 0 0.75rem !important;
+    justify-content: flex-start !important;
+    height: var(--component-height) !important;
+    box-sizing: border-box !important;
+}
+
+/* Ensure that this is never affected by icon-only styles */
+.search-container .info-display span,
+.search-container .info-display .separator {
+    display: inline-block !important;
+}
+
+/* Button styles for consistency */
+.button,
+.info-display {
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    transition: all 0.3s ease;
+}
+
+/* Dark mode-specific navbar consistency */
+body.dark-mode .navbar {
+    background-color: var(--card-bg) !important;
+    border-bottom: 1px solid var(--border-color);
+}
+
+/* Hamburger menu styling */
+.navbar-burger {
+    display: none;
+    width: 3rem;
+    height: 3rem;
+    position: relative;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    margin-left: auto;
+}
+
+.navbar-burger:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.navbar-burger span {
+    background-color: var(--text-color);
+    display: block;
+    height: 2px;
+    position: absolute;
+    width: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    transform-origin: center;
+    transition: all 0.2s ease-out;
+}
+
+.navbar-burger span:nth-child(1) {
+    top: calc(50% - 8px);
+}
+
+.navbar-burger span:nth-child(2) {
+    top: 50%;
+}
+
+.navbar-burger span:nth-child(3) {
+    top: calc(50% + 8px);
+}
+
+.navbar-burger.is-active span:nth-child(1) {
+    transform: translateX(-50%) translateY(8px) rotate(45deg);
+}
+
+.navbar-burger.is-active span:nth-child(2) {
+    opacity: 0;
+}
+
+.navbar-burger.is-active span:nth-child(3) {
+    transform: translateX(-50%) translateY(-8px) rotate(-45deg);
+}
+
+/* Mobile navbar styling */
+@media screen and (max-width: 768px) {
+    .navbar-burger {
+        display: flex;
+    }
+}
+
+/* Mobile view - stack the search container elements */
+@media screen and (max-width: 768px) {
+    .search-container {
+        flex-direction: column;
+        gap: 0.5rem;
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        align-items: center;
+    }
+
+    .search-container>div {
+        width: 90% !important;
+        max-width: 350px !important;
+    }
+
+    .search-container .info-display {
+        width: 90% !important;
+        max-width: 350px !important;
+        min-width: 0 !important;
+        margin: 0 auto;
+    }
+
+    /* Ensure react-select control has the same width */
+    .search-container .react-select__control {
+        min-width: 100% !important;
+        max-width: 100% !important;
+        width: 100% !important;
+    }
 }

@@ -1,9 +1,24 @@
 import 'bulma/css/bulma.min.css';
-import React, { createRef, useContext, useRef } from 'react';
+import React, { createRef, useContext, useEffect, useRef, useState } from 'react';
 import { MyContext } from './MyContext';
 
 function FloorGrid({ gridData })
 {
+    const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+    const divRefs = useRef(gridData.suites.map(() => createRef()));
+    const divRef = useRef(null);
+
+    useEffect(() =>
+    {
+        const handleResize = () =>
+        {
+            setIsMobile(window.innerWidth <= 768);
+        };
+
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
     const {
         print,
         setIsModalOpen,
@@ -18,6 +33,7 @@ function FloorGrid({ gridData })
         setPullMethod,
         cellColors,
         selectedID,
+        userID,
         onlyShowBumpableRooms,
         userMap,
         dormMapping,
@@ -25,9 +41,9 @@ function FloorGrid({ gridData })
         setIsFroshModalOpen,
         setIsSuiteNoteModalOpen,
         selectedPalette,
-
         roomRefs,
-        activeTab
+        activeTab,
+        isDarkMode
     } = useContext(MyContext);
 
     function capitalizeFirstLetterOfEachWord(str)
@@ -75,25 +91,13 @@ function FloorGrid({ gridData })
         });
     }
 
-    // entire collection of cells
-    const gridContainerStyle = {
-        display: 'grid',
-        gridTemplateColumns: `1fr 1fr 1fr 1fr 1fr ${(activeTab === 'Atwood' || (activeTab === 'Drinkward' || activeTab === 'Case')) ? '1fr' : ''} ${activeTab === 'Case' ? '1fr' : ''}`,
-        gap: '4px',
-        maxWidth: '900px',
-        margin: '0 auto',
-        background: '#f5f5f5',
-        padding: '4px',
-        borderRadius: '8px',
-    };
-
     // each cell in floorgrid
     const gridItemStyle = {
         borderRadius: '4px',
         padding: '8px 12px',
         textAlign: 'center',
         fontSize: '0.95rem',
-        color: '#2a2a2a',
+        color: isDarkMode ? '#f5f5f5' : '#2a2a2a',
         fontWeight: '500',
         overflow: 'hidden',
         whiteSpace: 'nowrap',
@@ -103,22 +107,34 @@ function FloorGrid({ gridData })
         userSelect: 'none',
     };
 
-    const divRefs = useRef(gridData.suites.map(() => createRef()));
+    // entire collection of cells
+    const gridContainerStyle = {
+        display: 'grid',
+        gridTemplateColumns: isMobile ?
+            `45px 65px ${getOccupantColumns()}` :
+            `70px 150px 1fr 1fr 1fr ${(activeTab === 'Atwood' || activeTab === 'Drinkward' || activeTab === 'Case') ? '1fr' : ''} ${activeTab === 'Case' ? '1fr' : ''}`,
+        gap: '4px',
+        maxWidth: '900px',
+        margin: '0 auto',
+        background: 'var(--grid-container-bg)',
+        padding: '4px',
+        borderRadius: '8px',
+    };
 
-    const divRef = useRef(null);
-
-    // useEffect(() => {
-    //   if (divRef.current && isSuiteNoteModalOpen && divRef.current.offsetWidth !== 0 && divRef.current.offsetHeight !== 0) {
-    //     // commented console.log ("Selected room object;");
-    //     // commented console.log ('Width:', divRef.current.offsetWidth);
-    //     // commented console.log ('Height:', divRef.current.offsetHeight);
-    //     // setSuiteDimensions({
-    //     //   width: divRef.current.offsetWidth,
-    //     //   height: divRef.current.offsetHeight
-    //     // });
-    //   }
-    // }, [isSuiteNoteModalOpen]);
-
+    // Helper function to determine occupant columns based on dorm type
+    function getOccupantColumns()
+    {
+        if (activeTab === 'Case')
+        {
+            return '1fr 1fr 1fr 1fr'; // 4 occupants
+        } else if (activeTab === 'Atwood' || activeTab === 'Drinkward')
+        {
+            return '1fr 1fr 1fr'; // 3 occupants
+        } else
+        {
+            return '1fr 1fr'; // 2 occupants
+        }
+    }
 
     // darkens given color by a factor, using match
     function darken(color, factor)
@@ -131,6 +147,25 @@ function FloorGrid({ gridData })
             return hex.length === 1 ? `0${hex}` : hex;
         });
         return `#${newColor.join('')}`;
+    }
+
+    // Lighten a color - useful for dark mode
+    function lighten(color, factor)
+    {
+        const f = parseInt(factor, 10) || 0;
+        const RGB = color.substring(1).match(/.{2}/g);
+        const newColor = RGB.map((c) =>
+        {
+            const hex = Math.max(0, Math.min(255, parseInt(c, 16) + f)).toString(16);
+            return hex.length === 1 ? `0${hex}` : hex;
+        });
+        return `#${newColor.join('')}`;
+    }
+
+    // Choose appropriate color adjustment based on mode
+    function adjustColor(color, factor)
+    {
+        return isDarkMode ? lighten(color, factor) : darken(color, factor);
     }
 
     const updateSuiteNotes = (room, ref) =>
@@ -148,37 +183,50 @@ function FloorGrid({ gridData })
     // given parameters, return grid item style with correct background color shading
     const getGridItemStyle = (room, occupancy, maxOccupancy, suiteIndex, pullPriority) =>
     {
-
         // Not valid for pulling
         if (occupancy < maxOccupancy || !userMap || !userMap[selectedID])
         {
             return {
                 ...gridItemStyle,
-                backgroundColor: "black"
+                backgroundColor: selectedPalette.unbumpableRoom,
+                color: isDarkMode ? '#ffffff' : '#2a2a2a',
             };
         }
+
+        // Current user lives in this room
+        if (userID && userMap && userMap[userID] && room.roomUUID === userMap[userID].RoomUUID)
+        {
+            return {
+                ...gridItemStyle,
+                backgroundColor: selectedPalette.currentUserRoom,
+                color: isDarkMode ? '#ffffff' : '#2a2a2a',
+            };
+        }
+
         // Selected person lives in this room
         if (room.roomUUID === userMap[selectedID].RoomUUID)
         {
             return {
                 ...gridItemStyle,
                 backgroundColor: selectedPalette.selectedUserRoom,
+                color: isDarkMode ? '#ffffff' : '#2a2a2a',
             };
         }
 
         let backgroundColor = (suiteIndex % 2 === 0 ? selectedPalette.evenSuite : selectedPalette.oddSuite);
         if (pullPriority.isPreplaced)
         {
-            backgroundColor = darken(backgroundColor, 50); // darken the color by 10%
+            backgroundColor = adjustColor(backgroundColor, 50);
         }
         if (!checkBumpable(pullPriority) && onlyShowBumpableRooms)
         {
-            backgroundColor = darken(backgroundColor, 50); // darken the color by 10%
+            backgroundColor = adjustColor(backgroundColor, 50);
         }
 
         return {
             ...gridItemStyle,
-            backgroundColor
+            backgroundColor,
+            color: isDarkMode ? '#ffffff' : '#2a2a2a',
         };
     };
 
@@ -189,12 +237,14 @@ function FloorGrid({ gridData })
         fontSize: '0.9rem',
         letterSpacing: '0.02em',
         cursor: 'default',
+        color: isDarkMode ? '#ffffff' : '#2a2a2a',
     };
 
     const pullMethodStyle = {
         ...gridItemStyle,
         backgroundColor: selectedPalette.pullMethod,
         cursor: 'default',
+        color: isDarkMode ? '#ffffff' : '#2a2a2a',
     };
 
     const handleCellClick = async (roomNumber) =>
@@ -354,15 +404,31 @@ function FloorGrid({ gridData })
 
     return (
         <div style={gridContainerStyle} className="grid-container">
-            <div style={roomNumberStyle} className="grid-header-cell"><strong>Room #</strong></div>
-            <div style={roomNumberStyle} className="grid-header-cell"><strong>Pull</strong></div>
-            <div style={roomNumberStyle} className="grid-header-cell"><strong>Suite</strong></div>
-            <div style={roomNumberStyle} className="grid-header-cell"><strong>Occupant 1</strong></div>
-            <div style={roomNumberStyle} className="grid-header-cell"><strong>Occupant 2</strong></div>
+            <div style={roomNumberStyle} className="grid-cell">
+                <strong style={{ color: isDarkMode ? '#ffffff' : 'inherit' }}>Room #</strong>
+            </div>
+            <div style={roomNumberStyle} className="grid-cell">
+                <strong style={{ color: isDarkMode ? '#ffffff' : 'inherit' }}>Pull</strong>
+            </div>
+            {!isMobile && (
+                <div style={roomNumberStyle} className="grid-cell">
+                    <strong style={{ color: isDarkMode ? '#ffffff' : 'inherit' }}>Suite</strong>
+                </div>
+            )}
+            <div style={roomNumberStyle} className="grid-cell">
+                <strong style={{ color: isDarkMode ? '#ffffff' : 'inherit' }}>Occupant 1</strong>
+            </div>
+            <div style={roomNumberStyle} className="grid-cell">
+                <strong style={{ color: isDarkMode ? '#ffffff' : 'inherit' }}>Occupant 2</strong>
+            </div>
             {((activeTab === 'Atwood' || activeTab === 'Drinkward') || activeTab === 'Case') &&
-                <div style={roomNumberStyle} className="grid-header-cell"><strong>Occupant 3</strong></div>}
+                <div style={roomNumberStyle} className="grid-cell">
+                    <strong style={{ color: isDarkMode ? '#ffffff' : 'inherit' }}>Occupant 3</strong>
+                </div>}
             {activeTab === 'Case' &&
-                <div style={roomNumberStyle} className="grid-header-cell"><strong>Occupant 4</strong></div>}
+                <div style={roomNumberStyle} className="grid-cell">
+                    <strong style={{ color: isDarkMode ? '#ffffff' : 'inherit' }}>Occupant 4</strong>
+                </div>}
 
             {[...gridData.suites].map((suite, suiteIndex) => (
                 suite.rooms.map((room, roomIndex) => (
@@ -383,7 +449,7 @@ function FloorGrid({ gridData })
                         >
                             {getPullMethodByRoomNumber(room.roomNumber)}
                         </div>
-                        {roomIndex === 0 && (
+                        {!isMobile && roomIndex === 0 && (
                             <div
                                 style={{
                                     ...pullMethodStyle,

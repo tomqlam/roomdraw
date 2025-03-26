@@ -54,6 +54,11 @@
     animation: fadeIn 0.2s ease forwards;
 }
 
+body.dark-mode .color-picker-popover {
+    background: #333;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
 @keyframes fadeIn {
     from {
         opacity: 0;
@@ -80,6 +85,12 @@
     color: #333;
     text-align: center;
     font-family: monospace;
+}
+
+body.dark-mode .color-input-container input {
+    background-color: #444;
+    border-color: #555;
+    color: #fff;
 }
 
 /* Override react-colorful styles */
@@ -148,4 +159,35 @@
 
 .button .icon {
     margin-right: 0.25rem;
+}
+
+/* Dark mode specific adjustments for color pickers */
+body.dark-mode .react-colorful__hue {
+    border: 1px solid #444;
+}
+
+body.dark-mode .react-colorful__saturation {
+    border: 1px solid #444;
+}
+
+body.dark-mode .modal-card-head {
+    border-bottom: 1px solid #333 !important;
+}
+
+body.dark-mode .modal-card-foot {
+    border-top: 1px solid #333 !important;
+}
+
+/* Improve delete button visibility in dark mode */
+body.dark-mode .delete {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+body.dark-mode .delete:hover {
+    background-color: rgba(255, 255, 255, 0.4);
+}
+
+body.dark-mode .delete::before,
+body.dark-mode .delete::after {
+    background-color: #000;
 }
