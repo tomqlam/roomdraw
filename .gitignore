@@ -3,3 +3,5 @@ backend/tmp/
 .DS_Store
 node_modules
 roomdraw_env
+.env.production
+.env.development

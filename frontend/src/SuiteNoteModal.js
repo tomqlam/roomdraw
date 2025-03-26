@@ -1,13 +1,12 @@
-import React, { useState, useContext, useEffect } from 'react';
-import { MyContext } from './MyContext';
-import { Browser } from '@syncfusion/ej2-base';
 import { ImageEditorComponent } from '@syncfusion/ej2-react-image-editor';
-import './App.css';
 import Compressor from 'compressorjs';
+import React, { useContext, useEffect, useState } from 'react';
+import './App.css';
+import { MyContext } from './MyContext';
 
-import * as ReactDOM from 'react-dom';
 
-function SuiteNoteModal() {
+function SuiteNoteModal()
+{
 
     const {
         selectedSuiteObject,
@@ -17,7 +16,7 @@ function SuiteNoteModal() {
         setRefreshKey,
         suiteDimensions,
         handleErrorFromTokenExpiry,
-  
+
 
     } = useContext(MyContext);
 
@@ -25,15 +24,18 @@ function SuiteNoteModal() {
     const [loadingSubmit, setLoadingSubmit] = useState(false);
     const [loadingClearNotes, setLoadingClearNotes] = useState(false);
 
-    useEffect(() => {
-        if (selectedSuiteObject) {
+    useEffect(() =>
+    {
+        if (selectedSuiteObject)
+        {
             setSuiteNotes(selectedSuiteObject.suiteDesign);
         }
     }, []);
 
 
 
-    const updateSuiteNotes = (notes) => {
+    const updateSuiteNotes = (notes) =>
+    {
         let imageData = imgObj.current.getImageData();
         const canvas = document.createElement('canvas');
         canvas.width = imageData.width;
@@ -42,15 +44,17 @@ function SuiteNoteModal() {
         context.putImageData(imageData, 0, 0);
 
         // Convert canvas to blob
-        canvas.toBlob((blob) => {
+        canvas.toBlob((blob) =>
+        {
             // Compress the blob
             new Compressor(blob, {
                 quality: 0.5,
-                success: (compressedResult) => {
+                success: (compressedResult) =>
+                {
                     // Store the compressed blob in state
                     setImage(compressedResult);
 
-                    const url = `/suites/design/${selectedSuiteObject.suiteUUID}`;
+                    const url = `${process.env.REACT_APP_API_URL}/suites/design/${selectedSuiteObject.suiteUUID}`;
                     const formData = new FormData();
                     formData.append('suite_design', compressedResult, 'suite_design.jpg');
 
@@ -62,19 +66,24 @@ function SuiteNoteModal() {
                         body: formData,
                     })
                         .then(response => response.json())
-                        .then(data => {
-                            if (data.error) {
-                                if (handleErrorFromTokenExpiry(data)) {
+                        .then(data =>
+                        {
+                            if (data.error)
+                            {
+                                if (handleErrorFromTokenExpiry(data))
+                                {
                                     return;
                                 };
-                            } else {
+                            } else
+                            {
                                 // updated suite successfully 
                                 setIsSuiteNoteModalOpen(false);
                                 setRefreshKey(prevKey => prevKey + 1);
                                 // commented console.log ("refreshing");
                             }
                         })
-                        .catch((error) => {
+                        .catch((error) =>
+                        {
                             console.error('Error:', error);
                         });
                 },
@@ -83,8 +92,9 @@ function SuiteNoteModal() {
     }
 
 
-    const deleteSuiteNotes = (notes) => {
-        fetch(`/suites/design/remove/${selectedSuiteObject.suiteUUID}`, {
+    const deleteSuiteNotes = (notes) =>
+    {
+        fetch(`${process.env.REACT_APP_API_URL}/suites/design/remove/${selectedSuiteObject.suiteUUID}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -92,17 +102,21 @@ function SuiteNoteModal() {
             },
         })
             .then(response => response.json())
-            .then(data => {
-                if (data.error) {
+            .then(data =>
+            {
+                if (data.error)
+                {
                     // commented console.log (data.error);
-                } else {
+                } else
+                {
                     // updated suite successfully 
                     setIsSuiteNoteModalOpen(false);
                     setRefreshKey(prevKey => prevKey + 1);
 
                 }
             })
-            .catch((error) => {
+            .catch((error) =>
+            {
                 console.error('Error:', error);
             });
     }
@@ -118,8 +132,10 @@ function SuiteNoteModal() {
     //     }
     //   }
 
-    useEffect(() => {
-        if (imgObj.current) {
+    useEffect(() =>
+    {
+        if (imgObj.current)
+        {
             // const width = suiteDimensions.width * 3; // replace with your desired width
             // const height = suiteDimensions.height * 3; // replace with your desired height
 
@@ -148,7 +164,8 @@ function SuiteNoteModal() {
 
             // // Convert the canvas to a data URL
             // const url = canvas.toDataURL('image/png');
-            if (selectedSuiteObject.suiteDesign) {
+            if (selectedSuiteObject.suiteDesign)
+            {
                 const url = selectedSuiteObject.suiteDesign;
                 // commented console.log (selectedSuiteObject);
 
@@ -160,7 +177,8 @@ function SuiteNoteModal() {
     }, []);
     const [image, setImage] = React.useState(null);
 
-    const handleSave = () => {
+    const handleSave = () =>
+    {
         let imageData = imgObj.current.getImageData();
         const canvas = document.createElement('canvas');
         canvas.width = imageData.width;
@@ -177,7 +195,8 @@ function SuiteNoteModal() {
 
         // Write the bytes of the string to a typed array
         let ia = new Uint8Array(byteString.length);
-        for (let i = 0; i < byteString.length; i++) {
+        for (let i = 0; i < byteString.length; i++)
+        {
             ia[i] = byteString.charCodeAt(i);
         }
 
@@ -199,7 +218,7 @@ function SuiteNoteModal() {
                 </header>
                 <section className="modal-card-body">
                     <p>First you must upload any picture, then crop & overlay text on top!</p>
-                    <p>Please do not submit inappropriate pictures, or pictures too thin/tall.</p> <br/>
+                    <p>Please do not submit inappropriate pictures, or pictures too thin/tall.</p> <br />
                     {/* <input type="file" id="fileUpload" /> */}
                     <div id="container" style={{ width: '100%', height: '50vh' }}>
                         <ImageEditorComponent toolbar={['Crop', 'Transform', 'Annotate', 'Image', 'ZoomIn', 'ZoomOut',]} ref={imgObj} />
@@ -213,11 +232,13 @@ function SuiteNoteModal() {
                     /> */}
                 </section>
                 <footer className="modal-card-foot" style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <button className={`button is-primary ${loadingSubmit && "is-loading"}`} onClick={() => {
+                    <button className={`button is-primary ${loadingSubmit && "is-loading"}`} onClick={() =>
+                    {
                         setLoadingSubmit(true);
                         updateSuiteNotes(suiteNotes);
                     }}>Submit</button>
-                    <button className={`button is-danger ${loadingClearNotes && "is-loading"}`} onClick={() => {
+                    <button className={`button is-danger ${loadingClearNotes && "is-loading"}`} onClick={() =>
+                    {
                         setLoadingClearNotes(true);
                         deleteSuiteNotes();
                     }}>Delete all notes</button>

@@ -4,39 +4,30 @@ import (
 	"database/sql"
 	"fmt"
 	"net/url"
-	"os"
 	"strings"
 	"time"
 
-	"github.com/joho/godotenv"
+	"roomdraw/backend/pkg/config"
+
 	_ "github.com/lib/pq"
 )
 
 var DB *sql.DB
 
 func InitDB() error {
-	err := godotenv.Load(".env")
-	if err != nil {
-		return fmt.Errorf("error loading .env file: %v", err)
-	}
-
-	SQLPass := os.Getenv("SQL_PASS")
-	SQLIP := os.Getenv("SQL_IP")
-	SQLDBName := os.Getenv("SQL_DB_NAME")
-	SQLUser := os.Getenv("SQL_USER")
-	SQLPort := os.Getenv("SQL_PORT")
-	useSSL := os.Getenv("USE_SSL")
 	// replace every space with %20
-	encodedPass := url.QueryEscape(SQLPass)
+	encodedPass := url.QueryEscape(config.SQLPass)
 	// replace + with %20
 	encodedPass = strings.Replace(encodedPass, "+", "%20", -1)
 
 	// Construct the connection string
-	connStr := fmt.Sprintf("postgresql://%s:%s@%s:%s/%s?sslmode=%s", SQLUser, encodedPass, SQLIP, SQLPort, SQLDBName, useSSL)
+	connStr := fmt.Sprintf("postgresql://%s:%s@%s:%s/%s?sslmode=%s",
+		config.SQLUser, encodedPass, config.SQLIP, config.SQLPort, config.SQLDBName, config.UseSSL)
 
-	// log.Println("connStr", connStr)
+	fmt.Println("Connection string:", connStr)
 
 	// Open the database connection
+	var err error
 	DB, err = sql.Open("postgres", connStr)
 	if err != nil {
 		return fmt.Errorf("error opening database connection: %v", err)

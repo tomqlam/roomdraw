@@ -798,6 +798,15 @@ body.dark-mode input[type="checkbox"] {
     background-color: var(--body-bg);
 }
 
+/* Mobile view - ensure one floor grid per row */
+@media screen and (max-width: 768px) {
+    .columns.is-centered.is-multiline .column {
+        flex: 0 0 100% !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+}
+
 /* Floorplan styles */
 .floorplan-container {
     display: flex;

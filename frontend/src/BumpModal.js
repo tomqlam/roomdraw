@@ -179,7 +179,7 @@ function BumpModal()
         setLoadingSubmit(true);
         return new Promise((resolve) =>
         {
-            fetch(`/rooms/${selectedRoomObject.roomUUID}`, {
+            fetch(`${process.env.REACT_APP_API_URL}/rooms/${selectedRoomObject.roomUUID}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -291,7 +291,7 @@ function BumpModal()
     {
         return new Promise((resolve) =>
         {
-            fetch(`/rooms/${roomUUID}`, {
+            fetch(`${process.env.REACT_APP_API_URL}/rooms/${roomUUID}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

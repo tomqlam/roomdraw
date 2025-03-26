@@ -4,10 +4,8 @@ import (
 	"fmt"
 	"log"
 	"net/smtp"
-	"os"
+	"roomdraw/backend/pkg/config"
 	"roomdraw/backend/pkg/models"
-
-	"github.com/joho/godotenv"
 )
 
 type EmailService struct {
@@ -18,17 +16,12 @@ type EmailService struct {
 }
 
 func NewEmailService() *EmailService {
-	err := godotenv.Load(".env")
-	if err != nil {
-		log.Printf("Error loading .env file: %v", err)
-	}
-
-	log.Println("os.Getenv(EMAIL_USERNAME): ", os.Getenv("EMAIL_USERNAME"))
+	log.Println("Email username:", config.EmailUsername)
 	return &EmailService{
 		smtpHost:    "smtp.cs.hmc.edu",
 		smtpPort:    "587",
-		senderEmail: os.Getenv("EMAIL_USERNAME") + "@cs.hmc.edu",
-		senderPass:  os.Getenv("EMAIL_PASSWORD"),
+		senderEmail: config.EmailUsername + "@cs.hmc.edu",
+		senderPass:  config.EmailPassword,
 	}
 }
 

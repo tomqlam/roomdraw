@@ -35,7 +35,7 @@ function Navbar()
         if (!userId || !localStorage.getItem('jwt')) return null;
         try
         {
-            const response = await fetch(`/users/${userId}`, {
+            const response = await fetch(`${process.env.REACT_APP_API_URL}/users/${userId}`, {
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
                 }
@@ -71,7 +71,7 @@ function Navbar()
                     {
                         try
                         {
-                            const roomResponse = await fetch(`/rooms/${data.RoomUUID}`, {
+                            const roomResponse = await fetch(`${process.env.REACT_APP_API_URL}/rooms/${data.RoomUUID}`, {
                                 headers: {
                                     'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
                                 }

@@ -16,7 +16,7 @@ const UserSettingsModal = ({ isOpen, onClose }) =>
             const userEmail = decodedToken.email;
 
             // Fetch current notification preferences
-            fetch(`/users/notifications?email=${encodeURIComponent(userEmail)}`, {
+            fetch(`${process.env.REACT_APP_API_URL}/users/notifications?email=${encodeURIComponent(userEmail)}`, {
                 headers: {
                     'Authorization': `Bearer ${credentials}`,
                 }
@@ -43,7 +43,7 @@ const UserSettingsModal = ({ isOpen, onClose }) =>
         const userEmail = decodedToken.email;
 
         setLoading(true);
-        fetch(`/users/notifications`, {
+        fetch(`${process.env.REACT_APP_API_URL}/users/notifications`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

@@ -91,7 +91,7 @@ function App()
 
             try
             {
-                const response = await fetch(`/rooms/${roomUUID}`, {
+                const response = await fetch(`${process.env.REACT_APP_API_URL}/rooms/${roomUUID}`, {
                     headers: {
                         'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
                     }
@@ -181,7 +181,7 @@ function App()
         if (!userId || !localStorage.getItem('jwt')) return null;
         try
         {
-            const response = await fetch(`/users/${userId}`, {
+            const response = await fetch(`${process.env.REACT_APP_API_URL}/users/${userId}`, {
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
                 }
@@ -217,7 +217,7 @@ function App()
                     {
                         try
                         {
-                            const roomResponse = await fetch(`/rooms/${data.RoomUUID}`, {
+                            const roomResponse = await fetch(`${process.env.REACT_APP_API_URL}/rooms/${data.RoomUUID}`, {
                                 headers: {
                                     'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
                                 }
@@ -372,7 +372,7 @@ function App()
     {
         if (localStorage.getItem('jwt'))
         {
-            fetch(`/rooms/indorm/${getRoomUUIDFromUserID(selectedID)}`, {
+            fetch(`${process.env.REACT_APP_API_URL}/rooms/indorm/${getRoomUUIDFromUserID(selectedID)}`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('jwt')}`,

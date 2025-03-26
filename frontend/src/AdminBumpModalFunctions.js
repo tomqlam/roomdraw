@@ -20,7 +20,7 @@ const AdminBumpModalFunctions = ({ closeModal }) =>
 
     function postToFrosh(roomObject)
     {
-        fetch(`/frosh/${roomObject.roomUUID}`, {
+        fetch(`${process.env.REACT_APP_API_URL}/frosh/${roomObject.roomUUID}`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
@@ -45,7 +45,7 @@ const AdminBumpModalFunctions = ({ closeModal }) =>
 
     function preplaceOccupants(roomObject)
     {
-        fetch(`/rooms/preplace/${roomObject.roomUUID}`, {
+        fetch(`${process.env.REACT_APP_API_URL}/rooms/preplace/${roomObject.roomUUID}`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
@@ -75,7 +75,7 @@ const AdminBumpModalFunctions = ({ closeModal }) =>
 
     function removePreplaceOccupants(roomObject)
     {
-        fetch(`/rooms/preplace/${roomObject.roomUUID}`, {
+        fetch(`${process.env.REACT_APP_API_URL}/rooms/preplace/${roomObject.roomUUID}`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('jwt')}`,

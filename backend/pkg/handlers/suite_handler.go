@@ -4,7 +4,7 @@ import (
 	"errors"
 	"log"
 	"net/http"
-	"os"
+	"roomdraw/backend/pkg/config"
 	"roomdraw/backend/pkg/database"
 	"roomdraw/backend/pkg/models"
 	"strings"
@@ -13,7 +13,6 @@ import (
 	"git.sr.ht/~jamesponddotco/bunnystorage-go"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/joho/godotenv"
 )
 
 func SetSuiteDesign(c *gin.Context) {
@@ -210,25 +209,15 @@ func SetSuiteDesignNew(c *gin.Context) {
 	// extract file name from URL
 	currentSuiteDesign = currentSuiteDesign[strings.LastIndex(currentSuiteDesign, "/")+1:]
 
-	readOnlyKey, ok := os.LookupEnv("BUNNYNET_READ_API_KEY")
-	if !ok {
-		log.Fatal("missing env var: BUNNYNET_READ_API_KEY")
-		err = errors.New("missing env var: BUNNYNET_READ_API_KEY")
-		return
-	}
-
-	readWriteKey, ok := os.LookupEnv("BUNNYNET_WRITE_API_KEY")
-	if !ok {
-		log.Fatal("missing env var: BUNNYNET_WRITE_API_KEY")
-		err = errors.New("missing env var: BUNNYNET_WRITE_API_KEY")
-		return
-	}
-
 	// Create new Config to be initialize a Client.
+	log.Println("BunnyNet credentials - Zone:", config.BunnyNetStorageZone)
+	log.Println("BunnyNet credentials - Read Key (first 5 chars):", config.BunnyNetReadAPIKey[:5]+"...")
+	log.Println("BunnyNet credentials - Write Key (first 5 chars):", config.BunnyNetWriteAPIKey[:5]+"...")
+
 	cfg := &bunnystorage.Config{
-		StorageZone: os.Getenv("BUNNYNET_STORAGE_ZONE"),
-		Key:         readWriteKey,
-		ReadOnlyKey: readOnlyKey,
+		StorageZone: config.BunnyNetStorageZone,
+		Key:         config.BunnyNetWriteAPIKey,
+		ReadOnlyKey: config.BunnyNetReadAPIKey,
 		Endpoint:    bunnystorage.EndpointLosAngeles,
 	}
 
@@ -300,20 +289,13 @@ func SetSuiteDesignNew(c *gin.Context) {
 	}
 
 	if uploadRes.Status != http.StatusCreated {
+		log.Println("uploadRes", uploadRes)
 		log.Println("Failed to upload suite design to BunnyStorage:", uploadRes.Status)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload suite design"})
 		return
 	}
 
-	err = godotenv.Load(".env")
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to load .env file"})
-		return
-	}
-
-	cdnURL := os.Getenv("CDN_URL")
-
-	imageUrl := cdnURL + "/suite_designs/" + imageFilename
+	imageUrl := config.CDNURL + "/suite_designs/" + imageFilename
 
 	log.Println(suiteUUID)
 
@@ -433,21 +415,11 @@ func DeleteSuiteDesign(c *gin.Context) {
 	// extract file name from URL
 	currentSuiteDesign = currentSuiteDesign[strings.LastIndex(currentSuiteDesign, "/")+1:]
 
-	readOnlyKey, ok := os.LookupEnv("BUNNYNET_READ_API_KEY")
-	if !ok {
-		log.Fatal("missing env var: BUNNYNET_READ_API_KEY")
-	}
-
-	readWriteKey, ok := os.LookupEnv("BUNNYNET_WRITE_API_KEY")
-	if !ok {
-		log.Fatal("missing env var: BUNNYNET_WRITE_API_KEY")
-	}
-
 	// Create new Config to be initialize a Client.
 	cfg := &bunnystorage.Config{
-		StorageZone: os.Getenv("BUNNYNET_STORAGE_ZONE"),
-		Key:         readWriteKey,
-		ReadOnlyKey: readOnlyKey,
+		StorageZone: config.BunnyNetStorageZone,
+		Key:         config.BunnyNetWriteAPIKey,
+		ReadOnlyKey: config.BunnyNetReadAPIKey,
 		Endpoint:    bunnystorage.EndpointLosAngeles,
 	}
 

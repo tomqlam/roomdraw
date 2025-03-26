@@ -165,7 +165,7 @@ export const MyContextProvider = ({ children }) =>
     {
         if (localStorage.getItem('jwt'))
         {
-            fetch('/users/idmap', {
+            fetch(`${process.env.REACT_APP_API_URL}/users/idmap`, {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
@@ -194,7 +194,7 @@ export const MyContextProvider = ({ children }) =>
     {
         if (localStorage.getItem('jwt'))
         {
-            fetch('/rooms', {
+            fetch(`${process.env.REACT_APP_API_URL}/rooms`, {
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('jwt')}`
                 }
@@ -227,7 +227,7 @@ export const MyContextProvider = ({ children }) =>
     }
     function fetchRoomsForOneDorm(dorm)
     {
-        fetch(`/rooms/simple/${dorm}`, {
+        fetch(`${process.env.REACT_APP_API_URL}/rooms/simple/${dorm}`, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
@@ -286,7 +286,7 @@ export const MyContextProvider = ({ children }) =>
     {
         const promises = dorms.map(dorm =>
         {
-            return fetch(`/rooms/simple/${dorm}`, {
+            return fetch(`${process.env.REACT_APP_API_URL}/rooms/simple/${dorm}`, {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('jwt')}`,

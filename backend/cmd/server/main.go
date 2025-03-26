@@ -6,24 +6,19 @@ import (
 	"roomdraw/backend/pkg/database"
 	"roomdraw/backend/pkg/handlers"
 	"roomdraw/backend/pkg/middleware"
-
-	"os"
 	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
 )
 
 func main() {
-	err := godotenv.Load(".env")
-	if err != nil {
+	// Load configuration once
+	if err := config.LoadConfig(); err != nil {
 		panic(err)
 	}
 
-	requireAuth := (os.Getenv("REQUIRE_AUTH") == "True")
-
-	err = database.InitDB()
+	err := database.InitDB()
 	if err != nil {
 		panic(err)
 	}
@@ -58,7 +53,7 @@ func main() {
 	writeGroup := router.Group("/").Use(middleware.QueueMiddleware(requestQueue))
 	writeGroupAdmin := router.Group("/").Use(middleware.QueueMiddleware(requestQueue))
 
-	if requireAuth {
+	if config.RequireAuth {
 		readGroup.Use(middleware.JWTAuthMiddleware(false))
 		writeGroup.Use(middleware.JWTAuthMiddleware(false))
 		writeGroupAdmin.Use(middleware.JWTAuthMiddleware(true))
@@ -87,7 +82,7 @@ func main() {
 	writeGroupAdmin.POST("/frosh/remove/:roomuuid", handlers.RemoveFroshHandler)
 	writeGroupAdmin.POST("/rooms/preplace/:roomuuid", handlers.PreplaceOccupants)
 
-	log.Println(requireAuth)
+	log.Println("RequireAuth:", config.RequireAuth)
 
 	// Start the server
 	router.Run(config.ServerAddress)

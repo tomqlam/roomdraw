@@ -32,7 +32,7 @@ const BumpFroshModal = () =>
 
     function removeFrosh(roomObject)
     {
-        fetch(`/frosh/remove/${roomObject.roomUUID}`, {
+        fetch(`${process.env.REACT_APP_API_URL}/frosh/remove/${roomObject.roomUUID}`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
@@ -69,7 +69,7 @@ const BumpFroshModal = () =>
         // make an api call to bump the frosh to the target room
         if (localStorage.getItem('jwt'))
         {
-            fetch(`/frosh/bump/${selectedRoomObject.roomUUID}`, {
+            fetch(`${process.env.REACT_APP_API_URL}/frosh/bump/${selectedRoomObject.roomUUID}`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
