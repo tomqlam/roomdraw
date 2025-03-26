@@ -21,6 +21,7 @@ function Navbar()
     const [isBurgerActive, setIsBurgerActive] = useState(false);
     const [currentUserData, setCurrentUserData] = useState(null);
     const [myRoom, setMyRoom] = useState("Unselected"); // to show what room current logged in user is in
+    const [isValidUser, setIsValidUser] = useState(false);
 
     const handleLogout = () =>
     {
@@ -61,8 +62,10 @@ function Navbar()
     {
         const updateCurrentUserData = async () =>
         {
-            if (userID)
+            // Check if user exists in userMap first
+            if (userID && userMap && userMap[userID])
             {
+                setIsValidUser(true);
                 const data = await fetchUserData(userID);
                 if (data)
                 {
@@ -97,10 +100,16 @@ function Navbar()
                         setMyRoom('no room yet');
                     }
                 }
+            } else
+            {
+                // User is not in userMap, treat as guest
+                setIsValidUser(false);
+                setCurrentUserData(null);
+                setMyRoom('Unselected');
             }
         };
         updateCurrentUserData();
-    }, [userID, refreshKey, handleErrorFromTokenExpiry]);
+    }, [userID, refreshKey, handleErrorFromTokenExpiry, userMap]);
 
     return (
         <nav className="navbar" role="navigation" aria-label="main navigation">
@@ -145,10 +154,20 @@ function Navbar()
                             {
                                 if (!credentials) return '';
                                 const decodedToken = jwtDecode(credentials);
+
+                                // Check if user exists in userMap
                                 const userId = Object.keys(userMap || {}).find(
                                     id => userMap[id].Email === decodedToken.email
                                 );
-                                return userId && userMap[userId] ? userMap[userId].FirstName : decodedToken.given_name;
+
+                                if (userId && userMap[userId])
+                                {
+                                    return userMap[userId].FirstName;
+                                } else
+                                {
+                                    // User not in the userMap, show as Guest
+                                    return decodedToken.given_name || 'Guest';
+                                }
                             })()}</span>
                         </button>
 
@@ -156,7 +175,7 @@ function Navbar()
                     </div>
 
                     <div className="navbar-item user-info-wrapper">
-                        {userMap && (() =>
+                        {userMap && isValidUser ? (() =>
                         {
                             const decodedToken = jwtDecode(credentials);
                             const userId = Object.keys(userMap || {}).find(
@@ -176,8 +195,17 @@ function Navbar()
                                 );
                             }
                             return null;
-                        })()}
-                        {userID && userMap && userMap[userID] && (
+                        })() : (
+                            <div className="info-display non-clickable mobile-stack-item" style={{ maxWidth: 'fit-content' }}>
+                                <span className="icon">
+                                    <i className="fas fa-user"></i>
+                                </span>
+                                <span style={{ fontWeight: '500' }}>
+                                    Guest
+                                </span>
+                            </div>
+                        )}
+                        {isValidUser && userID && userMap && userMap[userID] ? (
                             <div
                                 onClick={() => myRoom !== `no room yet` ? handleTakeMeThere(myRoom, true) : null}
                                 className={`info-display ${myRoom !== `no room yet` ? 'clickable' : 'non-clickable'} mobile-stack-item`}
@@ -186,19 +214,22 @@ function Navbar()
                                 <span className="icon">
                                     <i className="fas fa-home"></i>
                                 </span>
-                                {userID && userMap && userMap[userID] ? (
-                                    <>
-                                        <span style={{ fontWeight: '500' }}>
-                                            {userMap[userID].Year.charAt(0).toUpperCase() + userMap[userID].Year.slice(1)} #{userMap[userID].DrawNumber}
-                                        </span>
-                                        <span className="separator">•</span>
-                                        <span style={{ color: 'var(--text-color)' }}>
-                                            {myRoom !== `no room yet` ? myRoom : 'no room yet'}
-                                        </span>
-                                    </>
-                                ) : (
-                                    <span style={{ color: 'var(--text-color)' }}>Loading user data...</span>
-                                )}
+                                <span style={{ fontWeight: '500' }}>
+                                    {userMap[userID].Year.charAt(0).toUpperCase() + userMap[userID].Year.slice(1)} #{userMap[userID].DrawNumber}
+                                </span>
+                                <span className="separator">•</span>
+                                <span style={{ color: 'var(--text-color)' }}>
+                                    {myRoom !== `no room yet` ? myRoom : 'no room yet'}
+                                </span>
+                            </div>
+                        ) : (
+                            <div className="info-display non-clickable mobile-stack-item">
+                                <span className="icon">
+                                    <i className="fas fa-home"></i>
+                                </span>
+                                <span style={{ color: 'var(--text-color)' }}>
+                                    Viewing only
+                                </span>
                             </div>
                         )}
                     </div>

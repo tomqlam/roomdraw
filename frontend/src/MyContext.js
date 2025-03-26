@@ -40,20 +40,22 @@ export const MyContextProvider = ({ children }) =>
 
     const getRoomUUIDFromUserID = (userID) =>
     {
+        // Return null if userID is null/undefined or not a valid number
+        if (!userID) return null;
+
+        // Convert to number for comparison
+        const userId = Number(userID);
+
         if (rooms)
         {
             for (let room of rooms)
             {
-
-                if (room.Occupants && room.Occupants.includes(Number(userID)))
+                if (room.Occupants && room.Occupants.includes(userId))
                 {
-                    // they are this room
-
+                    // they are in this room
                     return room.RoomUUID;
                 }
             }
-
-
         }
         return null;
     }
@@ -67,7 +69,7 @@ export const MyContextProvider = ({ children }) =>
     const [selectedID, setSelectedID] = useState(() =>
     {
         const selectedID = localStorage.getItem('selectedID');
-        return selectedID !== null ? selectedID : '8'; //TODO 
+        return selectedID !== null ? selectedID : null; // Changed from '8' to null as default
     });
 
     const [userID, setUserID] = useState(() =>
@@ -76,10 +78,11 @@ export const MyContextProvider = ({ children }) =>
         return userID !== null ? userID : null; // Using null instead of '-1'
     });
 
-    // Update userID when both credentials and userMap are available
+    // Update userID when both credentials and userMap are available - this is a fallback
+    // in case the direct email query didn't work
     useEffect(() =>
     {
-        if (credentials && userMap)
+        if (credentials && userMap && !userID)
         {
             const decodedToken = jwtDecode(credentials);
             const userId = Object.keys(userMap || {}).find(
@@ -90,10 +93,10 @@ export const MyContextProvider = ({ children }) =>
             {
                 setUserID(userId);
                 localStorage.setItem('userID', userId);
-                console.log('Updated userID from credentials and userMap:', userId);
+                console.log('Updated userID from credentials and userMap (fallback):', userId);
             }
         }
-    }, [credentials, userMap]);
+    }, [credentials, userMap, userID]);
 
     const handleErrorFromTokenExpiry = (data) =>
     {

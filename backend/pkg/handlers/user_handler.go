@@ -93,3 +93,37 @@ func GetUser(c *gin.Context) {
 
 	c.JSON(http.StatusOK, user)
 }
+
+func GetUserByEmail(c *gin.Context) {
+	// Get the email from the query
+	email := c.Query("email")
+	if email == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Email query parameter is required"})
+		return
+	}
+
+	// Query for a single user by email
+	var user models.UserRaw
+	err := database.DB.QueryRow("SELECT id, year, first_name, last_name, draw_number, preplaced, in_dorm, sgroup_uuid, participated, participation_time, room_uuid, reslife_role, email FROM users WHERE email=$1", email).Scan(
+		&user.Id, &user.Year, &user.FirstName, &user.LastName, &user.DrawNumber,
+		&user.Preplaced, &user.InDorm, &user.SGroupUUID, &user.Participated,
+		&user.PartitipationTime, &user.RoomUUID, &user.ReslifeRole, &user.Email,
+	)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			// User not found - return empty object with status 200 (not a 404, because this is expected for guests)
+			c.JSON(http.StatusOK, gin.H{"found": false})
+			return
+		}
+		log.Println(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database query failed"})
+		return
+	}
+
+	// User found
+	c.JSON(http.StatusOK, gin.H{
+		"found": true,
+		"user": user,
+	})
+}

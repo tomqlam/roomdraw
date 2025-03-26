@@ -66,6 +66,7 @@ func main() {
 	readGroup.GET("/rooms/:roomuuid", handlers.GetRoom)
 	readGroup.GET("/users", handlers.GetUsers)
 	readGroup.GET("/users/idmap", handlers.GetUsersIdMap)
+	readGroup.GET("/users/email", handlers.GetUserByEmail)
 	readGroup.GET("/users/:userid", handlers.GetUser)
 	readGroup.GET("/users/notifications", handlers.GetNotificationPreference)
 

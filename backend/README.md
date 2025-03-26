@@ -30,10 +30,10 @@ docker run -it -p 8080:8080 -v $(pwd):/app roomdraw-backend
 
 For production deployment, run:
 ```bash
-docker build -t roomdraw-backend --build-arg ENV=production .
-docker run -it -p 8080:8080 -v $(pwd):/app roomdraw-backend
+podman build -t roomdraw-backend --build-arg ENV=production .
+podman run -it -p 8080:8080 -v $(pwd):/app roomdraw-backend
 ```
-
+<!-- 
 If you're running podman on a server on which you need root privs, run the above command locally to build the image. Then do:
 
 1. ```bash
@@ -45,8 +45,11 @@ If you're running podman on a server on which you need root privs, run the above
 3. ```bash
     podman load < roomdraw-backend.tar
     ```
+4. ```bash
+    podman run -it -p 8080:8080 -v $(pwd):/app roomdraw-backend
+    ``` -->
 
-4. Once the container is running, you can access the backend API at `http://localhost:8080`.
+<!-- 4. Once the container is running, you can access the backend API at `http://localhost:8080`. -->
 
 ## Environment Variables
 

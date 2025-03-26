@@ -63,6 +63,21 @@ function App()
     const [isBurgerActive, setIsBurgerActive] = useState(false);
     const [isInDorm, setIsInDorm] = useState(true);
 
+    // Validate selectedID when userMap loads
+    useEffect(() =>
+    {
+        if (userMap && selectedID)
+        {
+            // Check if the selectedID exists in userMap
+            if (!userMap[selectedID])
+            {
+                // Reset selectedID if it doesn't exist in userMap
+                setSelectedID(null);
+                setSelectedUserRoom("Unselected");
+            }
+        }
+    }, [userMap, selectedID, setSelectedID]);
+
     useEffect(() =>
     {
         const closedNotifications = JSON.parse(localStorage.getItem('closedNotifications')) || [];
@@ -86,7 +101,11 @@ function App()
     {
         const fetchRoomInfo = async () =>
         {
+            // Skip if no selectedID
+            if (!selectedID) return;
+
             const roomUUID = getRoomUUIDFromUserID(selectedID);
+            // Skip if no roomUUID
             if (!roomUUID) return;
 
             try
@@ -139,9 +158,63 @@ function App()
         const decoded = jwtDecode(credentialResponse.credential);
         setCredentials(credentialResponse.credential);
         localStorage.setItem('jwt', credentialResponse.credential);
+
+        // Immediately query for user by email
+        if (decoded.email)
+        {
+            fetchUserByEmail(decoded.email);
+        }
     };
 
-    // Store userID in localStorage when userMap is loaded
+    // Function to fetch user by email
+    const fetchUserByEmail = async (email) =>
+    {
+        try
+        {
+            const response = await fetch(`${process.env.REACT_APP_API_URL}/users/email?email=${encodeURIComponent(email)}`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
+                }
+            });
+
+            if (!response.ok)
+            {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            if (handleErrorFromTokenExpiry(data))
+            {
+                return;
+            }
+
+            // If user found in DB, set userID immediately
+            if (data.found)
+            {
+                setUserID(data.user.Id.toString());
+                localStorage.setItem('userID', data.user.Id.toString());
+                console.log('User found in database:', data.user.Id);
+
+                // Also set as selectedID if there isn't one already
+                if (!selectedID)
+                {
+                    setSelectedID(data.user.Id.toString());
+                    localStorage.setItem('selectedID', data.user.Id.toString());
+                }
+            } else
+            {
+                console.log('User not found in database, continuing as guest');
+                // User not in database, will be treated as guest
+                setUserID(null);
+                localStorage.removeItem('userID');
+            }
+        } catch (err)
+        {
+            console.error('Error fetching user by email:', err);
+        }
+    };
+
+    // Store userID in localStorage when userMap is loaded - this is a fallback if fetching by email fails
     useEffect(() =>
     {
         if (credentials && userMap)
@@ -171,8 +244,11 @@ function App()
     const handleLogout = () =>
     {
         setCredentials(null);
+        setUserID(null);
+        setSelectedID(null);
         localStorage.removeItem('jwt');
         localStorage.removeItem('userID');
+        localStorage.removeItem('selectedID');
         googleLogout();
     };
 
@@ -207,7 +283,8 @@ function App()
     {
         const updateSelectedUserData = async () =>
         {
-            if (selectedID)
+            // Only proceed if selectedID exists and is in userMap
+            if (selectedID && userMap && userMap[selectedID])
             {
                 const data = await fetchUserData(selectedID);
                 if (data)
@@ -243,6 +320,11 @@ function App()
                         setSelectedUserRoom('no room yet');
                     }
                 }
+            } else
+            {
+                // Reset data if no valid user is selected
+                setSelectedUserData(null);
+                setSelectedUserRoom('Unselected');
             }
         };
         updateSelectedUserData();
@@ -266,6 +348,12 @@ function App()
 
     const canUserToggleInDorm = (userID) =>
     {
+        // Safety check - if userID is invalid or not in userMap, return -1 (no toggle)
+        if (!userID || !userMap || !userMap[userID])
+        {
+            return -1;
+        }
+
         userID = Number(userID);
         const usersRoom = getRoomObjectFromUserID(userID);
         if (!userMap)
@@ -298,7 +386,6 @@ function App()
             return 0;
         }
         return -1;
-
     }
 
     // Save state to localStorage whenever it changes
@@ -370,9 +457,20 @@ function App()
 
     const handleForfeit = () =>
     {
+        // Skip if no selectedID
+        if (!selectedID) return;
+
+        // Get the room UUID for the selected user
+        const roomUUID = getRoomUUIDFromUserID(selectedID);
+        if (!roomUUID)
+        {
+            console.error('No room UUID found for user');
+            return;
+        }
+
         if (localStorage.getItem('jwt'))
         {
-            fetch(`${process.env.REACT_APP_API_URL}/rooms/indorm/${getRoomUUIDFromUserID(selectedID)}`, {
+            fetch(`${process.env.REACT_APP_API_URL}/rooms/indorm/${roomUUID}`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
@@ -397,8 +495,6 @@ function App()
                 {
                     console.error('Error forfeiting in-dorm:', err);
                 })
-
-
         }
     }
 
