@@ -40,12 +40,7 @@ const (
 
 // LoadConfig loads all environment variables once
 func LoadConfig() error {
-	env := os.Getenv("ENV")
-	if env == "" {
-		env = "development"
-	}
-
-	envFile := fmt.Sprintf(".env.%s", env)
+	envFile := ".env"
 	err := godotenv.Load(envFile)
 	if err != nil {
 		return fmt.Errorf("error loading %s file: %v", envFile, err)

@@ -22,7 +22,7 @@ To run the RoomDraw backend, follow these steps:
 
 For local development, run:
 ```bash
-docker build -t roomdraw-backend --build-arg ENV=development .
+docker build -t roomdraw-backend .
 docker run -it -p 8080:8080 -v $(pwd):/app roomdraw-backend
 ```
 
