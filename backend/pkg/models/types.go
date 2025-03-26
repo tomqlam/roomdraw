@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/lib/pq"
@@ -168,19 +169,22 @@ type RoomSimpler struct {
 }
 
 type UserRaw struct {
-	Id                int         `db:"id"`
-	Year              string      `db:"year"`
-	FirstName         string      `db:"first_name"`
-	LastName          string      `db:"last_name"`
-	Email             string      `db:"email"`
-	DrawNumber        float64     `db:"draw_number"`
-	Preplaced         bool        `db:"preplaced"`
-	InDorm            int         `db:"in_dorm"`
-	SGroupUUID        uuid.UUID   `db:"sgroup_uuid"`
-	Participated      bool        `db:"participated"`
-	PartitipationTime pq.NullTime `db:"participation_time"`
-	RoomUUID          uuid.UUID   `db:"room_uuid"`
-	ReslifeRole       string      `db:"reslife_role"`
+	Id                    int         `db:"id"`
+	Year                  string      `db:"year"`
+	FirstName             string      `db:"first_name"`
+	LastName              string      `db:"last_name"`
+	Email                 string      `db:"email"`
+	DrawNumber            float64     `db:"draw_number"`
+	Preplaced             bool        `db:"preplaced"`
+	InDorm                int         `db:"in_dorm"`
+	SGroupUUID            uuid.UUID   `db:"sgroup_uuid"`
+	Participated          bool        `db:"participated"`
+	PartitipationTime     pq.NullTime `db:"participation_time"`
+	RoomUUID              uuid.UUID   `db:"room_uuid"`
+	ReslifeRole           string      `db:"reslife_role"`
+	NotificationsEnabled  bool        `db:"notifications_enabled"`
+	NotificationCreatedAt time.Time   `db:"notification_created_at"`
+	NotificationUpdatedAt time.Time   `db:"notification_updated_at"`
 }
 
 type SuiteGroupRaw struct {

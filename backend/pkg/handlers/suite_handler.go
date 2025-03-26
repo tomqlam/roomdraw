@@ -226,7 +226,7 @@ func SetSuiteDesignNew(c *gin.Context) {
 
 	// Create new Config to be initialize a Client.
 	cfg := &bunnystorage.Config{
-		StorageZone: "digitaldraw",
+		StorageZone: os.Getenv("BUNNYNET_STORAGE_ZONE"),
 		Key:         readWriteKey,
 		ReadOnlyKey: readOnlyKey,
 		Endpoint:    bunnystorage.EndpointLosAngeles,
@@ -445,7 +445,7 @@ func DeleteSuiteDesign(c *gin.Context) {
 
 	// Create new Config to be initialize a Client.
 	cfg := &bunnystorage.Config{
-		StorageZone: "digitaldraw",
+		StorageZone: os.Getenv("BUNNYNET_STORAGE_ZONE"),
 		Key:         readWriteKey,
 		ReadOnlyKey: readOnlyKey,
 		Endpoint:    bunnystorage.EndpointLosAngeles,

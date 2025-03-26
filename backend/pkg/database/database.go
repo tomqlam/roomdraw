@@ -20,18 +20,19 @@ func InitDB() error {
 		return fmt.Errorf("error loading .env file: %v", err)
 	}
 
-	cloudSQLPass := os.Getenv("CLOUD_SQL_PASS")
-	cloudSQLIP := os.Getenv("CLOUD_SQL_IP")
-	cloudSQLDBName := os.Getenv("CLOUD_SQL_DB_NAME")
-	cloudSQLUser := os.Getenv("CLOUD_SQL_USER")
+	SQLPass := os.Getenv("SQL_PASS")
+	SQLIP := os.Getenv("SQL_IP")
+	SQLDBName := os.Getenv("SQL_DB_NAME")
+	SQLUser := os.Getenv("SQL_USER")
+	SQLPort := os.Getenv("SQL_PORT")
 	useSSL := os.Getenv("USE_SSL")
 	// replace every space with %20
-	encodedPass := url.QueryEscape(cloudSQLPass)
+	encodedPass := url.QueryEscape(SQLPass)
 	// replace + with %20
 	encodedPass = strings.Replace(encodedPass, "+", "%20", -1)
 
 	// Construct the connection string
-	connStr := fmt.Sprintf("postgresql://%s:%s@%s/%s?sslmode=%s", cloudSQLUser, encodedPass, cloudSQLIP, cloudSQLDBName, useSSL)
+	connStr := fmt.Sprintf("postgresql://%s:%s@%s:%s/%s?sslmode=%s", SQLUser, encodedPass, SQLIP, SQLPort, SQLDBName, useSSL)
 
 	// log.Println("connStr", connStr)
 

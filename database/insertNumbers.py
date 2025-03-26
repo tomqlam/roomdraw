@@ -9,6 +9,10 @@
 # 8 = Drinkward
 # 9 = Linde
 
+import os
+from dotenv import load_dotenv
+from sqlalchemy.sql import text
+from sqlalchemy import create_engine
 import pandas as pd
 # the CSV columns should be:
 # First Name, Last Name, Year, In Dorm, Number, Email
@@ -48,31 +52,19 @@ numbers['Year'] = numbers['Year'].map(year_mapping)
 
 print(numbers)
 
-from typing import List, Dict
-from numpy import NaN
-from sqlalchemy import create_engine
-from sqlalchemy import Table, Column, Integer, String, MetaData, ForeignKey
-from sqlalchemy import inspect
-from sqlalchemy.sql import text
-from uuid import uuid4
-
 # import env variables
-import os
-from dotenv import load_dotenv
-from pathlib import Path
-
 
 dotenv_path = os.path.join(os.getcwd(), '.env')
 print(dotenv_path)
 
 load_dotenv(dotenv_path=dotenv_path, verbose=True)
 
-cloud_sql_pass = os.environ.get('CLOUD_SQL_PASS')
-cloud_sql_ip = os.environ.get('CLOUD_SQL_IP')
-cloud_sql_db_name = os.environ.get('CLOUD_SQL_DB_NAME')
-cloud_sql_user = os.environ.get('CLOUD_SQL_USER')
+sql_pass = os.environ.get('SQL_PASS')
+sql_ip = os.environ.get('SQL_IP')
+sql_db_name = os.environ.get('SQL_DB_NAME')
+sql_user = os.environ.get('SQL_USER')
 
-CONNSTR = f'postgresql://{cloud_sql_user}:{cloud_sql_pass}@{cloud_sql_ip}/{cloud_sql_db_name}'
+CONNSTR = f'postgresql://{sql_user}:{sql_pass}@{sql_ip}/{sql_db_name}'
 
 engine = create_engine(CONNSTR)
 

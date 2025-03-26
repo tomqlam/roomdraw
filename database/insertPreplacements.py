@@ -1,7 +1,10 @@
 # read in preplacements.csv into a dataframe
-
+import os
+import requests
+from dotenv import load_dotenv
+from sqlalchemy.sql import text
+from sqlalchemy import create_engine
 import pandas as pd
-import numpy as np
 
 df = pd.read_csv('preplacements.csv')
 
@@ -19,18 +22,8 @@ print(df.head())
 # 8 = Drinkward
 # 9 = Linde
 
-from typing import List, Dict
-from numpy import NaN
-from sqlalchemy import create_engine
-from sqlalchemy import Table, Column, Integer, String, MetaData, ForeignKey
-from sqlalchemy import inspect
-from sqlalchemy.sql import text
-from uuid import uuid4
 
 # import env variables
-import os
-from dotenv import load_dotenv
-from pathlib import Path
 
 # the CSV columns should be:
 # ID, First Name, Last Name, Email, Rising Class Yr (next year), Planned Grad Sess/Year, Dorm, Room, Preplacement Reason
@@ -41,12 +34,12 @@ print(dotenv_path)
 
 load_dotenv(dotenv_path=dotenv_path, verbose=True)
 
-cloud_sql_pass = os.environ.get('CLOUD_SQL_PASS')
-cloud_sql_ip = os.environ.get('CLOUD_SQL_IP')
-cloud_sql_db_name = os.environ.get('CLOUD_SQL_DB_NAME')
-cloud_sql_user = os.environ.get('CLOUD_SQL_USER')
+sql_pass = os.environ.get('SQL_PASS')
+sql_ip = os.environ.get('SQL_IP')
+sql_db_name = os.environ.get('SQL_DB_NAME')
+sql_user = os.environ.get('SQL_USER')
 
-CONNSTR = f'postgresql://{cloud_sql_user}:{cloud_sql_pass}@{cloud_sql_ip}/{cloud_sql_db_name}'
+CONNSTR = f'postgresql://{sql_user}:{sql_pass}@{sql_ip}/{sql_db_name}'
 
 engine = create_engine(CONNSTR)
 
@@ -78,8 +71,9 @@ with engine.connect() as connection:
         # execute the query
         result = connection.execute(text(query))
 
-        print(f'Inserted {values["first_name"]} {values["last_name"]} into the database')
-    
+        print(
+            f'Inserted {values["first_name"]} {values["last_name"]} into the database')
+
     connection.commit()
 
 
@@ -95,11 +89,11 @@ with engine.connect() as connection:
 
     # loop through the dataframe and add the user ids to the dataframe
     for index, row in df.iterrows():
-        df.at[index, 'id'] = user_ids[f'{row["First Name"]} {row["Last Name"]}']
+        df.at[index,
+              'id'] = user_ids[f'{row["First Name"]} {row["Last Name"]}']
 
     connection.commit()
 
-import requests
 jwt = "INSERT_JWT_HERE"
 
 # link is localhost:8080/rooms/preplace/:roomuuid
@@ -154,7 +148,7 @@ for name, group in df.groupby(['Dorm', 'Room']):
 
     print(url)
 
-    response = requests.post(url, headers=headers, json=json_body)
+    response = requests.post(url, headers=headers, json=json_body, timeout=10)
 
     # print the response
     # print(response.json())
