@@ -29,8 +29,8 @@ func (s *EmailService) SendBumpNotification(user models.UserRaw, roomID string, 
 	auth := smtp.PlainAuth("", s.senderEmail, s.senderPass, s.smtpHost)
 
 	to := []string{user.Email}
-	// for testing, set to tlam@g.hmc.edu
-	to = []string{"tlam@g.hmc.edu"}
+	// // for testing, set to tlam@g.hmc.edu
+	// to = []string{"tlam@g.hmc.edu"}
 
 	subject := fmt.Sprintf("(no-reply) Digital Draw Notification - Bumped from %s, %s", dormName, roomID)
 	body := fmt.Sprintf(
