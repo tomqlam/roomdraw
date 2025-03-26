@@ -51,7 +51,6 @@ function App()
         setUserID,
         refreshKey,
         isDarkMode,
-        toggleDarkMode,
         isUserSettingsModalOpen,
         setIsUserSettingsModalOpen,
         handleTakeMeThere
@@ -451,7 +450,6 @@ function App()
                         <div className="search-container">
                             <div style={{ width: 'var(--component-width)' }}>
                                 <Select
-                                    isClearable
                                     className="react-select"
                                     classNamePrefix="react-select"
                                     placeholder="Student name..."
@@ -500,7 +498,7 @@ function App()
                         {canUserToggleInDorm(selectedID) === 1 &&
                             <div style={{ paddingTop: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
                                 <label htmlFor="toggleInDorm" className="checkbox-label">
-                                    Keep In-Dorm
+                                    In-Dorm Forfeited
                                 </label>
                                 <input
                                     type="checkbox"
@@ -511,7 +509,7 @@ function App()
                                     onChange={handleForfeit}
                                 />
                                 <label htmlFor="toggleInDorm" className="checkbox-label">
-                                    Forfeit In-Dorm
+                                    In-Dorm Kept
                                 </label>
                             </div>
                         }
@@ -569,20 +567,20 @@ function App()
                                             onEnter={handleTransitionStart}
                                             onExited={handleTransitionEnd}
                                         >
-                                            <div className="crossfade-wrapper">
-                                                <div className="columns is-centered is-multiline" style={{ margin: 0 }}>
+                                            <div className="crossfade-wrapper" style={{ backgroundColor: 'var(--body-bg)' }}>
+                                                <div className="columns is-centered is-multiline" style={{ margin: 0, backgroundColor: 'var(--body-bg)' }}>
                                                     {gridData
                                                         .filter(dorm => dorm.dormName === activeTab)
                                                         .flatMap(dorm => dorm.floors)
                                                         .map((_, floorIndex) => (
                                                             activeTab === "Case" ? (
                                                                 floorIndex < 2 && (
-                                                                    <div key={`${activeTab}-${floorIndex}`} className="column is-narrow" style={{ padding: '0.75rem' }}>
+                                                                    <div key={`${activeTab}-${floorIndex}`} className="column is-narrow" style={{ padding: '0.75rem', backgroundColor: 'var(--body-bg)' }}>
                                                                         <FloorDisplay gridData={gridData} filterCondition={(floorNumber) => floorNumber === floorIndex} />
                                                                     </div>
                                                                 )
                                                             ) : (
-                                                                <div key={`${activeTab}-${floorIndex}`} className="column is-narrow" style={{ padding: '0.75rem' }}>
+                                                                <div key={`${activeTab}-${floorIndex}`} className="column is-narrow" style={{ padding: '0.75rem', backgroundColor: 'var(--body-bg)' }}>
                                                                     <FloorDisplay gridData={gridData} filterCondition={(floorNumber) => floorNumber === floorIndex} />
                                                                 </div>
                                                             )
@@ -605,8 +603,8 @@ function App()
                                             onEnter={handleTransitionStart}
                                             onExited={handleTransitionEnd}
                                         >
-                                            <div className="crossfade-wrapper">
-                                                <div className="floorplans-section">
+                                            <div className="crossfade-wrapper" style={{ backgroundColor: 'var(--body-bg)' }}>
+                                                <div className="floorplans-section" style={{ backgroundColor: 'var(--body-bg)' }}>
                                                     {gridData
                                                         .filter(dorm => dorm.dormName === activeTab)
                                                         .flatMap(dorm => dorm.floors)

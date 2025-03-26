@@ -1,9 +1,10 @@
-import {jwtDecode} from 'jwt-decode';
+import { jwtDecode } from 'jwt-decode';
 import { useContext } from 'react';
 import { MyContext } from './MyContext';
 
 
-const AdminBumpModalFunctions = ({closeModal}) => {
+const AdminBumpModalFunctions = ({ closeModal }) =>
+{
     const {
         adminList,
         credentials,
@@ -11,88 +12,101 @@ const AdminBumpModalFunctions = ({closeModal}) => {
         selectedRoomObject,
         selectedOccupants,
         setRefreshKey,
-  
+
         handleErrorFromTokenExpiry,
 
 
     } = useContext(MyContext);
 
-    function postToFrosh(roomObject) {
+    function postToFrosh(roomObject)
+    {
         fetch(`/frosh/${roomObject.roomUUID}`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
-          },
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
+            },
         })
-          .then(response => response.json())
-          .then(data => {
-            // commented console.log (data);
-            closeModal();
-            setRefreshKey(prev => prev + 1);
-            if (handleErrorFromTokenExpiry(data)) {
-              return;
-            };
-          })
-          .catch((error) => {
-            console.error('Error:', error);
-          });
-      }
-    
-      function preplaceOccupants(roomObject) {
+            .then(response => response.json())
+            .then(data =>
+            {
+                // commented console.log (data);
+                closeModal();
+                setRefreshKey(prev => prev + 1);
+                if (handleErrorFromTokenExpiry(data))
+                {
+                    return;
+                };
+            })
+            .catch((error) =>
+            {
+                console.error('Error:', error);
+            });
+    }
+
+    function preplaceOccupants(roomObject)
+    {
         fetch(`/rooms/preplace/${roomObject.roomUUID}`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
-          },
-          body: JSON.stringify({
-            proposedOccupants: selectedOccupants
-              .filter(occupant => occupant !== '')
-              .map(occupant => Number(occupant.value)),
-          }),
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
+            },
+            body: JSON.stringify({
+                proposedOccupants: selectedOccupants
+                    .filter(occupant => occupant !== '')
+                    .map(occupant => Number(occupant.value)),
+            }),
         })
-          .then(response => response.json())
-          .then(data => {
-            // commented console.log (data);
-            closeModal();
-            setRefreshKey(prev => prev + 1);
-            if (handleErrorFromTokenExpiry(data)) {
-              return;
-            };
-          })
-          .catch((error) => {
-            console.error('Error:', error);
-          });
-      }
-    
-      function removePreplaceOccupants(roomObject) {
+            .then(response => response.json())
+            .then(data =>
+            {
+                // commented console.log (data);
+                closeModal();
+                setRefreshKey(prev => prev + 1);
+                if (handleErrorFromTokenExpiry(data))
+                {
+                    return;
+                };
+            })
+            .catch((error) =>
+            {
+                console.error('Error:', error);
+            });
+    }
+
+    function removePreplaceOccupants(roomObject)
+    {
         fetch(`/rooms/preplace/${roomObject.roomUUID}`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
-          },
-          body: JSON.stringify({
-            proposedOccupants: [],
-          }),
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
+            },
+            body: JSON.stringify({
+                proposedOccupants: [],
+            }),
         })
-          .then(response => response.json())
-          .then(data => {
-            // commented console.log (data);
-            closeModal();
-            setRefreshKey(prev => prev + 1);
-            if (handleErrorFromTokenExpiry(data)) {
-              return;
-            };
-          })
-          .catch((error) => {
-            console.error('Error:', error);
-          });
-      }
+            .then(response => response.json())
+            .then(data =>
+            {
+                // commented console.log (data);
+                closeModal();
+                setRefreshKey(prev => prev + 1);
+                if (handleErrorFromTokenExpiry(data))
+                {
+                    return;
+                };
+            })
+            .catch((error) =>
+            {
+                console.error('Error:', error);
+            });
+    }
 
     const isAdmin = adminList.includes(jwtDecode(credentials).email);
 
     // Only render these buttons if the user is an admin
 
-    if (!isAdmin) {
+    if (!isAdmin)
+    {
         return null;
     }
 

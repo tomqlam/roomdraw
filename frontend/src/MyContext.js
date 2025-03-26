@@ -1,3 +1,4 @@
+import { jwtDecode } from "jwt-decode";
 import React, { createContext, useEffect, useRef, useState } from 'react';
 
 
@@ -72,8 +73,27 @@ export const MyContextProvider = ({ children }) =>
     const [userID, setUserID] = useState(() =>
     {
         const userID = localStorage.getItem('userID');
-        return userID !== null ? userID : '-1'; //TODO 
+        return userID !== null ? userID : null; // Using null instead of '-1'
     });
+
+    // Update userID when both credentials and userMap are available
+    useEffect(() =>
+    {
+        if (credentials && userMap)
+        {
+            const decodedToken = jwtDecode(credentials);
+            const userId = Object.keys(userMap || {}).find(
+                id => userMap[id].Email === decodedToken.email || id === '701'  // Temporary fix for test data
+            );
+
+            if (userId)
+            {
+                setUserID(userId);
+                localStorage.setItem('userID', userId);
+                console.log('Updated userID from credentials and userMap:', userId);
+            }
+        }
+    }, [credentials, userMap]);
 
     const handleErrorFromTokenExpiry = (data) =>
     {
@@ -683,13 +703,63 @@ export const MyContextProvider = ({ children }) =>
         darkDefaultPalette, // Just use the default dark palette for the last one
     ];
 
-    const [isDarkMode, setIsDarkMode] = useState(() =>
+    // Theme preference setup
+    const getInitialThemeMode = () =>
     {
-        const savedMode = localStorage.getItem('darkMode');
-        return savedMode ? JSON.parse(savedMode) : false;
-    });
+        const savedThemeMode = localStorage.getItem('themeMode') || 'system';
 
-    // Effect to update body class when dark mode changes
+        // If 'system' is selected, use the system preference
+        if (savedThemeMode === 'system')
+        {
+            return window.matchMedia('(prefers-color-scheme: dark)').matches;
+        }
+
+        // Otherwise use the explicit choice
+        return savedThemeMode === 'dark';
+    };
+
+    // Initialize dark mode from preferences
+    const [isDarkMode, setIsDarkMode] = useState(getInitialThemeMode());
+
+    // Add listener for system preference changes if using 'system' mode
+    useEffect(() =>
+    {
+        const themeMode = localStorage.getItem('themeMode') || 'system';
+
+        if (themeMode === 'system')
+        {
+            const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+            const handleChange = (e) =>
+            {
+                setIsDarkMode(e.matches);
+            };
+
+            // Modern way to add listener
+            if (mediaQuery.addEventListener)
+            {
+                mediaQuery.addEventListener('change', handleChange);
+            } else
+            {
+                // For older browsers
+                mediaQuery.addListener(handleChange);
+            }
+
+            // Clean up
+            return () =>
+            {
+                if (mediaQuery.removeEventListener)
+                {
+                    mediaQuery.removeEventListener('change', handleChange);
+                } else
+                {
+                    mediaQuery.removeListener(handleChange);
+                }
+            };
+        }
+    }, []);
+
+    // Apply dark mode class to body
     useEffect(() =>
     {
         if (isDarkMode)
@@ -699,7 +769,6 @@ export const MyContextProvider = ({ children }) =>
         {
             document.body.classList.remove('dark-mode');
         }
-        localStorage.setItem('darkMode', JSON.stringify(isDarkMode));
     }, [isDarkMode]);
 
     const [selectedPalette, setSelectedPalette] = useState(() =>
@@ -729,18 +798,13 @@ export const MyContextProvider = ({ children }) =>
         return isDark ? darkColorPalettes[0] : colorPalettes[0];
     });
 
-    // Toggle dark mode function
-    const toggleDarkMode = () =>
+    // Switch palette based on dark mode changes
+    useEffect(() =>
     {
-        // Get current palette name before toggling
+        // Get current palette name
         const currentPaletteName = selectedPalette.name;
-        const willBeDarkMode = !isDarkMode;
 
-        // Toggle dark mode
-        setIsDarkMode(willBeDarkMode);
-
-        // Switch palette based on new mode
-        if (willBeDarkMode)
+        if (isDarkMode)
         {
             // Switch to dark equivalent
             const darkPaletteIndex = darkColorPalettes.findIndex(palette => palette.name === currentPaletteName);
@@ -765,13 +829,13 @@ export const MyContextProvider = ({ children }) =>
                 setSelectedPalette(colorPalettes[0]);
             }
         }
-    };
+    }, [isDarkMode]);
 
     const getNameById = (id) =>
     {
-        if (id === -1)
+        if (id === null || id === -1)
         {
-            return "Frosh!!!";
+            return "";
         }
         // given an ID, return the First and Last name of the user
         if (id && userMap)
@@ -809,7 +873,7 @@ export const MyContextProvider = ({ children }) =>
                 const elementRect = roomRef.getBoundingClientRect();
                 const absoluteElementTop = elementRect.top + window.pageYOffset;
                 const middle = absoluteElementTop - (window.innerHeight / 2);
-                
+
                 window.scrollTo({
                     top: middle,
                     behavior: 'smooth'
@@ -879,7 +943,6 @@ export const MyContextProvider = ({ children }) =>
         adminList,
         isDarkMode,
         setIsDarkMode,
-        toggleDarkMode,
         isUserSettingsModalOpen,
         setIsUserSettingsModalOpen,
         myRoom,

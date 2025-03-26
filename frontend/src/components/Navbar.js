@@ -186,13 +186,19 @@ function Navbar()
                                 <span className="icon">
                                     <i className="fas fa-home"></i>
                                 </span>
-                                <span style={{ fontWeight: '500' }}>
-                                    {userMap[userID].Year.charAt(0).toUpperCase() + userMap[userID].Year.slice(1)} #{userMap[userID].DrawNumber}
-                                </span>
-                                <span className="separator">•</span>
-                                <span style={{ color: 'var(--text-color)' }}>
-                                    {myRoom !== `no room yet` ? myRoom : 'no room yet'}
-                                </span>
+                                {userID && userMap && userMap[userID] ? (
+                                    <>
+                                        <span style={{ fontWeight: '500' }}>
+                                            {userMap[userID].Year.charAt(0).toUpperCase() + userMap[userID].Year.slice(1)} #{userMap[userID].DrawNumber}
+                                        </span>
+                                        <span className="separator">•</span>
+                                        <span style={{ color: 'var(--text-color)' }}>
+                                            {myRoom !== `no room yet` ? myRoom : 'no room yet'}
+                                        </span>
+                                    </>
+                                ) : (
+                                    <span style={{ color: 'var(--text-color)' }}>Loading user data...</span>
+                                )}
                             </div>
                         )}
                     </div>

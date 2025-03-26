@@ -17,7 +17,7 @@ const SettingsModal = () =>
         showFloorplans,
         setShowFloorplans,
         isDarkMode,
-        toggleDarkMode
+        setIsDarkMode
     } = useContext(MyContext);
 
     const [activeColorPicker, setActiveColorPicker] = useState(null);
@@ -184,11 +184,24 @@ const SettingsModal = () =>
         };
     }, []);
 
-    // Handle dark mode toggle
-    const handleDarkModeToggle = () =>
+    // Handle theme mode selection
+    const handleThemeModeChange = (event) =>
     {
-        toggleDarkMode();
-        // The palette will be automatically switched in the MyContext useEffect
+        const mode = event.target.value;
+
+        // Save the preference in localStorage
+        localStorage.setItem('themeMode', mode);
+
+        if (mode === 'system')
+        {
+            // Check system preference
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            setIsDarkMode(prefersDark);
+        } else
+        {
+            // Set based on explicit choice
+            setIsDarkMode(mode === 'dark');
+        }
     };
 
     const ColorPickerPopover = ({ colorKey, color }) =>
@@ -336,21 +349,20 @@ const SettingsModal = () =>
                             </label>
                         </div>
                         <div className="field mt-4">
-                            <label className="checkbox">
-                                <input
-                                    type="checkbox"
-                                    checked={isDarkMode}
-                                    onChange={handleDarkModeToggle}
-                                    className="mr-2"
-                                />
-                                <span className="icon-text">
-                                    <span className="icon">
-                                        <i className={`fas ${isDarkMode ? 'fa-sun' : 'fa-moon'}`}></i>
-                                    </span>
-                                    <span>{isDarkMode ? 'Light' : 'Dark'} mode</span>
-                                </span>
-                                <p className="help">Toggle to {isDarkMode ? 'Light' : 'Dark'} mode for the application</p>
-                            </label>
+                            <label className="label">Theme</label>
+                            <div className="control">
+                                <div className="select is-fullwidth">
+                                    <select
+                                        value={localStorage.getItem('themeMode') || 'system'}
+                                        onChange={handleThemeModeChange}
+                                    >
+                                        <option value="light">Light Mode</option>
+                                        <option value="dark">Dark Mode</option>
+                                        <option value="system">System Default</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <p className="help">Choose between light mode, dark mode, or follow your system's settings</p>
                         </div>
                     </div>
 
