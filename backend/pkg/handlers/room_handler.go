@@ -10,7 +10,6 @@ import (
 	"roomdraw/backend/pkg/models"
 	"strconv"
 	"strings"
-	"sync"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -304,59 +303,6 @@ func GetSimplerFormattedDorm(c *gin.Context) {
 }
 
 func ToggleInDorm(c *gin.Context) {
-	var err error
-	// Retrieve the doneChan from the context
-	doneChanInterface, exists := c.Get("doneChan")
-	if !exists {
-		// If for some reason it doesn't exist, log an error and return
-		log.Print("Error: doneChan not found in context")
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-
-	// Assert the type of doneChan to be a chan bool
-	doneChan, ok := doneChanInterface.(chan bool)
-	if !ok {
-		// If the assertion fails, log an error and return
-		log.Print("Error: doneChan is not of type chan bool")
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-
-	// Retrieve the closeOnce from the context
-	closeOnceInterface, exists := c.Get("closeOnce")
-	if !exists {
-		// If for some reason it doesn't exist, log an error and return
-		log.Print("Error: closeOnce not found in context")
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-
-	// Assert the type of closeOnce to be a *sync.Once
-	closeOnce, ok := closeOnceInterface.(*sync.Once)
-	if !ok {
-		// If the assertion fails, log an error and return
-		log.Print("Error: closeOnce is not of type *sync.Once")
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-
-	// Ensure that a signal is sent to doneChan when the function exits, make sure this happens only once
-	defer func() {
-		closeOnce.Do(func() {
-			close(doneChan)
-			log.Println("Closed doneChan for request")
-		})
-	}()
-
-	// constantly listen for the doneChan to be closed (meaning the request was timed out) and return error
-	go func() {
-		<-doneChan
-		log.Println("Request was fulfilled or timed out")
-		// write to global error variable
-		err = errors.New("request was fulfilled or timed out")
-	}()
-
 	roomUUIDParam := c.Param("roomuuid")
 
 	// Start a transaction
@@ -444,59 +390,6 @@ func ToggleInDorm(c *gin.Context) {
 }
 
 func UpdateRoomOccupants(c *gin.Context) {
-	var err error
-	// Retrieve the doneChan from the context
-	doneChanInterface, exists := c.Get("doneChan")
-	if !exists {
-		// If for some reason it doesn't exist, log an error and return
-		log.Print("Error: doneChan not found in context")
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-
-	// Assert the type of doneChan to be a chan bool
-	doneChan, ok := doneChanInterface.(chan bool)
-	if !ok {
-		// If the assertion fails, log an error and return
-		log.Print("Error: doneChan is not of type chan bool")
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-
-	// Retrieve the closeOnce from the context
-	closeOnceInterface, exists := c.Get("closeOnce")
-	if !exists {
-		// If for some reason it doesn't exist, log an error and return
-		log.Print("Error: closeOnce not found in context")
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-
-	// Assert the type of closeOnce to be a *sync.Once
-	closeOnce, ok := closeOnceInterface.(*sync.Once)
-	if !ok {
-		// If the assertion fails, log an error and return
-		log.Print("Error: closeOnce is not of type *sync.Once")
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-
-	// Ensure that a signal is sent to doneChan when the function exits, make sure this happens only once
-	defer func() {
-		closeOnce.Do(func() {
-			close(doneChan)
-			log.Println("Closed doneChan for request")
-		})
-	}()
-
-	// constantly listen for the doneChan to be closed (meaning the request was timed out) and return error
-	go func() {
-		<-doneChan
-		log.Println("Request was fulfilled or timed out")
-		// write to global error variable
-		err = errors.New("request was fulfilled or timed out")
-	}()
-
 	var request models.OccupantUpdateRequest
 	if err := c.ShouldBindJSON(&request); err != nil {
 		log.Printf("JSON unmarshal error: %v", err)
@@ -504,6 +397,7 @@ func UpdateRoomOccupants(c *gin.Context) {
 		return
 	}
 
+	var err error
 	switch request.PullType {
 	case 1: // self pull
 		err = SelfPull(c, request)
@@ -2114,59 +2008,6 @@ func disbandSuiteGroup(sgroupUUID uuid.UUID, tx *sql.Tx) (models.UUIDArray, erro
 }
 
 func PreplaceOccupants(c *gin.Context) {
-	var err error
-	// Retrieve the doneChan from the context
-	doneChanInterface, exists := c.Get("doneChan")
-	if !exists {
-		// If for some reason it doesn't exist, log an error and return
-		log.Print("Error: doneChan not found in context")
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-
-	// Assert the type of doneChan to be a chan bool
-	doneChan, ok := doneChanInterface.(chan bool)
-	if !ok {
-		// If the assertion fails, log an error and return
-		log.Print("Error: doneChan is not of type chan bool")
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-
-	// Retrieve the closeOnce from the context
-	closeOnceInterface, exists := c.Get("closeOnce")
-	if !exists {
-		// If for some reason it doesn't exist, log an error and return
-		log.Print("Error: closeOnce not found in context")
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-
-	// Assert the type of closeOnce to be a *sync.Once
-	closeOnce, ok := closeOnceInterface.(*sync.Once)
-	if !ok {
-		// If the assertion fails, log an error and return
-		log.Print("Error: closeOnce is not of type *sync.Once")
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-
-	// Ensure that a signal is sent to doneChan when the function exits, make sure this happens only once
-	defer func() {
-		closeOnce.Do(func() {
-			close(doneChan)
-			log.Println("Closed doneChan for request")
-		})
-	}()
-
-	// constantly listen for the doneChan to be closed (meaning the request was timed out) and return error
-	go func() {
-		<-doneChan
-		log.Println("Request was fulfilled or timed out")
-		// write to global error variable
-		err = errors.New("request was fulfilled or timed out")
-	}()
-
 	// the room uuid is in the url
 	roomUUIDParam := c.Param("roomuuid")
 
@@ -2180,7 +2021,7 @@ func PreplaceOccupants(c *gin.Context) {
 
 	// the request body should contain the occupants to be preplaced
 	var request models.PreplacedRequest
-	if err = c.ShouldBindJSON(&request); err != nil {
+	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}

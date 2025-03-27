@@ -122,48 +122,57 @@ func getGooglePublicKey(token *jwt.Token) (interface{}, error) {
 	return getKeyFunc(token)
 }
 
-func QueueMiddleware(requestQueue chan<- *gin.Context) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		// if the request is a write operation, enqueue the request
-		// log.Printf("QueueMiddleware triggered for path: %s", c.Request.URL.Path)
-		doneChan := make(chan bool, 1) // Channel to signal completion of request processing
-		closeOnce := sync.Once{}
-		c.Set("doneChan", doneChan)    // Pass the channel along with the context
-		c.Set("closeOnce", &closeOnce) // Pass the closeOnce along with the context
-		requestQueue <- c              // Enqueue the context
+// RequestQueue represents a queue for serializing requests
+type RequestQueue struct {
+	queue chan func()
+}
+
+// NewRequestQueue creates a new request queue with a specified concurrency
+func NewRequestQueue(concurrency int) *RequestQueue {
+	queue := &RequestQueue{
+		queue: make(chan func(), 100), // Buffer size of 100 pending requests
+	}
+
+	// Start worker goroutines
+	for i := 0; i < concurrency; i++ {
+		go queue.worker()
+	}
+
+	return queue
+}
+
+// worker processes jobs from the queue
+func (q *RequestQueue) worker() {
+	for job := range q.queue {
+		job()
 	}
 }
 
-func RequestProcessor(requestQueue <-chan *gin.Context) {
-	for c := range requestQueue {
-		// Wait for the request to be processed
-		doneChan, exists := c.Get("doneChan")
-		if !exists {
-			log.Print("Error: doneChan not found in context for request processor +", c.Request.URL.Path)
-			continue
+// QueueMiddleware creates middleware that serializes write operations
+func QueueMiddleware(queue *RequestQueue) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// Create a channel to signal when the request is done
+		done := make(chan struct{})
+
+		// Create a timeout channel
+		timeout := time.After(30 * time.Second)
+
+		// Queue the request processing
+		queue.queue <- func() {
+			defer close(done)
+			// This executes the next handler in the chain
+			c.Next()
 		}
 
-		closeOnce, exists := c.Get("closeOnce")
-		if !exists {
-			log.Print("Error: closeOnce not found in context for request processor +", c.Request.URL.Path)
-			continue
-		}
-
-		c.Next() // Process the request
-
-		// set timeout time to 5 seconds
-		timeout := time.After(1 * time.Second)
-
-		// Wait for the doneChan to receive a signal
+		// Wait for completion or timeout
 		select {
-		case <-doneChan.(chan bool):
-			log.Print("Request processed +", c.Request.URL.Path)
+		case <-done:
+			// Request completed normally
+			log.Printf("Request processed: %s", c.Request.URL.Path)
 		case <-timeout:
-			log.Print("Request processing timed out +", c.Request.URL.Path)
-			closeOnce.(*sync.Once).Do(func() {
-				close(doneChan.(chan bool))
-				log.Println("Closed doneChan for timed out request")
-			})
+			// Request timed out
+			log.Printf("Request timed out: %s", c.Request.URL.Path)
+			c.AbortWithStatusJSON(http.StatusRequestTimeout, gin.H{"error": "Request processing timed out"})
 		}
 	}
 }

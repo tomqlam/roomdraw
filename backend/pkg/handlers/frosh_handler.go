@@ -7,66 +7,12 @@ import (
 	"net/http"
 	"roomdraw/backend/pkg/database"
 	"roomdraw/backend/pkg/models"
-	"sync"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
 
 func AddFroshHandler(c *gin.Context) {
-	var err error
-	// Retrieve the doneChan from the context
-	doneChanInterface, exists := c.Get("doneChan")
-	if !exists {
-		// If for some reason it doesn't exist, log an error and return
-		log.Print("Error: doneChan not found in context")
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-
-	// Assert the type of doneChan to be a chan bool
-	doneChan, ok := doneChanInterface.(chan bool)
-	if !ok {
-		// If the assertion fails, log an error and return
-		log.Print("Error: doneChan is not of type chan bool")
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-
-	// Retrieve the closeOnce from the context
-	closeOnceInterface, exists := c.Get("closeOnce")
-	if !exists {
-		// If for some reason it doesn't exist, log an error and return
-		log.Print("Error: closeOnce not found in context")
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-
-	// Assert the type of closeOnce to be a *sync.Once
-	closeOnce, ok := closeOnceInterface.(*sync.Once)
-	if !ok {
-		// If the assertion fails, log an error and return
-		log.Print("Error: closeOnce is not of type *sync.Once")
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-
-	// Ensure that a signal is sent to doneChan when the function exits, make sure this happens only once
-	defer func() {
-		closeOnce.Do(func() {
-			close(doneChan)
-			log.Println("Closed doneChan for request")
-		})
-	}()
-
-	// constantly listen for the doneChan to be closed (meaning the request was timed out) and return error
-	go func() {
-		<-doneChan
-		log.Println("Request was fulfilled or timed out")
-		// write to global error variable
-		err = errors.New("request was fulfilled or timed out")
-	}()
-
 	// get the room uuid from the request url
 	roomUUID := c.Param("roomuuid")
 
@@ -149,59 +95,6 @@ func AddFroshHandler(c *gin.Context) {
 }
 
 func RemoveFroshHandler(c *gin.Context) { // should be a secured route
-	var err error
-	// Retrieve the doneChan from the context
-	doneChanInterface, exists := c.Get("doneChan")
-	if !exists {
-		// If for some reason it doesn't exist, log an error and return
-		log.Print("Error: doneChan not found in context")
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-
-	// Assert the type of doneChan to be a chan bool
-	doneChan, ok := doneChanInterface.(chan bool)
-	if !ok {
-		// If the assertion fails, log an error and return
-		log.Print("Error: doneChan is not of type chan bool")
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-
-	// Retrieve the closeOnce from the context
-	closeOnceInterface, exists := c.Get("closeOnce")
-	if !exists {
-		// If for some reason it doesn't exist, log an error and return
-		log.Print("Error: closeOnce not found in context")
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-
-	// Assert the type of closeOnce to be a *sync.Once
-	closeOnce, ok := closeOnceInterface.(*sync.Once)
-	if !ok {
-		// If the assertion fails, log an error and return
-		log.Print("Error: closeOnce is not of type *sync.Once")
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-
-	// Ensure that a signal is sent to doneChan when the function exits, make sure this happens only once
-	defer func() {
-		closeOnce.Do(func() {
-			close(doneChan)
-			log.Println("Closed doneChan for request")
-		})
-	}()
-
-	// constantly listen for the doneChan to be closed (meaning the request was timed out) and return error
-	go func() {
-		<-doneChan
-		log.Println("Request was fulfilled or timed out")
-		// write to global error variable
-		err = errors.New("request was fulfilled or timed out")
-	}()
-
 	// get the room uuid from the request url
 	roomUUID := c.Param("roomuuid")
 
@@ -265,59 +158,6 @@ func RemoveFroshHandler(c *gin.Context) { // should be a secured route
 }
 
 func BumpFroshHandler(c *gin.Context) {
-	var err error
-	// Retrieve the doneChan from the context
-	doneChanInterface, exists := c.Get("doneChan")
-	if !exists {
-		// If for some reason it doesn't exist, log an error and return
-		log.Print("Error: doneChan not found in context")
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-
-	// Assert the type of doneChan to be a chan bool
-	doneChan, ok := doneChanInterface.(chan bool)
-	if !ok {
-		// If the assertion fails, log an error and return
-		log.Print("Error: doneChan is not of type chan bool")
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-
-	// Retrieve the closeOnce from the context
-	closeOnceInterface, exists := c.Get("closeOnce")
-	if !exists {
-		// If for some reason it doesn't exist, log an error and return
-		log.Print("Error: closeOnce not found in context")
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-
-	// Assert the type of closeOnce to be a *sync.Once
-	closeOnce, ok := closeOnceInterface.(*sync.Once)
-	if !ok {
-		// If the assertion fails, log an error and return
-		log.Print("Error: closeOnce is not of type *sync.Once")
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-
-	// Ensure that a signal is sent to doneChan when the function exits, make sure this happens only once
-	defer func() {
-		closeOnce.Do(func() {
-			close(doneChan)
-			log.Println("Closed doneChan for request")
-		})
-	}()
-
-	// constantly listen for the doneChan to be closed (meaning the request was timed out) and return error
-	go func() {
-		<-doneChan
-		log.Println("Request was fulfilled or timed out")
-		// write to global error variable
-		err = errors.New("request was fulfilled or timed out")
-	}()
-
 	// get the room uuid from the request url
 	roomUUID := c.Param("roomuuid")
 

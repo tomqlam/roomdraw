@@ -39,14 +39,12 @@ func main() {
 		MaxAge: 12 * time.Hour,
 	}
 
-	// Initialize the RWMutex and request queue
-	requestQueue := make(chan *gin.Context)
+	// Initialize the request queue with concurrency of 1
+	// This ensures that all write operations are processed one at a time
+	requestQueue := middleware.NewRequestQueue(1)
 
 	// Apply the middleware globally
 	router.Use(cors.New(corsConfig))
-
-	// Start the request processor goroutine for write requests
-	go middleware.RequestProcessor(requestQueue)
 
 	// Group routes by read and write operations
 	readGroup := router.Group("/")
