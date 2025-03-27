@@ -70,7 +70,7 @@ function Navbar()
                 if (data)
                 {
                     setCurrentUserData(data);
-                    if (data.RoomUUID)
+                    if (data.RoomUUID && data.RoomUUID !== "00000000-0000-0000-0000-000000000000")
                     {
                         try
                         {

@@ -5,7 +5,8 @@ import { MyContext } from './MyContext';
 function FloorGrid({ gridData })
 {
     const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
-    const divRefs = useRef(gridData.suites.map(() => createRef()));
+    const [isLoading, setIsLoading] = useState(!gridData?.suites?.length);
+    const divRefs = useRef((gridData?.suites?.length ? gridData.suites : []).map(() => createRef()));
     const divRef = useRef(null);
 
     useEffect(() =>
@@ -18,6 +19,12 @@ function FloorGrid({ gridData })
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
     }, []);
+
+    useEffect(() =>
+    {
+        // Update loading state when gridData changes
+        setIsLoading(!gridData?.suites?.length);
+    }, [gridData?.suites]);
 
     const {
         print,
@@ -400,7 +407,95 @@ function FloorGrid({ gridData })
 
     }
 
+    // Create loading placeholders for the grid
+    const createLoadingPlaceholders = () =>
+    {
+        // Create 4 sample suites with 3 rooms each for placeholder content
+        const placeholderSuites = Array(4).fill().map((_, suiteIndex) =>
+        {
+            return Array(3).fill().map((_, roomIndex) => (
+                <React.Fragment key={`loading-${suiteIndex}-${roomIndex}`}>
+                    <div
+                        style={{
+                            ...gridItemStyle,
+                            backgroundColor: selectedPalette.roomNumber,
+                            opacity: 0.5,
+                            cursor: 'default'
+                        }}
+                        className="grid-cell"
+                    >
+                        {/* Empty placeholder */}
+                    </div>
+                    <div
+                        style={{
+                            ...gridItemStyle,
+                            backgroundColor: selectedPalette.roomNumber,
+                            opacity: 0.5,
+                            cursor: 'default'
+                        }}
+                        className="grid-cell"
+                    >
+                        {/* Empty placeholder */}
+                    </div>
+                    {!isMobile && roomIndex === 0 && (
+                        <div
+                            style={{
+                                ...pullMethodStyle,
+                                gridRow: `span 3`,
+                                backgroundColor: suiteIndex % 2 === 0 ? selectedPalette.evenSuite : selectedPalette.oddSuite,
+                                opacity: 0.5,
+                                cursor: 'default'
+                            }}
+                            className="grid-cell suite-cell"
+                        />
+                    )}
+                    <div
+                        style={{
+                            ...gridItemStyle,
+                            backgroundColor: selectedPalette.roomNumber,
+                            opacity: 0.5,
+                            cursor: 'default'
+                        }}
+                        className="grid-cell"
+                    />
+                    <div
+                        style={{
+                            ...gridItemStyle,
+                            backgroundColor: selectedPalette.roomNumber,
+                            opacity: 0.5,
+                            cursor: 'default'
+                        }}
+                        className="grid-cell"
+                    />
+                    {((activeTab === 'Atwood' || activeTab === 'Drinkward') || activeTab === 'Case') && (
+                        <div
+                            style={{
+                                ...gridItemStyle,
+                                backgroundColor: selectedPalette.roomNumber,
+                                opacity: 0.5,
+                                cursor: 'default'
+                            }}
+                            className="grid-cell"
+                        />
+                    )}
+                    {activeTab === "Case" && (
+                        <div
+                            style={{
+                                ...gridItemStyle,
+                                backgroundColor: selectedPalette.roomNumber,
+                                opacity: 0.5,
+                                cursor: 'default'
+                            }}
+                            className="grid-cell"
+                        />
+                    )}
+                </React.Fragment>
+            ))
+        });
 
+        // Flatten the array of arrays
+        return placeholderSuites.flat();
+    };
 
     return (
         <div style={gridContainerStyle} className="grid-container">
@@ -430,94 +525,98 @@ function FloorGrid({ gridData })
                     <strong style={{ color: isDarkMode ? '#ffffff' : 'inherit' }}>Occupant 4</strong>
                 </div>}
 
-            {[...gridData.suites].map((suite, suiteIndex) => (
-                suite.rooms.map((room, roomIndex) => (
-                    <React.Fragment key={roomIndex}>
-                        <div
-                            style={getGridItemStyle(room, room.maxOccupancy, 1, suiteIndex, room.pullPriority)}
-                            onClick={() => handleCellClick(room.roomNumber)}
-                            ref={el => { roomRefs.current[room.roomUUID] = el; }}
-                            id={room.roomUUID}
-                            className="grid-cell"
-                        >
-                            {room.roomNumber}
-                        </div>
-                        <div
-                            style={getGridItemStyle(room, room.maxOccupancy, 1, suiteIndex, room.pullPriority)}
-                            onClick={() => handleCellClick(room.roomNumber)}
-                            className="grid-cell"
-                        >
-                            {getPullMethodByRoomNumber(room.roomNumber)}
-                        </div>
-                        {!isMobile && roomIndex === 0 && (
+            {isLoading ? (
+                createLoadingPlaceholders()
+            ) : (
+                [...gridData.suites].map((suite, suiteIndex) => (
+                    suite.rooms.map((room, roomIndex) => (
+                        <React.Fragment key={roomIndex}>
                             <div
-                                style={{
-                                    ...pullMethodStyle,
-                                    gridRow: `span ${suite.rooms.length}`,
-                                    backgroundColor: suiteIndex % 2 === 0 ? selectedPalette.evenSuite : selectedPalette.oddSuite,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                }}
-                                ref={divRefs.current[suiteIndex]}
-                                onClick={() => updateSuiteNotes(room.roomNumber, divRefs.current[suiteIndex])}
-                                className="grid-cell suite-cell"
+                                style={getGridItemStyle(room, room.maxOccupancy, 1, suiteIndex, room.pullPriority)}
+                                onClick={() => handleCellClick(room.roomNumber)}
+                                ref={el => { roomRefs.current[room.roomUUID] = el; }}
+                                id={room.roomUUID}
+                                className="grid-cell"
                             >
-                                {suite.suiteDesign && (
-                                    <img
-                                        src={suite.suiteDesign}
-                                        alt={suite.suiteDesign}
-                                        style={{
-                                            maxWidth: '100%',
-                                            maxHeight: '50vh',
-                                            objectFit: 'contain',
-                                            width: 'auto',
-                                            height: 'auto',
-                                            borderRadius: '4px',
-                                        }}
-                                    />
-                                )}
+                                {room.roomNumber}
                             </div>
-                        )}
-                        <div
-                            style={getGridItemStyle(room, room.maxOccupancy, 1, suiteIndex, room.pullPriority)}
-                            onClick={() => handleCellClick(room.roomNumber)}
-                            className="grid-cell"
-                            data-full-name={room.maxOccupancy >= 1 ? (room.hasFrosh ? 'Frosh' : getNameById(room.occupant1)) : ''}
-                        >
-                            {room.maxOccupancy >= 1 && (room.hasFrosh ? 'Frosh' : getNameById(room.occupant1))}
-                        </div>
-                        <div
-                            style={getGridItemStyle(room, room.maxOccupancy, 2, suiteIndex, room.pullPriority)}
-                            onClick={() => handleCellClick(room.roomNumber)}
-                            className="grid-cell"
-                            data-full-name={room.maxOccupancy >= 2 ? (room.hasFrosh ? 'Frosh' : getNameById(room.occupant2)) : ''}
-                        >
-                            {room.maxOccupancy >= 2 && (room.hasFrosh ? 'Frosh' : getNameById(room.occupant2))}
-                        </div>
-                        {((activeTab === 'Atwood' || activeTab === 'Drinkward') || activeTab === 'Case') && (
                             <div
-                                style={getGridItemStyle(room, room.maxOccupancy, 3, suiteIndex, room.pullPriority)}
+                                style={getGridItemStyle(room, room.maxOccupancy, 1, suiteIndex, room.pullPriority)}
                                 onClick={() => handleCellClick(room.roomNumber)}
                                 className="grid-cell"
-                                data-full-name={room.maxOccupancy >= 3 ? (room.hasFrosh ? 'Frosh' : getNameById(room.occupant3)) : ''}
                             >
-                                {room.maxOccupancy >= 3 && (room.hasFrosh ? 'Frosh' : getNameById(room.occupant3))}
+                                {getPullMethodByRoomNumber(room.roomNumber)}
                             </div>
-                        )}
-                        {activeTab === "Case" && (
+                            {!isMobile && roomIndex === 0 && (
+                                <div
+                                    style={{
+                                        ...pullMethodStyle,
+                                        gridRow: `span ${suite.rooms.length}`,
+                                        backgroundColor: suiteIndex % 2 === 0 ? selectedPalette.evenSuite : selectedPalette.oddSuite,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                    }}
+                                    ref={divRefs.current[suiteIndex]}
+                                    onClick={() => updateSuiteNotes(room.roomNumber, divRefs.current[suiteIndex])}
+                                    className="grid-cell suite-cell"
+                                >
+                                    {suite.suiteDesign && (
+                                        <img
+                                            src={suite.suiteDesign}
+                                            alt={suite.suiteDesign}
+                                            style={{
+                                                maxWidth: '100%',
+                                                maxHeight: '50vh',
+                                                objectFit: 'contain',
+                                                width: 'auto',
+                                                height: 'auto',
+                                                borderRadius: '4px',
+                                            }}
+                                        />
+                                    )}
+                                </div>
+                            )}
                             <div
-                                style={getGridItemStyle(room, room.maxOccupancy, 4, suiteIndex, room.pullPriority)}
+                                style={getGridItemStyle(room, room.maxOccupancy, 1, suiteIndex, room.pullPriority)}
                                 onClick={() => handleCellClick(room.roomNumber)}
                                 className="grid-cell"
-                                data-full-name={room.maxOccupancy >= 4 ? (room.hasFrosh ? 'Frosh' : getNameById(room.occupant4)) : ''}
+                                data-full-name={room.maxOccupancy >= 1 ? (room.hasFrosh ? 'Frosh' : getNameById(room.occupant1)) : ''}
                             >
-                                {room.maxOccupancy >= 4 && (room.hasFrosh ? 'Frosh' : getNameById(room.occupant4))}
+                                {room.maxOccupancy >= 1 && (room.hasFrosh ? 'Frosh' : getNameById(room.occupant1))}
                             </div>
-                        )}
-                    </React.Fragment>
+                            <div
+                                style={getGridItemStyle(room, room.maxOccupancy, 2, suiteIndex, room.pullPriority)}
+                                onClick={() => handleCellClick(room.roomNumber)}
+                                className="grid-cell"
+                                data-full-name={room.maxOccupancy >= 2 ? (room.hasFrosh ? 'Frosh' : getNameById(room.occupant2)) : ''}
+                            >
+                                {room.maxOccupancy >= 2 && (room.hasFrosh ? 'Frosh' : getNameById(room.occupant2))}
+                            </div>
+                            {((activeTab === 'Atwood' || activeTab === 'Drinkward') || activeTab === 'Case') && (
+                                <div
+                                    style={getGridItemStyle(room, room.maxOccupancy, 3, suiteIndex, room.pullPriority)}
+                                    onClick={() => handleCellClick(room.roomNumber)}
+                                    className="grid-cell"
+                                    data-full-name={room.maxOccupancy >= 3 ? (room.hasFrosh ? 'Frosh' : getNameById(room.occupant3)) : ''}
+                                >
+                                    {room.maxOccupancy >= 3 && (room.hasFrosh ? 'Frosh' : getNameById(room.occupant3))}
+                                </div>
+                            )}
+                            {activeTab === "Case" && (
+                                <div
+                                    style={getGridItemStyle(room, room.maxOccupancy, 4, suiteIndex, room.pullPriority)}
+                                    onClick={() => handleCellClick(room.roomNumber)}
+                                    className="grid-cell"
+                                    data-full-name={room.maxOccupancy >= 4 ? (room.hasFrosh ? 'Frosh' : getNameById(room.occupant4)) : ''}
+                                >
+                                    {room.maxOccupancy >= 4 && (room.hasFrosh ? 'Frosh' : getNameById(room.occupant4))}
+                                </div>
+                            )}
+                        </React.Fragment>
+                    ))
                 ))
-            ))}
+            )}
         </div>
     );
 }

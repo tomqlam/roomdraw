@@ -651,7 +651,7 @@ function App()
                         </ul>
                     </div>
 
-                    {userMap && <div className="columns is-centered" style={{ width: '100%', margin: 0 }}>
+                    <div className="columns is-centered" style={{ width: '100%', margin: 0 }}>
                         {!showFloorplans && (
                             <div className="column is-full">
                                 <div className="floor-content-wrapper">
@@ -722,7 +722,7 @@ function App()
                                 </div>
                             </div>
                         )}
-                    </div>}
+                    </div>
                 </section>}
 
                 {currPage === "Recommendations" && <section className="section">
