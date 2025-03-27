@@ -433,7 +433,7 @@ function App()
     {
         return (
             <div className="column">
-                <div style={showFloorplans ? { width: '50vw' } : {}}>
+                <div style={showFloorplans ? { width: '100%' } : {}}>
                     {gridData.map((dorm) => (
                         <div key={dorm.dormName} className={activeTab === dorm.dormName ? '' : 'is-hidden'}>
                             {dorm.floors
@@ -548,11 +548,29 @@ function App()
                                 <Select
                                     className="react-select"
                                     classNamePrefix="react-select"
-                                    placeholder="Student name..."
+                                    placeholder="Search for a student..."
                                     onChange={handleNameChange}
+                                    onFocus={() => setSelectedID(null)}
+                                    onBlur={() =>
+                                    {
+                                        if (!selectedID && userID)
+                                        {
+                                            setSelectedID(userID);
+                                        }
+                                    }}
                                     menuPortalTarget={document.body}
                                     styles={{
-                                        menuPortal: base => ({ ...base, zIndex: 9999 })
+                                        menuPortal: base => ({ ...base, zIndex: 9999 }),
+                                        container: base => ({
+                                            ...base,
+                                            width: '100%',
+                                            minWidth: 'var(--min-component-width)',
+                                        }),
+                                        control: base => ({
+                                            ...base,
+                                            minWidth: 'var(--min-component-width)',
+                                            width: '100%'
+                                        })
                                     }}
                                     options={userMap ? Object.keys(userMap)
                                         .sort((a, b) =>
@@ -708,10 +726,9 @@ function App()
                                                             <div key={`${activeTab}-${floorIndex}`} className="floorplan-container">
                                                                 <FloorDisplay gridData={gridData} filterCondition={(floorNumber) => floorNumber === floorIndex} />
                                                                 <img
-                                                                    src={`/Floorplans/floorplans_${activeTab.toLowerCase()}_${floorIndex + 1}.png`}
+                                                                    src={`./Floorplans/floorplans_${activeTab.toLowerCase()}_${floorIndex + 1}.png`}
                                                                     alt={`Floorplan for floor ${floorIndex}`}
                                                                     className="floorplan-image"
-                                                                    style={{ maxWidth: '40vw' }}
                                                                 />
                                                             </div>
                                                         ))}

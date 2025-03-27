@@ -114,9 +114,11 @@ const AdminBumpModalFunctions = ({ closeModal }) =>
         <>
             <label className="label">Admin-Only Functions</label>
 
-            <button className="button is-warning" style={{ marginRight: '5px' }} onClick={() => postToFrosh(selectedRoomObject)}>Add Frosh</button>
-            <button className="button is-warning" style={{ marginRight: '5px' }} onClick={() => preplaceOccupants(selectedRoomObject)}>Pre-Place Occupants</button>
-            <button className="button is-warning" onClick={() => removePreplaceOccupants(selectedRoomObject)}>Remove Pre-Placed Occupants</button>
+            <div className="buttons">
+                <button className="button is-warning" style={{ marginBottom: '0.5rem' }} onClick={() => postToFrosh(selectedRoomObject)}>Add Frosh</button>
+                <button className="button is-warning" style={{ marginBottom: '0.5rem' }} onClick={() => preplaceOccupants(selectedRoomObject)}>Pre-Place Occupants</button>
+                <button className="button is-warning" style={{ marginBottom: '0.5rem' }} onClick={() => removePreplaceOccupants(selectedRoomObject)}>Remove Pre-Placed Occupants</button>
+            </div>
             <p class="help is-danger">These are dangerous: be sure before toggling!</p>
 
         </>

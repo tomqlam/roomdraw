@@ -42,6 +42,8 @@ function BumpModal()
     const [loadingSubmit, setLoadingSubmit] = useState(false);
     const [loadingClearPerson, setLoadingClearPerson] = useState([]);
     const [loadingClearRoom, setLoadingClearRoom] = useState(false);
+    // New state to store original values when focus changes
+    const [originalOccupants, setOriginalOccupants] = useState({});
 
     useEffect(() =>
     {
@@ -367,7 +369,7 @@ function BumpModal()
     return (
 
         <div className="modal is-active">
-            <div className="modal-background"></div>
+            <div className="modal-background" onClick={closeModal}></div>
             <div className="modal-card">
                 <header className="modal-card-head">
                     <p className="modal-card-title">
@@ -387,15 +389,49 @@ function BumpModal()
                             {[1, 2, 3, 4].slice(0, selectedRoomObject.maxOccupancy).map((index) => (
                                 <div className="field" key={index}>
                                     <div className="control">
-                                        <div style={{ marginBottom: "10px", width: 200 }}>
+                                        <div style={{ marginBottom: "10px", width: 300 }}>
                                             <Select
-                                                placeholder={`Select Occupant ${index}`}
+                                                placeholder={`Search for occupant ${index}...`}
                                                 value={
                                                     selectedOccupants[index - 1]
                                                 }
                                                 menuPortalTarget={document.body}
+                                                onFocus={() =>
+                                                {
+                                                    // Store current value in originalOccupants state
+                                                    setOriginalOccupants(prev => ({
+                                                        ...prev,
+                                                        [index - 1]: selectedOccupants[index - 1]
+                                                    }));
+
+                                                    // Clear the current value
+                                                    const updatedOccupants = [...selectedOccupants];
+                                                    updatedOccupants[index - 1] = null;
+                                                    setSelectedOccupants(updatedOccupants);
+                                                }}
+                                                onBlur={() =>
+                                                {
+                                                    // If no new selection was made, restore the original value
+                                                    if (!selectedOccupants[index - 1] && originalOccupants[index - 1])
+                                                    {
+                                                        const updatedOccupants = [...selectedOccupants];
+                                                        updatedOccupants[index - 1] = originalOccupants[index - 1];
+                                                        setSelectedOccupants(updatedOccupants);
+                                                    }
+                                                }}
                                                 styles={{
                                                     menuPortal: base => ({ ...base, zIndex: 9999 }),
+                                                    container: base => ({
+                                                        ...base,
+                                                        width: '100%',
+                                                    }),
+                                                    control: base => ({
+                                                        ...base,
+                                                        backgroundColor: 'var(--input-bg)',
+                                                        borderColor: 'var(--border-color)',
+                                                        color: 'var(--text-color)',
+                                                        width: '100%',
+                                                    }),
                                                     option: (provided, state) => ({
                                                         ...provided,
                                                         backgroundColor: state.isFocused
@@ -406,12 +442,6 @@ function BumpModal()
                                                         color: state.isFocused
                                                             ? '#ffffff'
                                                             : 'var(--text-color)',
-                                                    }),
-                                                    control: (provided) => ({
-                                                        ...provided,
-                                                        backgroundColor: 'var(--input-bg)',
-                                                        borderColor: 'var(--border-color)',
-                                                        color: 'var(--text-color)',
                                                     }),
                                                     singleValue: (provided) => ({
                                                         ...provided,
