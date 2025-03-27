@@ -48,7 +48,7 @@ func GetUsersIdMap(c *gin.Context) {
 	}
 	defer rows.Close()
 
-	var users []models.UserRaw
+	userMap := make(map[int]models.UserRaw)
 	for rows.Next() {
 		var user models.UserRaw
 		if err := rows.Scan(&user.Id, &user.Year, &user.FirstName, &user.LastName, &user.DrawNumber, &user.Preplaced, &user.InDorm, &user.SGroupUUID, &user.Participated, &user.PartitipationTime, &user.RoomUUID, &user.ReslifeRole); err != nil {
@@ -57,12 +57,6 @@ func GetUsersIdMap(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Database scan failed"})
 			return
 		}
-		users = append(users, user)
-	}
-
-	// create a map of user ids to user objects
-	userMap := make(map[int]models.UserRaw)
-	for _, user := range users {
 		userMap[user.Id] = user
 	}
 
@@ -124,6 +118,6 @@ func GetUserByEmail(c *gin.Context) {
 	// User found
 	c.JSON(http.StatusOK, gin.H{
 		"found": true,
-		"user": user,
+		"user":  user,
 	})
 }
