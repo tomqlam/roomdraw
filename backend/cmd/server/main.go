@@ -18,6 +18,9 @@ func main() {
 		panic(err)
 	}
 
+	// Initialize email service after config is loaded
+	handlers.InitializeEmailService()
+
 	err := database.InitDB()
 	if err != nil {
 		panic(err)

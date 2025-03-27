@@ -13,7 +13,9 @@ import (
 
 var emailService *services.EmailService
 
-func init() {
+// InitializeEmailService initializes the email service with loaded configuration
+func InitializeEmailService() {
+	log.Println("Initializing email service from handlers...")
 	emailService = services.NewEmailService()
 }
 
