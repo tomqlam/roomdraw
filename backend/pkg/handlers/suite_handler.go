@@ -1,14 +1,11 @@
 package handlers
 
 import (
-	"errors"
 	"log"
 	"net/http"
 	"roomdraw/backend/pkg/config"
 	"roomdraw/backend/pkg/database"
-	"roomdraw/backend/pkg/models"
 	"strings"
-	"sync"
 
 	"git.sr.ht/~jamesponddotco/bunnystorage-go"
 	"github.com/gin-gonic/gin"
@@ -16,102 +13,6 @@ import (
 )
 
 func SetSuiteDesign(c *gin.Context) {
-	var err error
-	// Retrieve the doneChan from the context
-	doneChanInterface, exists := c.Get("doneChan")
-	if !exists {
-		// If for some reason it doesn't exist, log an error and return
-		log.Print("Error: doneChan not found in context")
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-
-	// Assert the type of doneChan to be a chan bool
-	doneChan, ok := doneChanInterface.(chan bool)
-	if !ok {
-		// If the assertion fails, log an error and return
-		log.Print("Error: doneChan is not of type chan bool")
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-
-	// Retrieve the closeOnce from the context
-	closeOnceInterface, exists := c.Get("closeOnce")
-	if !exists {
-		// If for some reason it doesn't exist, log an error and return
-		log.Print("Error: closeOnce not found in context")
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-
-	// Assert the type of closeOnce to be a *sync.Once
-	closeOnce, ok := closeOnceInterface.(*sync.Once)
-	if !ok {
-		// If the assertion fails, log an error and return
-		log.Print("Error: closeOnce is not of type *sync.Once")
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-
-	// Ensure that a signal is sent to doneChan when the function exits, make sure this happens only once
-	defer func() {
-		closeOnce.Do(func() {
-			close(doneChan)
-			log.Println("Closed doneChan for request")
-		})
-	}()
-
-	// constantly listen for the doneChan to be closed (meaning the request was timed out) and return error
-	go func() {
-		<-doneChan
-		log.Println("Request was fulfilled or timed out")
-		// write to global error variable
-		err = errors.New("request was fulfilled or timed out")
-	}()
-
-	suiteUUID := c.Param("suiteuuid")
-
-	var suiteDesignUpdateReq models.SuiteDesignUpdateRequest
-	if err := c.ShouldBindJSON(&suiteDesignUpdateReq); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	tx, err := database.DB.Begin()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to start transaction"})
-		return
-	}
-
-	// Ensure the transaction is either committed or rolled back
-	defer func() {
-		if r := recover(); r != nil {
-			tx.Rollback()
-			panic(r)
-		} else if err != nil {
-			tx.Rollback()
-		} else {
-			err = tx.Commit()
-		}
-	}()
-
-	_, err = tx.Exec("UPDATE suites SET suite_design = $1 WHERE suite_uuid = $2", suiteDesignUpdateReq.SuiteDesign, suiteUUID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update suite design"})
-		return
-	}
-
-	// commit the transaction
-	err = tx.Commit()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to commit transaction"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "Suite design updated"})
-}
-
-func SetSuiteDesignNew(c *gin.Context) {
 	suiteUUID := c.Param("suiteuuid")
 
 	tx, err := database.DB.Begin()
