@@ -14,5 +14,6 @@ CREATE TABLE Suites (
     lock_pulled_room uuid,
     reslife_room uuid,
     gender_preference varchar NOT NULL DEFAULT '',
+    can_be_gender_preferenced bool NOT NULL DEFAULT false,
     PRIMARY KEY (suite_uuid)
 );

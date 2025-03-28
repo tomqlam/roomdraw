@@ -103,18 +103,19 @@ type RoomRaw struct {
 }
 
 type SuiteRaw struct {
-	SuiteUUID        uuid.UUID `db:"suite_uuid"`
-	Dorm             int       `db:"dorm"`
-	DormName         string    `db:"dorm_name"`
-	Floor            int       `db:"floor"`
-	RoomCount        int       `db:"room_count"`
-	Rooms            UUIDArray `db:"rooms"`
-	AlternativePull  bool      `db:"alternative_pull"`
-	SuiteDesign      string    `db:"suite_design"`
-	CanLockPull      bool      `db:"can_lock_pull"`
-	LockPulledRoom   uuid.UUID `db:"lock_pulled_room"`
-	ReslifeRoom      uuid.UUID `db:"reslife_room"`
-	GenderPreference string    `db:"gender_preference"`
+	SuiteUUID              uuid.UUID `db:"suite_uuid"`
+	Dorm                   int       `db:"dorm"`
+	DormName               string    `db:"dorm_name"`
+	Floor                  int       `db:"floor"`
+	RoomCount              int       `db:"room_count"`
+	Rooms                  UUIDArray `db:"rooms"`
+	AlternativePull        bool      `db:"alternative_pull"`
+	SuiteDesign            string    `db:"suite_design"`
+	CanLockPull            bool      `db:"can_lock_pull"`
+	LockPulledRoom         uuid.UUID `db:"lock_pulled_room"`
+	ReslifeRoom            uuid.UUID `db:"reslife_room"`
+	GenderPreference       string    `db:"gender_preference"`
+	CanBeGenderPreferenced bool      `db:"can_be_gender_preferenced"`
 }
 
 type DormSimple struct {
