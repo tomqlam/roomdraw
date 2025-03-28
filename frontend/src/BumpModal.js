@@ -44,6 +44,13 @@ function BumpModal()
     const [loadingClearRoom, setLoadingClearRoom] = useState(false);
     // New state to store original values when focus changes
     const [originalOccupants, setOriginalOccupants] = useState({});
+    // Add state for tracking clear room stats
+    const [clearRoomStats, setClearRoomStats] = useState({
+        clearRoomCount: 0,
+        maxDailyClears: 10,
+        remainingClears: 10,
+        isBlacklisted: false
+    });
 
     useEffect(() =>
     {
@@ -73,7 +80,54 @@ function BumpModal()
         }
     }, [selectedSuiteObject, selectedItem]);
 
+    // Load clear room stats when component mounts
+    useEffect(() =>
+    {
+        fetchClearRoomStats();
+    }, [refreshKey]);
 
+    // Function to fetch clear room stats
+    const fetchClearRoomStats = () =>
+    {
+        fetch(`${process.env.REACT_APP_API_URL}/users/clear-room-stats`, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('jwt')}`
+            }
+        })
+            .then(response => response.json())
+            .then(data =>
+            {
+                if (!data.error)
+                {
+                    setClearRoomStats(data);
+                }
+            })
+            .catch(error =>
+            {
+                console.error("Error fetching clear room stats:", error);
+            });
+    };
+
+    // Function to check for 403 blacklist responses
+    const handleBlacklistCheck = (response) =>
+    {
+        if (response.status === 403)
+        {
+            return response.json().then(data =>
+            {
+                if (data.blacklisted)
+                {
+                    // Update the user's blacklist status
+                    setClearRoomStats(prev => ({ ...prev, isBlacklisted: true }));
+                    setPullError(data.error || 'Your account has been temporarily restricted due to excessive room clearing. Please contact an administrator.');
+                    setShowModalError(true);
+                    return true;
+                }
+                return false;
+            });
+        }
+        return Promise.resolve(false);
+    };
 
     const handlePullMethodChange = (e) =>
     {
@@ -195,9 +249,24 @@ function BumpModal()
                     pullLeaderRoom,
                 }),
             })
-                .then(response => response.json())
+                .then(response =>
+                {
+                    // Check for blacklist first
+                    return handleBlacklistCheck(response).then(isBlacklisted =>
+                    {
+                        if (isBlacklisted)
+                        {
+                            setLoadingSubmit(false);
+                            resolve(false);
+                            return null;
+                        }
+                        return response.json();
+                    });
+                })
                 .then(data =>
                 {
+                    if (!data) return; // If blacklisted, skip this part
+
                     if (data.error)
                     {
                         if (handleErrorFromTokenExpiry(data))
@@ -293,25 +362,35 @@ function BumpModal()
     {
         return new Promise((resolve) =>
         {
-            fetch(`${process.env.REACT_APP_API_URL}/rooms/${roomUUID}`, {
+            fetch(`${process.env.REACT_APP_API_URL}/rooms/clear/${roomUUID}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${localStorage.getItem('jwt')}`
-                },
-                body: JSON.stringify({
-                    proposedOccupants: [],
-                    pullType: 1,
-                }),
+                }
             })
                 .then(response =>
                 {
-                    // commented console.log ("Fetch response status:", response.status);  // Add this line
-                    return response;
+                    // Check for blacklist first
+                    return handleBlacklistCheck(response).then(isBlacklisted =>
+                    {
+                        if (isBlacklisted)
+                        {
+                            setLoadingClearRoom(false);
+                            if (personIndex !== -1)
+                            {
+                                setLoadingClearPerson(loadingClearPerson.map((item, itemIndex) => itemIndex === personIndex ? false : item));
+                            }
+                            resolve(false);
+                            return null;
+                        }
+                        return response.json();
+                    });
                 })
                 .then(data =>
                 {
-                    // commented console.log ("Received response from clearing room");
+                    if (!data) return; // If blacklisted, skip this part
+
                     if (data.error)
                     {
                         if (handleErrorFromTokenExpiry(data))
@@ -323,9 +402,24 @@ function BumpModal()
                         setShowModalError(true);
                         resolve(false);
 
-
+                        if (data.blacklisted)
+                        {
+                            // Update the user's blacklist status
+                            setClearRoomStats(prev => ({ ...prev, isBlacklisted: true }));
+                        }
                     } else
                     {
+                        // Update clear room stats from response
+                        if (data.clearRoomCount !== undefined)
+                        {
+                            setClearRoomStats({
+                                clearRoomCount: data.clearRoomCount,
+                                maxDailyClears: data.maxDailyClears,
+                                remainingClears: data.remainingClears,
+                                isBlacklisted: data.isBlacklisted || false
+                            });
+                        }
+
                         // no error 
                         // commented console.log ("Refreshing and settingloadClearPeron");
                         setRefreshKey(prev => prev + 1);
@@ -340,10 +434,7 @@ function BumpModal()
                         {
                             closeModal();
                         }
-
-
                     }
-
                 })
                 .catch((error) =>
                 {
@@ -360,11 +451,29 @@ function BumpModal()
                         setPullError("");
                         setPeopleAlreadyInRoom([]);
                     }
-
                 });
         });
     }
 
+    // Function to format the minutes until reset
+    const formatTimeUntilReset = (minutes) =>
+    {
+        if (minutes < 60)
+        {
+            return `${minutes} minutes`;
+        } else
+        {
+            const hours = Math.floor(minutes / 60);
+            const remainingMinutes = minutes % 60;
+            if (remainingMinutes === 0)
+            {
+                return `${hours} hour${hours > 1 ? 's' : ''}`;
+            } else
+            {
+                return `${hours} hour${hours > 1 ? 's' : ''} ${remainingMinutes} min`;
+            }
+        }
+    };
 
     return (
 
@@ -510,13 +619,44 @@ function BumpModal()
                     ))}
 
                 </section>
-                <footer className="modal-card-foot" style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <button className={`button is-primary ${loadingSubmit ? 'is-loading' : ''}`} onClick={handleSubmit}>Update room</button>
-                    <button className={`button is-danger ${loadingClearRoom ? 'is-loading' : ''}`} onClick={() =>
-                    {
-                        setLoadingClearRoom(true);
-                        handleClearRoom(selectedRoomObject.roomUUID, true, -1);
-                    }}>Clear room</button>
+                <footer className="modal-card-foot" style={{ display: 'flex', justifyContent: 'space-between', flexDirection: 'column' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+                        <button className={`button is-primary ${loadingSubmit ? 'is-loading' : ''}`} onClick={handleSubmit}>Update room</button>
+                        <button
+                            className={`button is-danger ${loadingClearRoom ? 'is-loading' : ''}`}
+                            onClick={() =>
+                            {
+                                setLoadingClearRoom(true);
+                                handleClearRoom(selectedRoomObject.roomUUID, true, -1);
+                            }}
+                            disabled={clearRoomStats.remainingClears <= 0 || clearRoomStats.isBlacklisted}
+                        >
+                            Clear room
+                        </button>
+                    </div>
+                    {clearRoomStats.isBlacklisted ? (
+                        <div className="notification is-danger" style={{ marginTop: '10px', padding: '10px', fontSize: '0.85rem' }}>
+                            Your account has been temporarily restricted due to excessive room clearing. Please contact an administrator.
+                        </div>
+                    ) : clearRoomStats.remainingClears <= 3 ? (
+                        <div className="notification is-warning" style={{ marginTop: '10px', padding: '10px', fontSize: '0.85rem' }}>
+                            Warning: You are approaching the daily limit for room clearing. Further clearing may result in account restriction.
+                            {clearRoomStats.resetsInMinutes && (
+                                <div style={{ marginTop: '5px' }}>
+                                    Limits reset at midnight Pacific Time which is ({formatTimeUntilReset(clearRoomStats.resetsInMinutes)})
+                                </div>
+                            )}
+                        </div>
+                    ) : (
+                        <div className="notification is-info" style={{ marginTop: '10px', padding: '10px', fontSize: '0.85rem' }}>
+                            Clearing rooms should be done sparingly. Excessive usage will result in account restriction.
+                            {clearRoomStats.resetsInMinutes && (
+                                <div style={{ marginTop: '5px' }}>
+                                    Limits reset at midnight Pacific Time which ({formatTimeUntilReset(clearRoomStats.resetsInMinutes)})
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </footer>
             </div>
         </div>

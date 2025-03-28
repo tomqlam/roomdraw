@@ -23,6 +23,8 @@ function SuiteNoteModal()
     const [suiteNotes, setSuiteNotes] = useState('');
     const [loadingSubmit, setLoadingSubmit] = useState(false);
     const [loadingClearNotes, setLoadingClearNotes] = useState(false);
+    const [isBlacklisted, setIsBlacklisted] = useState(false);
+    const [blacklistMessage, setBlacklistMessage] = useState('');
 
     useEffect(() =>
     {
@@ -32,7 +34,24 @@ function SuiteNoteModal()
         }
     }, []);
 
-
+    // Function to check for 403 blacklist responses
+    const handleBlacklistCheck = (response) =>
+    {
+        if (response.status === 403)
+        {
+            return response.json().then(data =>
+            {
+                if (data.blacklisted)
+                {
+                    setIsBlacklisted(true);
+                    setBlacklistMessage(data.error || 'Your account has been temporarily restricted due to excessive room clearing. Please contact an administrator.');
+                    return true;
+                }
+                return false;
+            });
+        }
+        return Promise.resolve(false);
+    };
 
     const updateSuiteNotes = (notes) =>
     {
@@ -65,18 +84,34 @@ function SuiteNoteModal()
                         },
                         body: formData,
                     })
-                        .then(response => response.json())
+                        .then(response =>
+                        {
+                            // Check for blacklist first
+                            return handleBlacklistCheck(response).then(isBlacklisted =>
+                            {
+                                if (isBlacklisted)
+                                {
+                                    setLoadingSubmit(false);
+                                    return null;
+                                }
+                                return response.json();
+                            });
+                        })
                         .then(data =>
                         {
+                            if (!data) return; // If blacklisted, skip this part
+
                             if (data.error)
                             {
                                 if (handleErrorFromTokenExpiry(data))
                                 {
                                     return;
                                 };
+                                setLoadingSubmit(false);
                             } else
                             {
                                 // updated suite successfully 
+                                setLoadingSubmit(false);
                                 setIsSuiteNoteModalOpen(false);
                                 setRefreshKey(prevKey => prevKey + 1);
                                 // commented console.log ("refreshing");
@@ -85,6 +120,7 @@ function SuiteNoteModal()
                         .catch((error) =>
                         {
                             console.error('Error:', error);
+                            setLoadingSubmit(false);
                         });
                 },
             });
@@ -101,23 +137,39 @@ function SuiteNoteModal()
                 'Authorization': `Bearer ${localStorage.getItem('jwt')}`
             },
         })
-            .then(response => response.json())
+            .then(response =>
+            {
+                // Check for blacklist first
+                return handleBlacklistCheck(response).then(isBlacklisted =>
+                {
+                    if (isBlacklisted)
+                    {
+                        setLoadingClearNotes(false);
+                        return null;
+                    }
+                    return response.json();
+                });
+            })
             .then(data =>
             {
+                if (!data) return; // If blacklisted, skip this part
+
                 if (data.error)
                 {
                     // commented console.log (data.error);
+                    setLoadingClearNotes(false);
                 } else
                 {
                     // updated suite successfully 
+                    setLoadingClearNotes(false);
                     setIsSuiteNoteModalOpen(false);
                     setRefreshKey(prevKey => prevKey + 1);
-
                 }
             })
             .catch((error) =>
             {
                 console.error('Error:', error);
+                setLoadingClearNotes(false);
             });
     }
 
@@ -217,12 +269,23 @@ function SuiteNoteModal()
                     <button className="delete" aria-label="close" onClick={() => setIsSuiteNoteModalOpen(false)}></button>
                 </header>
                 <section className="modal-card-body">
-                    <p>First you must upload any picture, then crop & overlay text on top!</p>
-                    <p>Please do not submit inappropriate pictures, or pictures too thin/tall.</p> <br />
-                    {/* <input type="file" id="fileUpload" /> */}
-                    <div id="container" style={{ width: '100%', height: '50vh' }}>
-                        <ImageEditorComponent toolbar={['Crop', 'Transform', 'Annotate', 'Image', 'ZoomIn', 'ZoomOut',]} ref={imgObj} />
-                    </div>
+                    {isBlacklisted ? (
+                        <div className="notification is-danger">
+                            <span className="icon mr-2">
+                                <i className="fas fa-exclamation-triangle"></i>
+                            </span>
+                            {blacklistMessage}
+                        </div>
+                    ) : (
+                        <>
+                            <p>First you must upload any picture, then crop & overlay text on top!</p>
+                            <p>Please do not submit inappropriate pictures, or pictures too thin/tall.</p> <br />
+                            {/* <input type="file" id="fileUpload" /> */}
+                            <div id="container" style={{ width: '100%', height: '50vh' }}>
+                                <ImageEditorComponent toolbar={['Crop', 'Transform', 'Annotate', 'Image', 'ZoomIn', 'ZoomOut',]} ref={imgObj} />
+                            </div>
+                        </>
+                    )}
                     {/* <button onClick={handleSave}>Save</button> */}
                     {/* <textarea
                         className="textarea"
@@ -232,16 +295,28 @@ function SuiteNoteModal()
                     /> */}
                 </section>
                 <footer className="modal-card-foot" style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <button className={`button is-primary ${loadingSubmit && "is-loading"}`} onClick={() =>
-                    {
-                        setLoadingSubmit(true);
-                        updateSuiteNotes(suiteNotes);
-                    }}>Submit</button>
-                    <button className={`button is-danger ${loadingClearNotes && "is-loading"}`} onClick={() =>
-                    {
-                        setLoadingClearNotes(true);
-                        deleteSuiteNotes();
-                    }}>Delete all notes</button>
+                    <button
+                        className={`button is-primary ${loadingSubmit && "is-loading"}`}
+                        onClick={() =>
+                        {
+                            setLoadingSubmit(true);
+                            updateSuiteNotes(suiteNotes);
+                        }}
+                        disabled={isBlacklisted}
+                    >
+                        Submit
+                    </button>
+                    <button
+                        className={`button is-danger ${loadingClearNotes && "is-loading"}`}
+                        onClick={() =>
+                        {
+                            setLoadingClearNotes(true);
+                            deleteSuiteNotes();
+                        }}
+                        disabled={isBlacklisted}
+                    >
+                        Delete all notes
+                    </button>
                 </footer>
             </div>
         </div>

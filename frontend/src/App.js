@@ -5,11 +5,13 @@ import { jwtDecode } from "jwt-decode";
 import React, { useContext, useEffect, useState } from 'react';
 import Select from 'react-select';
 import { CSSTransition, TransitionGroup } from 'react-transition-group';
+import BlacklistManager from './Admin/BlacklistManager';
 import BumpFroshModal from './BumpFroshModal';
 import BumpModal from './BumpModal';
 import Navbar from './components/Navbar';
 import FloorGrid from './FloorGrid';
 import { MyContext } from './MyContext';
+import SearchPage from './Search/SearchPage';
 import SettingsModal from './SettingsModal';
 import './styles.css';
 import SuiteNoteModal from './SuiteNoteModal';
@@ -62,6 +64,8 @@ function App()
     const [selectedUserRoom, setSelectedUserRoom] = useState("Unselected"); // to show what room current selected user is in
     const [isBurgerActive, setIsBurgerActive] = useState(false);
     const [isInDorm, setIsInDorm] = useState(true);
+    const [lastSelectedID, setLastSelectedID] = useState(null); // Store last valid selection
+    const [isSearchFocused, setIsSearchFocused] = useState(false); // Track if search is focused
 
     // Validate selectedID when userMap loads
     useEffect(() =>
@@ -399,7 +403,46 @@ function App()
     {
         if (selectedOption)
         {
+            // Immediately unfocus search when an option is selected
+            setIsSearchFocused(false);
+
+            setLastSelectedID(selectedID); // Store the previous selection
             setSelectedID(selectedOption.value);
+            // Immediately trigger an update of the user's room info when they are selected
+            if (userMap && userMap[selectedOption.value])
+            {
+                const updateRoomInfoImmediately = async () =>
+                {
+                    const data = await fetchUserData(selectedOption.value);
+                    if (data && data.RoomUUID)
+                    {
+                        try
+                        {
+                            const roomResponse = await fetch(`${process.env.REACT_APP_API_URL}/rooms/${data.RoomUUID}`, {
+                                headers: {
+                                    'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
+                                }
+                            });
+                            if (roomResponse.ok)
+                            {
+                                const roomData = await roomResponse.json();
+                                if (!handleErrorFromTokenExpiry(roomData))
+                                {
+                                    const roomDisplay = `${roomData.DormName} ${roomData.RoomID}`;
+                                    setSelectedUserRoom(roomDisplay);
+                                }
+                            }
+                        } catch (err)
+                        {
+                            console.error('Error fetching room data:', err);
+                        }
+                    } else
+                    {
+                        setSelectedUserRoom('no room yet');
+                    }
+                };
+                updateRoomInfoImmediately();
+            }
         } else
         {
             setSelectedID(userID);
@@ -508,6 +551,20 @@ function App()
         setIsTransitioning(false);
     };
 
+    // Check if current user is an admin
+    const isAdmin = () =>
+    {
+        if (!credentials) return false;
+        try
+        {
+            const decoded = jwtDecode(credentials);
+            return decoded.email === "tlam@g.hmc.edu" || decoded.email === "smao@g.hmc.edu";
+        } catch (error)
+        {
+            return false;
+        }
+    };
+
     return (
         <div className={`main-content ${isTransitioning ? 'transition-active' : ''}`}>
             {credentials && <Navbar />}
@@ -550,10 +607,23 @@ function App()
                                     classNamePrefix="react-select"
                                     placeholder="Search for a student..."
                                     onChange={handleNameChange}
-                                    onFocus={() => setSelectedID(null)}
+                                    onFocus={() =>
+                                    {
+                                        // Store the current selection before clearing it
+                                        if (selectedID)
+                                        {
+                                            setLastSelectedID(selectedID);
+                                        }
+                                        setIsSearchFocused(true);
+                                    }}
                                     onBlur={() =>
                                     {
-                                        if (!selectedID && userID)
+                                        setIsSearchFocused(false);
+                                        if (!selectedID && lastSelectedID)
+                                        {
+                                            // Restore the last selection when no new selection is made
+                                            setSelectedID(lastSelectedID);
+                                        } else if (!selectedID && userID)
                                         {
                                             setSelectedID(userID);
                                         }
@@ -584,8 +654,15 @@ function App()
                                             value: key,
                                             label: `${userMap[key].FirstName} ${userMap[key].LastName}`
                                         })) : []}
-                                    value={selectedID && userMap && userMap[selectedID] ?
-                                        { value: selectedID, label: `${userMap[selectedID].FirstName} ${userMap[selectedID].LastName}` } : null}
+                                    value={
+                                        isSearchFocused
+                                            ? null // When focused, show empty input
+                                            : (selectedID && userMap && userMap[selectedID]
+                                                ? { value: selectedID, label: `${userMap[selectedID].FirstName} ${userMap[selectedID].LastName}` }
+                                                : null)
+                                    }
+                                    openMenuOnFocus={true}
+                                    isClearable={true}
                                 />
                             </div>
                             <div
@@ -745,6 +822,21 @@ function App()
                 {currPage === "Recommendations" && <section className="section">
                     {/* <Recommendations gridData={gridData} setCurrPage={setCurrPage} /> */}
                 </section>}
+
+                {/* Search page */}
+                {currPage === "Search" && credentials && (
+                    <SearchPage />
+                )}
+
+                {/* Admin dashboard page */}
+                {currPage === "Admin" && isAdmin() && (
+                    <section className="section">
+                        <div className="container">
+                            <h1 className="title has-text-centered">Admin Dashboard</h1>
+                            <BlacklistManager />
+                        </div>
+                    </section>
+                )}
             </div>
 
             {isModalOpen && <BumpModal />}

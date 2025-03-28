@@ -1,6 +1,7 @@
 package models
 
 import (
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -261,4 +262,14 @@ type GeneralRequest struct {
 type PreplacedRequest struct {
 	ProposedOccupants []int  `json:"proposedOccupants"`
 	UserJWT           string `json:"userJWT"`
+}
+
+// UserRateLimit represents an entry in the user_rate_limits table
+type UserRateLimit struct {
+	Email             string         `db:"email"`
+	ClearRoomCount    int            `db:"clear_room_count"`
+	ClearRoomDate     sql.NullTime   `db:"clear_room_date"`
+	IsBlacklisted     bool           `db:"is_blacklisted"`
+	BlacklistedAt     sql.NullTime   `db:"blacklisted_at"`
+	BlacklistedReason sql.NullString `db:"blacklisted_reason"`
 }

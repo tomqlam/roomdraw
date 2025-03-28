@@ -56,7 +56,7 @@ func main() {
 
 	if config.RequireAuth {
 		readGroup.Use(middleware.JWTAuthMiddleware(false))
-		writeGroup.Use(middleware.JWTAuthMiddleware(false))
+		writeGroup.Use(middleware.JWTAuthMiddleware(false), middleware.BlacklistCheckMiddleware())
 		writeGroupAdmin.Use(middleware.JWTAuthMiddleware(true))
 	}
 
@@ -70,10 +70,16 @@ func main() {
 	readGroup.GET("/users/email", handlers.GetUserByEmail)
 	readGroup.GET("/users/:userid", handlers.GetUser)
 	readGroup.GET("/users/notifications", handlers.GetNotificationPreference)
+	readGroup.GET("/users/clear-room-stats", handlers.GetUserClearRoomStats)
+
+	// New paginated and sorted endpoints
+	readGroup.GET("/search/rooms", handlers.GetRoomsPagedAndSorted)
+	readGroup.GET("/search/users", handlers.GetUsersPagedAndSorted)
 
 	// Define write routes
 	writeGroup.POST("/rooms/:roomuuid", handlers.UpdateRoomOccupants)
 	writeGroup.POST("/rooms/indorm/:roomuuid", handlers.ToggleInDorm)
+	writeGroup.POST("/rooms/clear/:roomuuid", handlers.ClearRoomHandler)
 	writeGroup.POST("/suites/design/:suiteuuid", handlers.SetSuiteDesign)
 	writeGroup.POST("/suites/design/remove/:suiteuuid", handlers.DeleteSuiteDesign)
 	writeGroup.POST("/frosh/bump/:roomuuid", handlers.BumpFroshHandler)
@@ -83,6 +89,8 @@ func main() {
 	writeGroupAdmin.POST("/frosh/:roomuuid", handlers.AddFroshHandler)
 	writeGroupAdmin.POST("/frosh/remove/:roomuuid", handlers.RemoveFroshHandler)
 	writeGroupAdmin.POST("/rooms/preplace/:roomuuid", handlers.PreplaceOccupants)
+	writeGroupAdmin.GET("/admin/blacklisted-users", handlers.GetBlacklistedUsers)
+	writeGroupAdmin.POST("/admin/blacklist/remove/:email", handlers.RemoveUserBlacklist)
 
 	log.Println("RequireAuth:", config.RequireAuth)
 

@@ -15,7 +15,9 @@ function Navbar()
         handleErrorFromTokenExpiry,
         userID,
         handleTakeMeThere,
-        refreshKey
+        refreshKey,
+        currPage,
+        setCurrPage
     } = useContext(MyContext);
 
     const [isBurgerActive, setIsBurgerActive] = useState(false);
@@ -110,6 +112,20 @@ function Navbar()
         };
         updateCurrentUserData();
     }, [userID, refreshKey, handleErrorFromTokenExpiry, userMap]);
+
+    // Check if current user is an admin
+    const isAdmin = () =>
+    {
+        if (!credentials) return false;
+        try
+        {
+            const decoded = jwtDecode(credentials);
+            return decoded.email === "tlam@g.hmc.edu" || decoded.email === "smao@g.hmc.edu";
+        } catch (error)
+        {
+            return false;
+        }
+    };
 
     return (
         <nav className="navbar" role="navigation" aria-label="main navigation">
@@ -211,9 +227,6 @@ function Navbar()
                                 className={`info-display ${myRoom !== `no room yet` ? 'clickable' : 'non-clickable'} mobile-stack-item`}
                                 title={myRoom !== `no room yet` ? `Go to my room: ${myRoom}` : 'No room assigned yet'}
                             >
-                                <span className="icon">
-                                    <i className="fas fa-home"></i>
-                                </span>
                                 <span style={{ fontWeight: '500' }}>
                                     {userMap[userID].Year.charAt(0).toUpperCase() + userMap[userID].Year.slice(1)} #{userMap[userID].DrawNumber}
                                 </span>
@@ -224,9 +237,6 @@ function Navbar()
                             </div>
                         ) : (
                             <div className="info-display non-clickable mobile-stack-item">
-                                <span className="icon">
-                                    <i className="fas fa-home"></i>
-                                </span>
                                 <span style={{ color: 'var(--text-color)' }}>
                                     Viewing only
                                 </span>
@@ -234,17 +244,47 @@ function Navbar()
                         )}
                     </div>
 
+                    {/* Search button */}
+                    <div className="navbar-item admin-wrapper">
+                        <button
+                            className={`button is-success mobile-stack-item ${currPage === "Search" ? "is-active" : ""}`}
+                            onClick={() => setCurrPage(currPage === "Search" ? "Home" : "Search")}
+                            title={currPage === "Search" ? "Return to Room Draw" : "Search"}
+                        >
+                            <span className="icon">
+                                <i className={`fas ${currPage === "Search" ? "fa-home" : "fa-search"}`}></i>
+                            </span>
+                            <span>{currPage === "Search" ? "Room Draw" : "Search"}</span>
+                        </button>
+                    </div>
+
+                    {/* Admin link - only visible to admins */}
+                    {isAdmin() && (
+                        <div className="navbar-item admin-wrapper">
+                            <button
+                                className={`button is-info mobile-stack-item ${currPage === "Admin" ? "is-active" : ""}`}
+                                onClick={() => setCurrPage(currPage === "Admin" ? "Home" : "Admin")}
+                                title={currPage === "Admin" ? "Return to Room Draw" : "Admin Dashboard"}
+                            >
+                                <span className="icon">
+                                    <i className={`fas ${currPage === "Admin" ? "fa-home" : "fa-shield-alt"}`}></i>
+                                </span>
+                                <span>{currPage === "Admin" ? "Room Draw" : "Admin"}</span>
+                            </button>
+                        </div>
+                    )}
+
                     {/* Settings Section */}
                     <div className="navbar-item settings-wrapper">
                         <button
                             className="button is-primary mobile-stack-item"
                             onClick={() => setIsSettingsModalOpen(prev => !prev)}
-                            title="Visual Settings"
+                            title="Personalization"
                         >
                             <span className="icon">
                                 <i className="fas fa-palette"></i>
                             </span>
-                            <span>Visual Settings</span>
+                            <span>Personalization</span>
                         </button>
                     </div>
 

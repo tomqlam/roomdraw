@@ -10,6 +10,7 @@ import (
 	"roomdraw/backend/pkg/models"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -509,7 +510,8 @@ func SelfPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 	}
 
 	if len(proposedOccupants) == 0 {
-		err = clearRoom(currentRoomInfo.RoomUUID, tx, notificationQueue)
+		email := c.MustGet("email").(string)
+		err = clearRoom(currentRoomInfo.RoomUUID, tx, notificationQueue, email)
 		if err != nil {
 			log.Println(err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to clear room"})
@@ -642,7 +644,8 @@ func SelfPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 
 	if currentRoomInfo.CurrentOccupancy > 0 {
 		// remove the current occupants from the room
-		err = clearRoom(currentRoomInfo.RoomUUID, tx, notificationQueue)
+		email := c.MustGet("email").(string)
+		err = clearRoom(currentRoomInfo.RoomUUID, tx, notificationQueue, email)
 		if err != nil {
 			log.Println(err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to remove the current occupants of the room"})
@@ -971,7 +974,8 @@ func NormalPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 
 	if currentRoomInfo.CurrentOccupancy > 0 {
 		// use clearRoom function to remove the current occupants from the room
-		err = clearRoom(currentRoomInfo.RoomUUID, tx, notificationQueue)
+		email := c.MustGet("email").(string)
+		err = clearRoom(currentRoomInfo.RoomUUID, tx, notificationQueue, email)
 		if err != nil {
 			log.Println(err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to remove the current occupants of the room"})
@@ -1251,11 +1255,14 @@ func LockPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 	}
 
 	if len(proposedOccupants) == 0 {
-		// error because lock pull requires at least one occupant
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Lock pull requires at least one occupant"})
-		err = errors.New("lock pull requires at least one occupant")
-		tx.Rollback()
-		return err
+		email := c.MustGet("email").(string)
+		err = clearRoom(currentRoomInfo.RoomUUID, tx, notificationQueue, email)
+		if err != nil {
+			log.Println(err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to remove the current occupants of the room"})
+			return err
+		}
+		return nil
 	}
 
 	// lock pulled room must be full
@@ -1409,7 +1416,8 @@ func LockPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 
 	if currentRoomInfo.CurrentOccupancy > 0 {
 		// use clearRoom function to remove the current occupants from the room
-		err = clearRoom(currentRoomInfo.RoomUUID, tx, notificationQueue)
+		email := c.MustGet("email").(string)
+		err = clearRoom(currentRoomInfo.RoomUUID, tx, notificationQueue, email)
 		if err != nil {
 			log.Println(err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to remove the current occupants of the room"})
@@ -1786,12 +1794,12 @@ func AlternativePull(c *gin.Context, request models.OccupantUpdateRequest) error
 
 	if currentRoomInfo.CurrentOccupancy > 0 {
 		// remove the current occupants from the room
-		err = clearRoom(currentRoomInfo.RoomUUID, tx, notificationQueue)
+		email := c.MustGet("email").(string)
+		err = clearRoom(currentRoomInfo.RoomUUID, tx, notificationQueue, email)
 		if err != nil {
 			log.Println(err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to remove the current occupants of the room"})
 			tx.Rollback()
-			return err
 		}
 	}
 
@@ -1904,10 +1912,29 @@ func AlternativePull(c *gin.Context, request models.OccupantUpdateRequest) error
 	return nil
 }
 
-func clearRoom(roomUUID uuid.UUID, tx *sql.Tx, notificationQueue *models.BumpNotificationQueue) error {
+func clearRoom(roomUUID uuid.UUID, tx *sql.Tx, notificationQueue *models.BumpNotificationQueue, requesterEmail string) error {
+	// Look up the requester's user ID from their email
+	var requester models.UserRaw
+
+	err := tx.QueryRow("SELECT id, year, first_name, last_name FROM users WHERE email = $1", requesterEmail).Scan(
+		&requester.Id, &requester.Year, &requester.FirstName, &requester.LastName,
+	)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			// User not found in database, continue with clearing the room
+			// but don't exclude any occupant from notifications
+			log.Printf("User with email %s not found in database", requesterEmail)
+			requester.Id = -1 // Set to invalid ID
+		} else {
+			// Other database error
+			return err
+		}
+	}
+
 	// Get current occupants before clearing
 	var currentOccupants models.IntArray
-	err := tx.QueryRow("SELECT occupants FROM rooms WHERE room_uuid = $1", roomUUID).Scan(&currentOccupants)
+	err = tx.QueryRow("SELECT occupants FROM rooms WHERE room_uuid = $1", roomUUID).Scan(&currentOccupants)
 	if err != nil {
 		return err
 	}
@@ -1921,6 +1948,11 @@ func clearRoom(roomUUID uuid.UUID, tx *sql.Tx, notificationQueue *models.BumpNot
 
 	// Queue notifications for each occupant being bumped
 	for _, occupantID := range currentOccupants {
+		// if the occupant is the person who is clearing the room, don't send a notification
+		if occupantID == requester.Id {
+			log.Println("Occupant " + strconv.Itoa(occupantID) + " is the requester, so not sending a notification")
+			continue
+		}
 		notificationQueue.Add(occupantID, roomID, dormName)
 	}
 
@@ -2089,7 +2121,8 @@ func PreplaceOccupants(c *gin.Context) {
 
 	// if proposed occupants is empty, clear the room
 	if len(request.ProposedOccupants) == 0 {
-		err = clearRoom(currentRoomInfo.RoomUUID, tx, notificationQueue)
+		email := c.MustGet("email").(string)
+		err = clearRoom(currentRoomInfo.RoomUUID, tx, notificationQueue, email)
 		if err != nil {
 			log.Println(err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to remove the current occupants of the room"})
@@ -2306,4 +2339,407 @@ func GetRoom(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, roomInfo)
+}
+
+// Add this new function after one of the existing handler functions
+
+// ClearRoomHandler handles clearing all occupants from a room
+func ClearRoomHandler(c *gin.Context) {
+	// Get the room UUID from the URL
+	roomUUIDParam := c.Param("roomuuid")
+
+	// Get the user's email
+	email, exists := c.Get("email")
+	if !exists {
+		log.Print("Error: email not found in context")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "User email not found"})
+		return
+	}
+	emailStr := email.(string)
+
+	// Log the user who is attempting to clear the room
+	userFullName, exists := c.Get("user_full_name")
+	if !exists {
+		log.Print("Error: user_full_name not found in context")
+		userFullName = "unknown user"
+	}
+	log.Println(userFullName.(string) + " is attempting to clear room " + roomUUIDParam)
+
+	// Check rate limits for clear room operations
+	const MAX_DAILY_CLEARS = 10
+
+	// Get the current date in Pacific Time
+	loc, err := time.LoadLocation("America/Los_Angeles")
+	if err != nil {
+		log.Printf("Error loading Pacific timezone: %v", err)
+		// Fall back to UTC if unable to load Pacific time
+		loc = time.UTC
+	}
+	pacificNow := time.Now().In(loc)
+	today := pacificNow.Format("2006-01-02") // YYYY-MM-DD format
+	todayDate, _ := time.Parse("2006-01-02", today)
+
+	// Check if the user has a rate limit record for today
+	var userLimit models.UserRateLimit
+	err = database.DB.QueryRow(`
+		SELECT email, clear_room_count, clear_room_date, is_blacklisted, blacklisted_at, blacklisted_reason
+		FROM user_rate_limits 
+		WHERE email = $1
+	`, emailStr).Scan(
+		&userLimit.Email,
+		&userLimit.ClearRoomCount,
+		&userLimit.ClearRoomDate,
+		&userLimit.IsBlacklisted,
+		&userLimit.BlacklistedAt,
+		&userLimit.BlacklistedReason,
+	)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			// First clear for this user, create a new record
+			_, err = database.DB.Exec("INSERT INTO user_rate_limits (email, clear_room_count, clear_room_date) VALUES ($1, 0, $2)", emailStr, today)
+			if err != nil {
+				log.Printf("Error creating rate limit record: %v", err)
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+				return
+			}
+			userLimit.Email = emailStr
+			userLimit.ClearRoomCount = 0
+			userLimit.ClearRoomDate.Valid = true
+			userLimit.ClearRoomDate.Time = todayDate
+			userLimit.IsBlacklisted = false
+		} else {
+			log.Printf("Error checking rate limits: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+			return
+		}
+	}
+
+	// Check if we need to reset the counter (if date has changed)
+	recordDateStr := today // Default to today if ClearRoomDate is not valid
+	if userLimit.ClearRoomDate.Valid {
+		recordDateStr = userLimit.ClearRoomDate.Time.Format("2006-01-02")
+	}
+
+	if recordDateStr != today {
+		// Reset the counter for a new day
+		_, err = database.DB.Exec("UPDATE user_rate_limits SET clear_room_count = 0, clear_room_date = $1 WHERE email = $2",
+			today, emailStr)
+		if err != nil {
+			log.Printf("Error resetting rate limit: %v", err)
+		}
+		userLimit.ClearRoomCount = 0
+	}
+
+	// Check if the user is already at or has exceeded their limit
+	if userLimit.ClearRoomCount >= MAX_DAILY_CLEARS {
+		// Blacklist the user
+		now := time.Now()
+		reason := "Exceeded daily clear room limit"
+		_, err = database.DB.Exec(
+			"UPDATE user_rate_limits SET is_blacklisted = true, blacklisted_at = $1, blacklisted_reason = $2 WHERE email = $3",
+			now, reason, emailStr)
+		if err != nil {
+			log.Printf("Error blacklisting user: %v", err)
+		}
+
+		log.Printf("User %s has been blacklisted for exceeding clear room rate limit", emailStr)
+		c.JSON(http.StatusTooManyRequests, gin.H{
+			"error":       "You have exceeded the daily limit for clearing rooms. Your account has been temporarily restricted. Please contact an administrator.",
+			"blacklisted": true,
+		})
+		return
+	}
+
+	// Create a notification queue for bump notifications
+	notificationQueue := models.NewBumpNotificationQueue()
+
+	// Start a transaction
+	tx, err := database.DB.Begin()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to start transaction"})
+		return
+	}
+
+	// Get current room info to check if it can be cleared
+	var currentRoomInfo models.RoomRaw
+	err = tx.QueryRow("SELECT room_uuid, dorm, dorm_name, room_id, suite_uuid, max_occupancy, current_occupancy, occupants, pull_priority, has_frosh FROM rooms WHERE room_uuid = $1", roomUUIDParam).Scan(
+		&currentRoomInfo.RoomUUID,
+		&currentRoomInfo.Dorm,
+		&currentRoomInfo.DormName,
+		&currentRoomInfo.RoomID,
+		&currentRoomInfo.SuiteUUID,
+		&currentRoomInfo.MaxOccupancy,
+		&currentRoomInfo.CurrentOccupancy,
+		&currentRoomInfo.Occupants,
+		&currentRoomInfo.PullPriority,
+		&currentRoomInfo.HasFrosh,
+	)
+	if err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to query room info from rooms table"})
+		return
+	}
+
+	// Check if the room has frosh - if so, don't allow clearing it
+	if currentRoomInfo.HasFrosh {
+		tx.Rollback()
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Cannot clear a room with frosh"})
+		return
+	}
+
+	// If the room is preplaced, don't allow clearing
+	if currentRoomInfo.PullPriority.IsPreplaced {
+		tx.Rollback()
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Cannot clear a preplaced room"})
+		return
+	}
+
+	// Check if the room is already empty
+	roomAlreadyEmpty := currentRoomInfo.CurrentOccupancy == 0
+
+	// Clear the room
+	err = clearRoom(currentRoomInfo.RoomUUID, tx, notificationQueue, emailStr)
+	if err != nil {
+		log.Println(err)
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to clear room"})
+		return
+	}
+
+	// Commit transaction
+	err = tx.Commit()
+	if err != nil {
+		log.Println("Result for " + userFullName.(string) + ": failed to clear room " + roomUUIDParam + " because of error " + err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to commit transaction"})
+		return
+	}
+
+	log.Println("Result for " + userFullName.(string) + ": successfully cleared room " + roomUUIDParam)
+
+	// Send notifications if needed
+	for _, notification := range notificationQueue.Notifications {
+		log.Println("Notifying bumped users ...")
+		SendBumpNotification(notification.UserID, notification.RoomID, notification.DormName)
+	}
+
+	// Only increment the clear count if the room wasn't already empty
+	if !roomAlreadyEmpty {
+		log.Println("Incrementing clear count for user " + emailStr)
+
+		// Increment the clear count
+		_, err = database.DB.Exec("UPDATE user_rate_limits SET clear_room_count = clear_room_count + 1 WHERE email = $1", emailStr)
+		if err != nil {
+			log.Printf("Error updating clear count: %v", err)
+		}
+	} else {
+		log.Println("Room was already empty, not incrementing clear count for user " + emailStr)
+	}
+
+	// Fetch the updated count from the database using the model
+	var updatedUserLimit models.UserRateLimit
+	err = database.DB.QueryRow(`
+		SELECT email, clear_room_count, clear_room_date, is_blacklisted, blacklisted_at, blacklisted_reason 
+		FROM user_rate_limits 
+		WHERE email = $1
+	`, emailStr).Scan(
+		&updatedUserLimit.Email,
+		&updatedUserLimit.ClearRoomCount,
+		&updatedUserLimit.ClearRoomDate,
+		&updatedUserLimit.IsBlacklisted,
+		&updatedUserLimit.BlacklistedAt,
+		&updatedUserLimit.BlacklistedReason,
+	)
+
+	if err != nil {
+		log.Printf("Error fetching updated clear count: %v", err)
+		// If room was already empty, keep the same count, otherwise increment
+		updatedUserLimit.ClearRoomCount = userLimit.ClearRoomCount
+		if !roomAlreadyEmpty {
+			updatedUserLimit.ClearRoomCount += 1 // Fallback to calculation if fetch fails
+		}
+	}
+
+	// Log the updated values
+	log.Printf("Updated clear count for user %s: %d", emailStr, updatedUserLimit.ClearRoomCount)
+
+	// Check if this operation pushed the user over the limit and blacklist them if so
+	if updatedUserLimit.ClearRoomCount >= MAX_DAILY_CLEARS && !updatedUserLimit.IsBlacklisted {
+		now := time.Now()
+		reason := "Exceeded daily clear room limit"
+		_, err = database.DB.Exec(
+			"UPDATE user_rate_limits SET is_blacklisted = true, blacklisted_at = $1, blacklisted_reason = $2 WHERE email = $3",
+			now, reason, emailStr)
+		if err != nil {
+			log.Printf("Error blacklisting user: %v", err)
+		} else {
+			updatedUserLimit.IsBlacklisted = true
+			log.Printf("User %s has been blacklisted after reaching clear room limit", emailStr)
+		}
+	}
+
+	// Calculate minutes until midnight Pacific Time
+	midnight := time.Date(pacificNow.Year(), pacificNow.Month(), pacificNow.Day(), 0, 0, 0, 0, loc)
+	if pacificNow.After(midnight) {
+		midnight = midnight.Add(24 * time.Hour)
+	}
+	minutesUntilReset := int(midnight.Sub(pacificNow).Minutes())
+
+	// Return the updated count to the client
+	c.JSON(http.StatusOK, gin.H{
+		"message":         "Successfully cleared room",
+		"clearRoomCount":  updatedUserLimit.ClearRoomCount,
+		"maxDailyClears":  MAX_DAILY_CLEARS,
+		"remainingClears": MAX_DAILY_CLEARS - updatedUserLimit.ClearRoomCount,
+		"resetsInMinutes": minutesUntilReset,
+		"pacificDate":     today,
+		"isBlacklisted":   updatedUserLimit.IsBlacklisted,
+	})
+}
+
+// GetRoomsPagedAndSorted handles getting rooms with pagination, sorting and filtering
+func GetRoomsPagedAndSorted(c *gin.Context) {
+	// Start a transaction
+	tx, err := database.DB.Begin()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to start transaction"})
+		return
+	}
+
+	// Ensure the transaction is either committed or rolled back
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+			panic(r)
+		} else if err != nil {
+			tx.Rollback()
+		} else {
+			err = tx.Commit()
+		}
+	}()
+
+	// Get pagination and sorting parameters
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+	sortBy := c.DefaultQuery("sort_by", "dorm_name")
+	sortOrder := c.DefaultQuery("sort_order", "asc")
+	dormFilter := c.Query("dorm")
+	capacityFilter := c.Query("capacity")
+	emptyOnly := c.DefaultQuery("empty_only", "false")
+
+	// Validate parameters
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 || limit > 100 {
+		limit = 10
+	}
+
+	// Calculate offset
+	offset := (page - 1) * limit
+
+	// Build the base query
+	baseQuery := "SELECT room_uuid, dorm, dorm_name, room_id, suite_uuid, max_occupancy, current_occupancy, occupants, pull_priority, sgroup_uuid, has_frosh, frosh_room_type FROM rooms"
+
+	// Build WHERE clause
+	whereClause := ""
+	args := []interface{}{}
+	argCount := 1
+
+	if dormFilter != "" {
+		whereClause += " WHERE dorm_name = $" + strconv.Itoa(argCount)
+		args = append(args, dormFilter)
+		argCount++
+	}
+
+	if capacityFilter != "" {
+		capacity, err := strconv.Atoi(capacityFilter)
+		if err == nil {
+			if whereClause == "" {
+				whereClause += " WHERE"
+			} else {
+				whereClause += " AND"
+			}
+			whereClause += " max_occupancy = $" + strconv.Itoa(argCount)
+			args = append(args, capacity)
+			argCount++
+		}
+	}
+
+	if emptyOnly == "true" {
+		if whereClause == "" {
+			whereClause += " WHERE"
+		} else {
+			whereClause += " AND"
+		}
+		whereClause += " (current_occupancy < max_occupancy OR current_occupancy IS NULL)"
+	}
+
+	// Validate sort column to prevent SQL injection
+	allowedSortColumns := map[string]string{
+		"dorm":              "dorm",
+		"dorm_name":         "dorm_name",
+		"room_id":           "room_id",
+		"max_occupancy":     "max_occupancy",
+		"current_occupancy": "current_occupancy",
+	}
+
+	validSortColumn, exists := allowedSortColumns[sortBy]
+	if !exists {
+		validSortColumn = "dorm_name" // Default to dorm_name if invalid
+	}
+
+	// Validate sort order
+	if sortOrder != "asc" && sortOrder != "desc" {
+		sortOrder = "asc" // Default to ascending if invalid
+	}
+
+	// Count total records query
+	countQuery := "SELECT COUNT(*) FROM rooms" + whereClause
+	var totalRecords int
+	err = tx.QueryRow(countQuery, args...).Scan(&totalRecords)
+	if err != nil {
+		log.Println(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database count query failed"})
+		return
+	}
+
+	// Calculate total pages
+	totalPages := (totalRecords + limit - 1) / limit
+
+	// Build final query with sorting and pagination
+	query := baseQuery + whereClause + " ORDER BY " + validSortColumn + " " + sortOrder +
+		" LIMIT $" + strconv.Itoa(argCount) + " OFFSET $" + strconv.Itoa(argCount+1)
+	args = append(args, limit, offset)
+
+	// Execute the query
+	rows, err := tx.Query(query, args...)
+	if err != nil {
+		log.Println(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database query failed"})
+		return
+	}
+	defer rows.Close()
+
+	var rooms []models.RoomRaw
+	for rows.Next() {
+		var room models.RoomRaw
+		if err := rows.Scan(&room.RoomUUID, &room.Dorm, &room.DormName, &room.RoomID,
+			&room.SuiteUUID, &room.MaxOccupancy, &room.CurrentOccupancy, &room.Occupants,
+			&room.PullPriority, &room.SGroupUUID, &room.HasFrosh, &room.FroshRoomType); err != nil {
+			log.Println(err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Database scan failed"})
+			return
+		}
+		rooms = append(rooms, room)
+	}
+
+	// Return the results
+	c.JSON(http.StatusOK, gin.H{
+		"rooms":       rooms,
+		"page":        page,
+		"limit":       limit,
+		"total":       totalRecords,
+		"total_pages": totalPages,
+	})
 }

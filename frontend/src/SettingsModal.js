@@ -311,7 +311,7 @@ const SettingsModal = () =>
                             <span className="icon">
                                 <i className="fas fa-palette"></i>
                             </span>
-                            <span>Visual Settings</span>
+                            <span>Personalization</span>
                         </span>
                     </p>
                     <button

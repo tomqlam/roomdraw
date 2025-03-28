@@ -2,11 +2,13 @@ package middleware
 
 import (
 	"crypto/rsa"
+	"database/sql"
 	"encoding/base64"
 	"encoding/json"
 	"log"
 	"math/big"
 	"net/http"
+	"roomdraw/backend/pkg/database"
 	"strings"
 	"sync"
 	"time"
@@ -247,5 +249,50 @@ func JWTAuthMiddleware(requiresAdmin bool) gin.HandlerFunc {
 		}
 
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized access"})
+	}
+}
+
+// BlacklistCheckMiddleware checks if the user is blacklisted and blocks write operations if they are
+func BlacklistCheckMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// Skip this middleware for non-write operations or if not authenticated
+		if c.Request.Method == "GET" || c.Request.Method == "OPTIONS" {
+			c.Next()
+			return
+		}
+
+		// Get the user's email from the JWT token
+		email, exists := c.Get("email")
+		if !exists {
+			c.Next() // If not authenticated, let the auth middleware handle it
+			return
+		}
+
+		// Check if the user is blacklisted
+		var isBlacklisted bool
+		err := database.DB.QueryRow("SELECT is_blacklisted FROM user_rate_limits WHERE email = $1", email).Scan(&isBlacklisted)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				// User not in the rate limits table yet, so not blacklisted
+				isBlacklisted = false
+			} else {
+				log.Printf("Error checking blacklist status for %s: %v", email, err)
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+				c.Abort()
+				return
+			}
+		}
+
+		if isBlacklisted {
+			log.Printf("Blocked request from blacklisted user: %s", email)
+			c.JSON(http.StatusForbidden, gin.H{
+				"error":       "Your account has been temporarily restricted due to unusual activity. Please contact an administrator.",
+				"blacklisted": true,
+			})
+			c.Abort()
+			return
+		}
+
+		c.Next()
 	}
 }

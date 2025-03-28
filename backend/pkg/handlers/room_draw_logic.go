@@ -122,8 +122,8 @@ func generateUserPriority(user models.UserRaw, dormId int) models.PullPriority {
 
 // returns if the first priority is higher than the second
 func comparePullPriority(priority1 models.PullPriority, priority2 models.PullPriority) bool {
-	log.Println("priority1", priority1)
-	log.Println("priority2", priority2)
+	// log.Println("priority1", priority1)
+	// log.Println("priority2", priority2)
 
 	if !priority1.Valid {
 		return false
