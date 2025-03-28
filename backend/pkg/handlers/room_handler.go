@@ -2497,6 +2497,7 @@ func ClearRoomHandler(c *gin.Context) {
 
 	// Check if the room is already empty
 	roomAlreadyEmpty := currentRoomInfo.CurrentOccupancy == 0
+	log.Printf("Room %s current occupancy: %d (empty: %v)", roomUUIDParam, currentRoomInfo.CurrentOccupancy, roomAlreadyEmpty)
 
 	// Clear the room
 	err = clearRoom(currentRoomInfo.RoomUUID, tx, notificationQueue, emailStr)
@@ -2507,10 +2508,26 @@ func ClearRoomHandler(c *gin.Context) {
 		return
 	}
 
+	// Only increment the clear count if the room wasn't already empty
+	if !roomAlreadyEmpty {
+		log.Printf("Incrementing clear count for user %s (room was not empty)", emailStr)
+
+		// Increment the clear count within the same transaction
+		_, err = tx.Exec("UPDATE user_rate_limits SET clear_room_count = clear_room_count + 1 WHERE email = $1", emailStr)
+		if err != nil {
+			log.Printf("Error updating clear count: %v", err)
+			tx.Rollback()
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update clear count"})
+			return
+		}
+	} else {
+		log.Printf("Not incrementing clear count for user %s (room was already empty)", emailStr)
+	}
+
 	// Commit transaction
 	err = tx.Commit()
 	if err != nil {
-		log.Println("Result for " + userFullName.(string) + ": failed to clear room " + roomUUIDParam + " because of error " + err.Error())
+		log.Printf("Failed to commit transaction: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to commit transaction"})
 		return
 	}
@@ -2521,19 +2538,6 @@ func ClearRoomHandler(c *gin.Context) {
 	for _, notification := range notificationQueue.Notifications {
 		log.Println("Notifying bumped users ...")
 		SendBumpNotification(notification.UserID, notification.RoomID, notification.DormName)
-	}
-
-	// Only increment the clear count if the room wasn't already empty
-	if !roomAlreadyEmpty {
-		log.Println("Incrementing clear count for user " + emailStr)
-
-		// Increment the clear count
-		_, err = database.DB.Exec("UPDATE user_rate_limits SET clear_room_count = clear_room_count + 1 WHERE email = $1", emailStr)
-		if err != nil {
-			log.Printf("Error updating clear count: %v", err)
-		}
-	} else {
-		log.Println("Room was already empty, not incrementing clear count for user " + emailStr)
 	}
 
 	// Fetch the updated count from the database using the model
@@ -2565,16 +2569,30 @@ func ClearRoomHandler(c *gin.Context) {
 
 	// Check if this operation pushed the user over the limit and blacklist them if so
 	if updatedUserLimit.ClearRoomCount >= MAX_DAILY_CLEARS && !updatedUserLimit.IsBlacklisted {
+		// Start a new transaction for blacklisting
+		blacklistTx, err := database.DB.Begin()
+		if err != nil {
+			log.Printf("Error starting blacklist transaction: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+			return
+		}
+
 		now := time.Now()
 		reason := "Exceeded daily clear room limit"
-		_, err = database.DB.Exec(
+		_, err = blacklistTx.Exec(
 			"UPDATE user_rate_limits SET is_blacklisted = true, blacklisted_at = $1, blacklisted_reason = $2 WHERE email = $3",
 			now, reason, emailStr)
 		if err != nil {
 			log.Printf("Error blacklisting user: %v", err)
+			blacklistTx.Rollback()
 		} else {
-			updatedUserLimit.IsBlacklisted = true
-			log.Printf("User %s has been blacklisted after reaching clear room limit", emailStr)
+			err = blacklistTx.Commit()
+			if err != nil {
+				log.Printf("Error committing blacklist transaction: %v", err)
+			} else {
+				updatedUserLimit.IsBlacklisted = true
+				log.Printf("User %s has been blacklisted after reaching clear room limit", emailStr)
+			}
 		}
 	}
 

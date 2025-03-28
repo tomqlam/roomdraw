@@ -86,7 +86,7 @@ function App()
     {
         const closedNotifications = JSON.parse(localStorage.getItem('closedNotifications')) || [];
         const newNotifications = [
-            'Reminder: to show/hide floorplans, click Settings in the top right corner and toggle the checkbox.',
+            'Reminder: to show/hide floorplans, click Personalization in the top right corner and toggle the checkbox.',
             // 'Notification 2', 
         ].filter(notification => !closedNotifications.includes(notification));
         setNotifications(newNotifications);

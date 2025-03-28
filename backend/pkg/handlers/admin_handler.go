@@ -7,8 +7,9 @@ import (
 	"roomdraw/backend/pkg/database"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"roomdraw/backend/pkg/models"
+
+	"github.com/gin-gonic/gin"
 )
 
 // BlacklistedUser represents a user who has been blacklisted
@@ -66,7 +67,23 @@ func GetBlacklistedUsers(c *gin.Context) {
 func RemoveUserBlacklist(c *gin.Context) {
 	email := c.Param("email")
 
-	_, err := database.DB.Exec(`
+	// Start a transaction
+	tx, err := database.DB.Begin()
+	if err != nil {
+		log.Printf("Error starting transaction: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to start transaction"})
+		return
+	}
+
+	// Ensure the transaction is either committed or rolled back
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+			panic(r)
+		}
+	}()
+
+	_, err = tx.Exec(`
 		UPDATE user_rate_limits
 		SET is_blacklisted = false, 
 		    clear_room_count = 0, 
@@ -76,7 +93,16 @@ func RemoveUserBlacklist(c *gin.Context) {
 
 	if err != nil {
 		log.Printf("Error removing user from blacklist: %v", err)
+		tx.Rollback()
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to remove user from blacklist"})
+		return
+	}
+
+	// Commit the transaction
+	err = tx.Commit()
+	if err != nil {
+		log.Printf("Error committing transaction: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to commit transaction"})
 		return
 	}
 
@@ -104,10 +130,10 @@ func GetUserClearRoomStats(c *gin.Context) {
 	todayDate, _ := time.Parse("2006-01-02", today)
 
 	const MAX_DAILY_CLEARS = 10
-	
+
 	// Define a UserRateLimit instance
 	var userLimit models.UserRateLimit
-	
+
 	// Get the user's clear room stats
 	err = database.DB.QueryRow(`
 		SELECT email, clear_room_count, clear_room_date, is_blacklisted, blacklisted_at, blacklisted_reason
@@ -144,7 +170,7 @@ func GetUserClearRoomStats(c *gin.Context) {
 	}
 
 	// Log the values for debugging
-	log.Printf("For user %s: clearCount=%d, recordDate=%s, isBlacklisted=%v", 
+	log.Printf("For user %s: clearCount=%d, recordDate=%s, isBlacklisted=%v",
 		emailStr, userLimit.ClearRoomCount, recordDateStr, userLimit.IsBlacklisted)
 
 	// Check if we need to reset based on date
@@ -159,11 +185,11 @@ func GetUserClearRoomStats(c *gin.Context) {
 		midnight = midnight.Add(24 * time.Hour)
 	}
 	minutesUntilReset := int(midnight.Sub(pacificNow).Minutes())
-	
+
 	c.JSON(http.StatusOK, gin.H{
 		"clearRoomCount":  userLimit.ClearRoomCount,
 		"maxDailyClears":  MAX_DAILY_CLEARS,
-		"remainingClears": MAX_DAILY_CLEARS - userLimit.ClearRoomCount, 
+		"remainingClears": MAX_DAILY_CLEARS - userLimit.ClearRoomCount,
 		"resetsInMinutes": minutesUntilReset,
 		"pacificDate":     today,
 		"isBlacklisted":   userLimit.IsBlacklisted,

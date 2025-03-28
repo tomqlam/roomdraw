@@ -157,7 +157,7 @@ function BlacklistManager()
                         </div>
                     ) : (
                         <div className="table-container">
-                            <table className="table is-fullwidth is-hoverable dark-mode-table">
+                            <table className="table is-fullwidth is-hoverable dark-mode-table blacklist-table">
                                 <thead>
                                     <tr>
                                         <th>Email</th>
@@ -174,18 +174,18 @@ function BlacklistManager()
                                                 <strong>{user.email}</strong>
                                             </td>
                                             <td>
-                                                <span className="tag is-danger">{user.clearRoomCount}</span>
+                                                <span className="tag is-danger is-medium">{user.clearRoomCount}</span>
                                             </td>
                                             <td>{new Date(user.blacklistedAt).toLocaleString()}</td>
                                             <td>{user.reason}</td>
                                             <td>
                                                 <button
-                                                    className={`button is-primary ${removing[user.email] ? 'is-loading' : ''}`}
+                                                    className={`button is-danger ${removing[user.email] ? 'is-loading' : ''}`}
                                                     onClick={() => removeFromBlacklist(user.email)}
                                                     disabled={removing[user.email]}
                                                 >
                                                     <span className="icon">
-                                                        <i className="fas fa-user-check"></i>
+                                                        <i className="fas fa-times"></i>
                                                     </span>
                                                     <span>Remove</span>
                                                 </button>

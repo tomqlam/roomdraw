@@ -381,89 +381,6 @@ function SearchPage()
         }, 50);
     };
 
-    // Create pagination controls
-    const pagination = () =>
-    {
-        const pages = [];
-
-        // Reduce excessive ellipsis when there are few pages
-        const showEllipsis = totalPages > 7;
-        const ellipsis = <li key="ellipsis">
-            <span className="pagination-ellipsis">&hellip;</span>
-        </li>;
-
-        // Logic to determine range of pages to show
-        let startPage = 1;
-        let endPage = totalPages;
-
-        if (totalPages > 7)
-        {
-            if (page <= 4)
-            {
-                // Near the beginning
-                endPage = 5;
-            } else if (page >= totalPages - 3)
-            {
-                // Near the end
-                startPage = totalPages - 4;
-            } else
-            {
-                // In the middle
-                startPage = page - 2;
-                endPage = page + 2;
-            }
-        }
-
-        // First page with ellipsis if needed
-        if (startPage > 1)
-        {
-            pages.push(
-                <li key={1}>
-                    <a className="pagination-link" onClick={() => setPage(1)}>1</a>
-                </li>
-            );
-
-            if (startPage > 2 && showEllipsis)
-            {
-                pages.push(ellipsis);
-            }
-        }
-
-        // Page numbers
-        for (let i = startPage; i <= endPage; i++)
-        {
-            pages.push(
-                <li key={i}>
-                    <a
-                        className={`pagination-link ${i === page ? 'is-current' : ''}`}
-                        onClick={() => setPage(i)}
-                    >
-                        {i}
-                    </a>
-                </li>
-            );
-        }
-
-        // Last page with ellipsis if needed
-        if (endPage < totalPages)
-        {
-            if (endPage < totalPages - 1 && showEllipsis)
-            {
-                pages.push(ellipsis);
-            }
-
-            pages.push(
-                <li key={totalPages}>
-                    <a className="pagination-link" onClick={() => setPage(totalPages)}>
-                        {totalPages}
-                    </a>
-                </li>
-            );
-        }
-
-        return pages;
-    };
-
     return (
         <div className="section">
             <div className="container">
@@ -847,8 +764,8 @@ function SearchPage()
 
                     {/* Pagination controls */}
                     {totalPages > 1 && (
-                        <nav className="pagination is-centered is-small mt-4 dark-mode-pagination" role="navigation" aria-label="pagination">
-                            <a
+                        <nav className="pagination is-centered" role="navigation" aria-label="pagination">
+                            <button
                                 className="pagination-previous"
                                 onClick={() =>
                                 {
@@ -860,9 +777,12 @@ function SearchPage()
                                 }}
                                 disabled={page === 1 || loading}
                             >
-                                Previous
-                            </a>
-                            <a
+                                <span className="icon">
+                                    <i className="fas fa-chevron-left"></i>
+                                </span>
+                                <span>Previous</span>
+                            </button>
+                            <button
                                 className="pagination-next"
                                 onClick={() =>
                                 {
@@ -874,10 +794,83 @@ function SearchPage()
                                 }}
                                 disabled={page === totalPages || loading}
                             >
-                                Next page
-                            </a>
+                                <span>Next</span>
+                                <span className="icon">
+                                    <i className="fas fa-chevron-right"></i>
+                                </span>
+                            </button>
                             <ul className="pagination-list">
-                                {pagination()}
+                                {/* First page */}
+                                {page > 2 && (
+                                    <li>
+                                        <button
+                                            className="pagination-link"
+                                            onClick={() => setPage(1)}
+                                        >
+                                            1
+                                        </button>
+                                    </li>
+                                )}
+
+                                {/* Ellipsis if needed */}
+                                {page > 3 && (
+                                    <li>
+                                        <span className="pagination-ellipsis">&hellip;</span>
+                                    </li>
+                                )}
+
+                                {/* Previous page if not first */}
+                                {page > 1 && (
+                                    <li>
+                                        <button
+                                            className="pagination-link"
+                                            onClick={() => setPage(page - 1)}
+                                        >
+                                            {page - 1}
+                                        </button>
+                                    </li>
+                                )}
+
+                                {/* Current page */}
+                                <li>
+                                    <button
+                                        className="pagination-link is-current"
+                                        aria-current="page"
+                                    >
+                                        {page}
+                                    </button>
+                                </li>
+
+                                {/* Next page if not last */}
+                                {page < totalPages && (
+                                    <li>
+                                        <button
+                                            className="pagination-link"
+                                            onClick={() => setPage(page + 1)}
+                                        >
+                                            {page + 1}
+                                        </button>
+                                    </li>
+                                )}
+
+                                {/* Ellipsis if needed */}
+                                {page < totalPages - 2 && (
+                                    <li>
+                                        <span className="pagination-ellipsis">&hellip;</span>
+                                    </li>
+                                )}
+
+                                {/* Last page */}
+                                {page < totalPages - 1 && (
+                                    <li>
+                                        <button
+                                            className="pagination-link"
+                                            onClick={() => setPage(totalPages)}
+                                        >
+                                            {totalPages}
+                                        </button>
+                                    </li>
+                                )}
                             </ul>
                         </nav>
                     )}

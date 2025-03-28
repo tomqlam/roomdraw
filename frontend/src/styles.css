@@ -49,7 +49,7 @@ body.dark-mode {
     --box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     --floor-section-bg: #1e1e1e;
     --floor-section-border: rgba(255, 255, 255, 0.06);
-    --floor-header-border: #333333;
+    --floor-header-border: #252525;
     --subtitle-color: #b0b0b0;
     --tab-active-color: #ffffff;
     --tab-hover-color: #e0e0e0;
@@ -57,7 +57,7 @@ body.dark-mode {
     --button-text-light: #f8f8f8;
     --button-text-dark: #f8f8f8;
     --grid-container-bg: #212121;
-    --card-bg-hover: #333333;
+    --card-bg-hover: #252525;
     --login-bg: #1a1a1a;
 }
 
@@ -2043,11 +2043,11 @@ body.dark-mode .navbar {
 }
 
 body.dark-mode .search-loading-overlay {
-    background-color: rgba(0,0,0,0.7);
+    background-color: rgba(0, 0, 0, 0.7);
 }
 
 body:not(.dark-mode) .search-loading-overlay {
-    background-color: rgba(255,255,255,0.7);
+    background-color: rgba(255, 255, 255, 0.7);
 }
 
 .search-filter-panel {
@@ -2081,26 +2081,45 @@ body:not(.dark-mode) .search-loading-overlay {
 }
 
 /* Table styling for dark mode */
-.dark-mode-table {
-    background-color: var(--card-bg);
-    color: var(--text-color);
+body.dark-mode .dark-mode-table {
+    background-color: var(--card-bg) !important;
+    color: var(--text-color) !important;
+    border-color: rgba(255, 255, 255, 0.05) !important;
 }
 
-.dark-mode-table th {
-    color: var(--text-color);
+body.dark-mode .dark-mode-table th {
+    color: #ffffff !important;
+    background-color: var(--card-bg) !important;
+    border-color: rgba(255, 255, 255, 0.05) !important;
+    font-weight: 600 !important;
+    padding-bottom: 1rem !important;
 }
 
-.dark-mode-table td {
-    color: var(--text-color);
+body.dark-mode .dark-mode-table td {
+    color: var(--text-color) !important;
+    border-color: rgba(255, 255, 255, 0.05) !important;
+    background-color: var(--card-bg) !important;
 }
 
-.dark-mode-table tr {
-    color: var(--text-color);
-    background-color: var(--card-bg);
+body.dark-mode .dark-mode-table tr {
+    background-color: var(--card-bg) !important;
+    border-color: rgba(255, 255, 255, 0.05) !important;
 }
 
-.dark-mode-table tr:hover {
-    background-color: var(--card-bg-hover);
+body.dark-mode .dark-mode-table tr:hover,
+body.dark-mode .dark-mode-table tr:hover td {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    color: var(--text-color) !important;
+}
+
+/* Sort icons in table headers */
+body.dark-mode .dark-mode-table th .icon {
+    color: rgba(255, 255, 255, 0.7) !important;
+    margin-left: 0.5rem !important;
+}
+
+body.dark-mode .dark-mode-table th:hover .icon {
+    color: #ffffff !important;
 }
 
 /* Pagination dark mode */
@@ -2123,4 +2142,170 @@ body:not(.dark-mode) .search-loading-overlay {
 /* Style for number display in results area */
 .results-count {
     color: var(--text-muted);
+}
+
+/* Icon color adjustments for dark mode */
+body.dark-mode .title .icon.has-text-primary {
+    color: var(--text-color) !important;
+}
+
+/* Dark mode table styles */
+body.dark-mode .dark-mode-table {
+    background-color: var(--card-bg) !important;
+    color: var(--text-color) !important;
+    border-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Dark mode search input styles */
+body.dark-mode .search-static-button {
+    background-color: var(--card-bg) !important;
+    color: var(--text-color) !important;
+    border-color: var(--border-color) !important;
+}
+
+body.dark-mode .tag.is-light {
+    background-color: var(--card-bg) !important;
+    color: var(--text-color) !important;
+    border: 1px solid var(--border-color) !important;
+}
+
+/* Dark mode table styles */
+body.dark-mode .dark-mode-table .tag.is-primary {
+    background-color: rgba(0, 209, 178, 0.2) !important;
+    color: #9fefde !important;
+    border: 1px solid rgba(0, 209, 178, 0.3) !important;
+    transition: all 0.3s ease;
+}
+
+body.dark-mode .dark-mode-table .tag.is-primary:hover {
+    background-color: rgba(0, 209, 178, 0.3) !important;
+    color: #b8f4e6 !important;
+    border-color: rgba(0, 209, 178, 0.4) !important;
+}
+
+/* Ensure other tags in the table maintain their styles */
+body.dark-mode .dark-mode-table .tag.is-info {
+    background-color: rgba(32, 156, 238, 0.2) !important;
+    color: #b8d8f4 !important;
+    border: 1px solid rgba(32, 156, 238, 0.3) !important;
+}
+
+/* Notification styles for dark mode */
+body.dark-mode .notification.is-info {
+    background-color: rgba(32, 156, 238, 0.1) !important;
+    color: #b8d8f4 !important;
+    border: 1px solid rgba(32, 156, 238, 0.2) !important;
+}
+
+body.dark-mode .notification {
+    background-color: var(--card-bg) !important;
+    color: var(--text-color) !important;
+    border: 1px solid var(--border-color) !important;
+}
+
+body.dark-mode .dark-mode-table td strong {
+    color: #ffffff !important;
+    font-weight: 500;
+}
+
+/* Blacklist table specific styles */
+.blacklist-table td {
+    vertical-align: middle !important;
+}
+
+.blacklist-table .tag.is-danger {
+    font-weight: 500;
+}
+
+body.dark-mode .blacklist-table .button.is-primary {
+    background-color: rgba(0, 209, 178, 0.2) !important;
+    color: #9fefde !important;
+    border: 1px solid rgba(0, 209, 178, 0.3) !important;
+    transition: all 0.3s ease;
+}
+
+body.dark-mode .blacklist-table .button.is-primary:hover {
+    background-color: rgba(0, 209, 178, 0.3) !important;
+    color: #b8f4e6 !important;
+    border-color: rgba(0, 209, 178, 0.4) !important;
+}
+
+/* Pagination styles */
+.pagination {
+    margin-top: 1.5rem;
+}
+
+.pagination-list {
+    list-style: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.25rem;
+    margin: 0;
+    padding: 0;
+}
+
+.pagination-link {
+    min-width: 2.25rem;
+    height: 2.25rem;
+    padding: 0 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    border: 1px solid var(--border-color);
+    background-color: var(--card-bg);
+    color: var(--text-color);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.pagination-link:hover {
+    background-color: var(--card-bg-hover);
+    border-color: var(--primary-color);
+}
+
+.pagination-link.is-current {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: #ffffff;
+}
+
+body.dark-mode .pagination-link.is-current {
+    background-color: #666666;
+    border-color: #666666;
+}
+
+.pagination-previous,
+.pagination-next {
+    padding: 0 0.75rem;
+    height: 2.25rem;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    border: 1px solid var(--border-color);
+    background-color: var(--card-bg);
+    color: var(--text-color);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.pagination-previous:hover:not(:disabled),
+.pagination-next:hover:not(:disabled) {
+    background-color: var(--card-bg-hover);
+    border-color: var(--primary-color);
+}
+
+.pagination-previous:disabled,
+.pagination-next:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.pagination-previous .icon,
+.pagination-next .icon {
+    font-size: 0.75rem;
 }
