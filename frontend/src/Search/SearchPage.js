@@ -469,11 +469,7 @@ function SearchPage()
             <div className="container">
                 <h1 className="title has-text-centered mb-5">Search</h1>
 
-                <div className="box mb-4" style={{
-                    borderRadius: '8px',
-                    boxShadow: 'var(--box-shadow)',
-                    backgroundColor: 'var(--card-bg)',
-                }}>
+                <div className="box mb-4 search-box">
                     <div className="buttons has-addons is-centered mb-3">
                         <button
                             className={`button ${searchType === 'rooms' ? 'is-primary' : isDarkMode ? 'is-dark' : 'is-light'}`}
@@ -512,15 +508,11 @@ function SearchPage()
                     </div>
 
                     {showFilters && (
-                        <div className="filter-panel px-4 py-3" style={{
-                            backgroundColor: 'var(--card-bg-hover)',
-                            borderRadius: '8px',
-                            marginBottom: '1rem'
-                        }}>
+                        <div className="px-4 py-3 search-filter-panel">
                             {searchType === 'rooms' ? (
                                 <div className="columns is-centered">
                                     <div className="column is-5">
-                                        <label className="label" style={{ color: 'var(--text-color)' }}>Dorm</label>
+                                        <label className="label dark-mode-label">Dorm</label>
                                         <Select
                                             className="react-select"
                                             classNamePrefix="react-select"
@@ -533,7 +525,7 @@ function SearchPage()
                                         />
                                     </div>
                                     <div className="column is-5">
-                                        <label className="label" style={{ color: 'var(--text-color)' }}>Room Capacity</label>
+                                        <label className="label dark-mode-label">Room Capacity</label>
                                         <Select
                                             className="react-select"
                                             classNamePrefix="react-select"
@@ -549,7 +541,7 @@ function SearchPage()
                             ) : (
                                 <div className="columns mb-0">
                                     <div className="column is-one-third">
-                                        <label className="label" style={{ color: 'var(--text-color)' }}>Year</label>
+                                        <label className="label dark-mode-label">Year</label>
                                         <Select
                                             className="react-select"
                                             classNamePrefix="react-select"
@@ -562,7 +554,7 @@ function SearchPage()
                                         />
                                     </div>
                                     <div className="column is-one-third">
-                                        <label className="label" style={{ color: 'var(--text-color)' }}>In-Dorm Preference</label>
+                                        <label className="label dark-mode-label">In-Dorm Preference</label>
                                         <Select
                                             className="react-select"
                                             classNamePrefix="react-select"
@@ -575,48 +567,29 @@ function SearchPage()
                                         />
                                     </div>
                                     <div className="column is-one-third">
-                                        <label className="label" style={{ color: 'var(--text-color)' }}>Draw Number Range</label>
+                                        <label className="label dark-mode-label">Draw Number Range</label>
                                         <div className="field has-addons">
                                             <div className="control is-expanded">
                                                 <input
-                                                    className="input"
+                                                    className="input search-number-input"
                                                     type="number"
                                                     placeholder="Min"
                                                     min="1"
                                                     value={drawNumberFilter.min}
                                                     onChange={(e) => setDrawNumberFilter({ ...drawNumberFilter, min: e.target.value })}
-                                                    style={{
-                                                        borderRadius: '6px 0 0 6px',
-                                                        height: 'var(--component-height)',
-                                                        backgroundColor: isDarkMode ? 'var(--card-bg)' : 'white',
-                                                        color: 'var(--text-color)',
-                                                        borderColor: 'var(--border-color)'
-                                                    }}
                                                 />
                                             </div>
                                             <div className="control">
-                                                <a className="button is-static" style={{
-                                                    height: 'var(--component-height)',
-                                                    backgroundColor: isDarkMode ? 'var(--card-bg-hover)' : '#f5f5f5',
-                                                    color: 'var(--text-color)',
-                                                    borderColor: 'var(--border-color)'
-                                                }}>to</a>
+                                                <a className="button is-static search-static-button">to</a>
                                             </div>
                                             <div className="control is-expanded">
                                                 <input
-                                                    className="input"
+                                                    className="input search-number-input-right"
                                                     type="number"
                                                     placeholder="Max"
                                                     min="1"
                                                     value={drawNumberFilter.max}
                                                     onChange={(e) => setDrawNumberFilter({ ...drawNumberFilter, max: e.target.value })}
-                                                    style={{
-                                                        borderRadius: '0 6px 6px 0',
-                                                        height: 'var(--component-height)',
-                                                        backgroundColor: isDarkMode ? 'var(--card-bg)' : 'white',
-                                                        color: 'var(--text-color)',
-                                                        borderColor: 'var(--border-color)'
-                                                    }}
                                                 />
                                             </div>
                                         </div>
@@ -659,14 +632,7 @@ function SearchPage()
                 </div>
 
                 {/* Results section */}
-                <div className="box" style={{
-                    borderRadius: '8px',
-                    boxShadow: 'var(--box-shadow)',
-                    minHeight: '500px',
-                    position: 'relative',
-                    backgroundColor: 'var(--card-bg)',
-                    color: 'var(--text-color)'
-                }}>
+                <div className="box search-results-box">
                     <div className="level">
                         <div className="level-left">
                             <div className="level-item">
@@ -689,11 +655,7 @@ function SearchPage()
                                                 setItemsPerPage(Number(e.target.value));
                                                 setPage(1); // Reset to first page when changing items per page
                                             }}
-                                            style={{
-                                                backgroundColor: isDarkMode ? 'var(--card-bg)' : 'white',
-                                                color: 'var(--text-color)',
-                                                borderColor: 'var(--border-color)'
-                                            }}
+                                            className="dark-mode-select"
                                         >
                                             <option value={5}>5 per page</option>
                                             <option value={10}>10 per page</option>
@@ -701,7 +663,7 @@ function SearchPage()
                                             <option value={50}>50 per page</option>
                                         </select>
                                     </div>
-                                    <span className="has-text-grey">{totalRecords} results</span>
+                                    <span className="results-count">{totalRecords} results</span>
                                 </div>
                             </div>
                         </div>
@@ -709,20 +671,7 @@ function SearchPage()
 
                     <div className="results-content" style={{ minHeight: '300px', position: 'relative' }}>
                         {loading && showLoading ? (
-                            <div className="has-text-centered loading-overlay" style={{
-                                position: 'absolute',
-                                top: 0,
-                                left: 0,
-                                right: 0,
-                                bottom: 0,
-                                display: 'flex',
-                                flexDirection: 'column',
-                                justifyContent: 'center',
-                                alignItems: 'center',
-                                backgroundColor: isDarkMode ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.7)',
-                                zIndex: 5,
-                                borderRadius: '8px'
-                            }}>
+                            <div className="has-text-centered search-loading-overlay">
                                 <span className="icon is-large">
                                     <i className="fas fa-circle-notch fa-spin fa-2x"></i>
                                 </span>
@@ -746,17 +695,10 @@ function SearchPage()
                                 opacity: loading ? 0.7 : 1,
                                 transition: 'opacity 0.2s'
                             }}>
-                                <table className="table is-fullwidth is-hoverable" style={{
-                                    backgroundColor: isDarkMode ? 'var(--card-bg)' : undefined,
-                                    color: 'var(--text-color)'
-                                }}>
+                                <table className="table is-fullwidth is-hoverable dark-mode-table">
                                     <thead>
                                         <tr>
-                                            <th onClick={() => requestSort('DormName')} className={getClassNamesFor('DormName')} style={{
-                                                cursor: 'pointer',
-                                                width: '30%',
-                                                color: 'var(--text-color)'
-                                            }}>
+                                            <th onClick={() => requestSort('DormName')} className={getClassNamesFor('DormName')} style={{ cursor: 'pointer', width: '30%' }}>
                                                 Dorm
                                                 <span className="icon is-small ml-1">
                                                     <i className={`fas ${sortConfig.key === 'DormName'
@@ -764,11 +706,7 @@ function SearchPage()
                                                         : 'fa-sort'}`}></i>
                                                 </span>
                                             </th>
-                                            <th onClick={() => requestSort('RoomID')} className={getClassNamesFor('RoomID')} style={{
-                                                cursor: 'pointer',
-                                                width: '30%',
-                                                color: 'var(--text-color)'
-                                            }}>
+                                            <th onClick={() => requestSort('RoomID')} className={getClassNamesFor('RoomID')} style={{ cursor: 'pointer', width: '30%' }}>
                                                 Room
                                                 <span className="icon is-small ml-1">
                                                     <i className={`fas ${sortConfig.key === 'RoomID'
@@ -776,11 +714,7 @@ function SearchPage()
                                                         : 'fa-sort'}`}></i>
                                                 </span>
                                             </th>
-                                            <th onClick={() => requestSort('capacity')} className={getClassNamesFor('capacity')} style={{
-                                                cursor: 'pointer',
-                                                width: '20%',
-                                                color: 'var(--text-color)'
-                                            }}>
+                                            <th onClick={() => requestSort('capacity')} className={getClassNamesFor('capacity')} style={{ cursor: 'pointer', width: '20%' }}>
                                                 Capacity
                                                 <span className="icon is-small ml-1">
                                                     <i className={`fas ${sortConfig.key === 'capacity'
@@ -788,21 +722,15 @@ function SearchPage()
                                                         : 'fa-sort'}`}></i>
                                                 </span>
                                             </th>
-                                            <th style={{ width: '20%', color: 'var(--text-color)' }}>Actions</th>
+                                            <th style={{ width: '20%' }}>Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {results.map(room => (
-                                            <tr key={room.RoomUUID} style={{
-                                                color: 'var(--text-color)',
-                                                backgroundColor: isDarkMode ? 'var(--card-bg)' : undefined,
-                                                '&:hover': {
-                                                    backgroundColor: isDarkMode ? 'var(--card-bg-hover)' : undefined,
-                                                }
-                                            }}>
-                                                <td style={{ color: 'var(--text-color)' }}>{room.DormName}</td>
-                                                <td style={{ color: 'var(--text-color)' }}>{room.RoomID}</td>
-                                                <td style={{ color: 'var(--text-color)' }}>{room.MaxOccupancy}</td>
+                                            <tr key={room.RoomUUID}>
+                                                <td>{room.DormName}</td>
+                                                <td>{room.RoomID}</td>
+                                                <td>{room.MaxOccupancy}</td>
                                                 <td>
                                                     <span className="tag is-primary" style={{
                                                         borderRadius: '6px',
@@ -829,7 +757,7 @@ function SearchPage()
                                 opacity: loading ? 0.7 : 1,
                                 transition: 'opacity 0.2s'
                             }}>
-                                <table className="table is-fullwidth is-hoverable">
+                                <table className="table is-fullwidth is-hoverable dark-mode-table">
                                     <thead>
                                         <tr>
                                             <th onClick={() => requestSort('FirstName')} className={getClassNamesFor('FirstName')} style={{ cursor: 'pointer', width: '25%' }}>
@@ -919,9 +847,9 @@ function SearchPage()
 
                     {/* Pagination controls */}
                     {totalPages > 1 && (
-                        <nav className="pagination is-centered is-small mt-4" role="navigation" aria-label="pagination">
+                        <nav className="pagination is-centered is-small mt-4 dark-mode-pagination" role="navigation" aria-label="pagination">
                             <a
-                                className={`pagination-previous ${isDarkMode ? 'has-text-light' : ''}`}
+                                className="pagination-previous"
                                 onClick={() =>
                                 {
                                     if (page > 1 && !loading)
@@ -931,12 +859,11 @@ function SearchPage()
                                     }
                                 }}
                                 disabled={page === 1 || loading}
-                                style={{ color: 'var(--text-color)' }}
                             >
                                 Previous
                             </a>
                             <a
-                                className={`pagination-next ${isDarkMode ? 'has-text-light' : ''}`}
+                                className="pagination-next"
                                 onClick={() =>
                                 {
                                     if (page < totalPages && !loading)
@@ -946,7 +873,6 @@ function SearchPage()
                                     }
                                 }}
                                 disabled={page === totalPages || loading}
-                                style={{ color: 'var(--text-color)' }}
                             >
                                 Next page
                             </a>
