@@ -34,6 +34,59 @@ function SearchPage()
     const [capacityOptions, setCapacityOptions] = useState([]);
     const [inDormOptions, setInDormOptions] = useState([]);
 
+    // Custom styles for react-select to support dark mode
+    const selectStyles = {
+        control: (baseStyles) => ({
+            ...baseStyles,
+            backgroundColor: isDarkMode ? 'var(--card-bg)' : 'white',
+            borderColor: 'var(--border-color)',
+            boxShadow: 'var(--input-shadow)',
+            '&:hover': {
+                borderColor: 'var(--primary-color)',
+            },
+        }),
+        option: (baseStyles, state) => ({
+            ...baseStyles,
+            backgroundColor: isDarkMode
+                ? state.isSelected
+                    ? 'var(--primary-color)'
+                    : state.isFocused
+                        ? 'var(--card-bg-hover)'
+                        : 'var(--card-bg)'
+                : state.isSelected
+                    ? 'var(--primary-color)'
+                    : state.isFocused
+                        ? '#f5f5f5'
+                        : 'white',
+            color: isDarkMode
+                ? state.isSelected
+                    ? 'white'
+                    : 'var(--text-color)'
+                : state.isSelected
+                    ? 'white'
+                    : 'inherit',
+            cursor: 'pointer',
+        }),
+        menu: (baseStyles) => ({
+            ...baseStyles,
+            backgroundColor: isDarkMode ? 'var(--card-bg)' : 'white',
+            boxShadow: 'var(--box-shadow)',
+            zIndex: 10,
+        }),
+        input: (baseStyles) => ({
+            ...baseStyles,
+            color: isDarkMode ? 'var(--text-color)' : 'inherit',
+        }),
+        singleValue: (baseStyles) => ({
+            ...baseStyles,
+            color: isDarkMode ? 'var(--text-color)' : 'inherit',
+        }),
+        placeholder: (baseStyles) => ({
+            ...baseStyles,
+            color: isDarkMode ? 'var(--text-muted)' : 'hsl(0, 0%, 50%)',
+        }),
+    };
+
     // Utility function to convert dorm ID to dorm name
     const getDormNameFromId = (dormId) =>
     {
@@ -416,10 +469,14 @@ function SearchPage()
             <div className="container">
                 <h1 className="title has-text-centered mb-5">Search</h1>
 
-                <div className="box mb-4" style={{ borderRadius: '8px', boxShadow: 'var(--box-shadow)' }}>
+                <div className="box mb-4" style={{
+                    borderRadius: '8px',
+                    boxShadow: 'var(--box-shadow)',
+                    backgroundColor: 'var(--card-bg)',
+                }}>
                     <div className="buttons has-addons is-centered mb-3">
                         <button
-                            className={`button ${searchType === 'rooms' ? 'is-primary' : 'is-light'}`}
+                            className={`button ${searchType === 'rooms' ? 'is-primary' : isDarkMode ? 'is-dark' : 'is-light'}`}
                             onClick={() => { setSearchType('rooms'); resetFilters(); }}
                             style={{ borderRadius: '8px 0 0 8px', transition: 'all 0.3s ease' }}
                         >
@@ -429,7 +486,7 @@ function SearchPage()
                             <span>Find Empty Rooms</span>
                         </button>
                         <button
-                            className={`button ${searchType === 'people' ? 'is-primary' : 'is-light'}`}
+                            className={`button ${searchType === 'people' ? 'is-primary' : isDarkMode ? 'is-dark' : 'is-light'}`}
                             onClick={() => { setSearchType('people'); resetFilters(); }}
                             style={{ borderRadius: '0 8px 8px 0', transition: 'all 0.3s ease' }}
                         >
@@ -442,7 +499,7 @@ function SearchPage()
 
                     <div className="is-flex is-justify-content-flex-end mb-3">
                         <button
-                            className="button is-small is-light"
+                            className={`button is-small ${isDarkMode ? 'is-dark' : 'is-light'}`}
                             onClick={toggleFilters}
                             title={showFilters ? "Hide filters" : "Show filters"}
                             style={{ borderRadius: '6px', transition: 'all 0.3s ease' }}
@@ -463,7 +520,7 @@ function SearchPage()
                             {searchType === 'rooms' ? (
                                 <div className="columns is-centered">
                                     <div className="column is-5">
-                                        <label className="label">Dorm</label>
+                                        <label className="label" style={{ color: 'var(--text-color)' }}>Dorm</label>
                                         <Select
                                             className="react-select"
                                             classNamePrefix="react-select"
@@ -472,10 +529,11 @@ function SearchPage()
                                             value={dormFilter.length > 0 ? dormFilter[0] : null}
                                             onChange={(option) => setDormFilter(option ? [option] : [])}
                                             isClearable
+                                            styles={selectStyles}
                                         />
                                     </div>
                                     <div className="column is-5">
-                                        <label className="label">Room Capacity</label>
+                                        <label className="label" style={{ color: 'var(--text-color)' }}>Room Capacity</label>
                                         <Select
                                             className="react-select"
                                             classNamePrefix="react-select"
@@ -484,13 +542,14 @@ function SearchPage()
                                             value={capacityFilter.length > 0 ? capacityFilter[0] : null}
                                             onChange={(option) => setCapacityFilter(option ? [option] : [])}
                                             isClearable
+                                            styles={selectStyles}
                                         />
                                     </div>
                                 </div>
                             ) : (
                                 <div className="columns mb-0">
                                     <div className="column is-one-third">
-                                        <label className="label">Year</label>
+                                        <label className="label" style={{ color: 'var(--text-color)' }}>Year</label>
                                         <Select
                                             className="react-select"
                                             classNamePrefix="react-select"
@@ -499,10 +558,11 @@ function SearchPage()
                                             value={yearFilter.length > 0 ? yearFilter[0] : null}
                                             onChange={(option) => setYearFilter(option ? [option] : [])}
                                             isClearable
+                                            styles={selectStyles}
                                         />
                                     </div>
                                     <div className="column is-one-third">
-                                        <label className="label">In-Dorm Preference</label>
+                                        <label className="label" style={{ color: 'var(--text-color)' }}>In-Dorm Preference</label>
                                         <Select
                                             className="react-select"
                                             classNamePrefix="react-select"
@@ -511,10 +571,11 @@ function SearchPage()
                                             value={inDormFilter.length > 0 ? inDormFilter[0] : null}
                                             onChange={(option) => setInDormFilter(option ? [option] : [])}
                                             isClearable
+                                            styles={selectStyles}
                                         />
                                     </div>
                                     <div className="column is-one-third">
-                                        <label className="label">Draw Number Range</label>
+                                        <label className="label" style={{ color: 'var(--text-color)' }}>Draw Number Range</label>
                                         <div className="field has-addons">
                                             <div className="control is-expanded">
                                                 <input
@@ -524,11 +585,22 @@ function SearchPage()
                                                     min="1"
                                                     value={drawNumberFilter.min}
                                                     onChange={(e) => setDrawNumberFilter({ ...drawNumberFilter, min: e.target.value })}
-                                                    style={{ borderRadius: '6px 0 0 6px', height: 'var(--component-height)' }}
+                                                    style={{
+                                                        borderRadius: '6px 0 0 6px',
+                                                        height: 'var(--component-height)',
+                                                        backgroundColor: isDarkMode ? 'var(--card-bg)' : 'white',
+                                                        color: 'var(--text-color)',
+                                                        borderColor: 'var(--border-color)'
+                                                    }}
                                                 />
                                             </div>
                                             <div className="control">
-                                                <a className="button is-static" style={{ height: 'var(--component-height)' }}>to</a>
+                                                <a className="button is-static" style={{
+                                                    height: 'var(--component-height)',
+                                                    backgroundColor: isDarkMode ? 'var(--card-bg-hover)' : '#f5f5f5',
+                                                    color: 'var(--text-color)',
+                                                    borderColor: 'var(--border-color)'
+                                                }}>to</a>
                                             </div>
                                             <div className="control is-expanded">
                                                 <input
@@ -538,7 +610,13 @@ function SearchPage()
                                                     min="1"
                                                     value={drawNumberFilter.max}
                                                     onChange={(e) => setDrawNumberFilter({ ...drawNumberFilter, max: e.target.value })}
-                                                    style={{ borderRadius: '0 6px 6px 0', height: 'var(--component-height)' }}
+                                                    style={{
+                                                        borderRadius: '0 6px 6px 0',
+                                                        height: 'var(--component-height)',
+                                                        backgroundColor: isDarkMode ? 'var(--card-bg)' : 'white',
+                                                        color: 'var(--text-color)',
+                                                        borderColor: 'var(--border-color)'
+                                                    }}
                                                 />
                                             </div>
                                         </div>
@@ -565,7 +643,7 @@ function SearchPage()
                                 </div>
                                 <div className="control">
                                     <button
-                                        className="button is-light"
+                                        className={`button ${isDarkMode ? 'is-dark' : 'is-light'}`}
                                         onClick={resetFilters}
                                         style={{ borderRadius: '8px', transition: 'all 0.3s ease' }}
                                     >
@@ -581,7 +659,14 @@ function SearchPage()
                 </div>
 
                 {/* Results section */}
-                <div className="box" style={{ borderRadius: '8px', boxShadow: 'var(--box-shadow)', minHeight: '500px', position: 'relative' }}>
+                <div className="box" style={{
+                    borderRadius: '8px',
+                    boxShadow: 'var(--box-shadow)',
+                    minHeight: '500px',
+                    position: 'relative',
+                    backgroundColor: 'var(--card-bg)',
+                    color: 'var(--text-color)'
+                }}>
                     <div className="level">
                         <div className="level-left">
                             <div className="level-item">
@@ -603,6 +688,11 @@ function SearchPage()
                                             {
                                                 setItemsPerPage(Number(e.target.value));
                                                 setPage(1); // Reset to first page when changing items per page
+                                            }}
+                                            style={{
+                                                backgroundColor: isDarkMode ? 'var(--card-bg)' : 'white',
+                                                color: 'var(--text-color)',
+                                                borderColor: 'var(--border-color)'
                                             }}
                                         >
                                             <option value={5}>5 per page</option>
@@ -629,7 +719,7 @@ function SearchPage()
                                 flexDirection: 'column',
                                 justifyContent: 'center',
                                 alignItems: 'center',
-                                backgroundColor: 'rgba(255,255,255,0.7)',
+                                backgroundColor: isDarkMode ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.7)',
                                 zIndex: 5,
                                 borderRadius: '8px'
                             }}>
@@ -641,7 +731,7 @@ function SearchPage()
                         ) : null}
 
                         {!loading && results.length === 0 ? (
-                            <div className="notification is-info is-light" style={{ borderRadius: '8px' }}>
+                            <div className={`notification is-info ${isDarkMode ? 'is-dark' : 'is-light'}`} style={{ borderRadius: '8px' }}>
                                 <span className="icon mr-2">
                                     <i className="fas fa-info-circle"></i>
                                 </span>
@@ -656,10 +746,17 @@ function SearchPage()
                                 opacity: loading ? 0.7 : 1,
                                 transition: 'opacity 0.2s'
                             }}>
-                                <table className="table is-fullwidth is-hoverable">
+                                <table className="table is-fullwidth is-hoverable" style={{
+                                    backgroundColor: isDarkMode ? 'var(--card-bg)' : undefined,
+                                    color: 'var(--text-color)'
+                                }}>
                                     <thead>
                                         <tr>
-                                            <th onClick={() => requestSort('DormName')} className={getClassNamesFor('DormName')} style={{ cursor: 'pointer', width: '30%' }}>
+                                            <th onClick={() => requestSort('DormName')} className={getClassNamesFor('DormName')} style={{
+                                                cursor: 'pointer',
+                                                width: '30%',
+                                                color: 'var(--text-color)'
+                                            }}>
                                                 Dorm
                                                 <span className="icon is-small ml-1">
                                                     <i className={`fas ${sortConfig.key === 'DormName'
@@ -667,7 +764,11 @@ function SearchPage()
                                                         : 'fa-sort'}`}></i>
                                                 </span>
                                             </th>
-                                            <th onClick={() => requestSort('RoomID')} className={getClassNamesFor('RoomID')} style={{ cursor: 'pointer', width: '30%' }}>
+                                            <th onClick={() => requestSort('RoomID')} className={getClassNamesFor('RoomID')} style={{
+                                                cursor: 'pointer',
+                                                width: '30%',
+                                                color: 'var(--text-color)'
+                                            }}>
                                                 Room
                                                 <span className="icon is-small ml-1">
                                                     <i className={`fas ${sortConfig.key === 'RoomID'
@@ -675,7 +776,11 @@ function SearchPage()
                                                         : 'fa-sort'}`}></i>
                                                 </span>
                                             </th>
-                                            <th onClick={() => requestSort('capacity')} className={getClassNamesFor('capacity')} style={{ cursor: 'pointer', width: '20%' }}>
+                                            <th onClick={() => requestSort('capacity')} className={getClassNamesFor('capacity')} style={{
+                                                cursor: 'pointer',
+                                                width: '20%',
+                                                color: 'var(--text-color)'
+                                            }}>
                                                 Capacity
                                                 <span className="icon is-small ml-1">
                                                     <i className={`fas ${sortConfig.key === 'capacity'
@@ -683,15 +788,21 @@ function SearchPage()
                                                         : 'fa-sort'}`}></i>
                                                 </span>
                                             </th>
-                                            <th style={{ width: '20%' }}>Actions</th>
+                                            <th style={{ width: '20%', color: 'var(--text-color)' }}>Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {results.map(room => (
-                                            <tr key={room.RoomUUID}>
-                                                <td>{room.DormName}</td>
-                                                <td>{room.RoomID}</td>
-                                                <td>{room.MaxOccupancy}</td>
+                                            <tr key={room.RoomUUID} style={{
+                                                color: 'var(--text-color)',
+                                                backgroundColor: isDarkMode ? 'var(--card-bg)' : undefined,
+                                                '&:hover': {
+                                                    backgroundColor: isDarkMode ? 'var(--card-bg-hover)' : undefined,
+                                                }
+                                            }}>
+                                                <td style={{ color: 'var(--text-color)' }}>{room.DormName}</td>
+                                                <td style={{ color: 'var(--text-color)' }}>{room.RoomID}</td>
+                                                <td style={{ color: 'var(--text-color)' }}>{room.MaxOccupancy}</td>
                                                 <td>
                                                     <span className="tag is-primary" style={{
                                                         borderRadius: '6px',
@@ -810,7 +921,7 @@ function SearchPage()
                     {totalPages > 1 && (
                         <nav className="pagination is-centered is-small mt-4" role="navigation" aria-label="pagination">
                             <a
-                                className="pagination-previous"
+                                className={`pagination-previous ${isDarkMode ? 'has-text-light' : ''}`}
                                 onClick={() =>
                                 {
                                     if (page > 1 && !loading)
@@ -820,11 +931,12 @@ function SearchPage()
                                     }
                                 }}
                                 disabled={page === 1 || loading}
+                                style={{ color: 'var(--text-color)' }}
                             >
                                 Previous
                             </a>
                             <a
-                                className="pagination-next"
+                                className={`pagination-next ${isDarkMode ? 'has-text-light' : ''}`}
                                 onClick={() =>
                                 {
                                     if (page < totalPages && !loading)
@@ -834,6 +946,7 @@ function SearchPage()
                                     }
                                 }}
                                 disabled={page === totalPages || loading}
+                                style={{ color: 'var(--text-color)' }}
                             >
                                 Next page
                             </a>

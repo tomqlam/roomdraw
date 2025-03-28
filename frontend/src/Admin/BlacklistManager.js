@@ -1,7 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
+import { MyContext } from '../MyContext';
 
 function BlacklistManager()
 {
+    const { isDarkMode } = useContext(MyContext);
     const [blacklistedUsers, setBlacklistedUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -77,8 +79,8 @@ function BlacklistManager()
             <div className="section">
                 <div className="container">
                     <h1 className="title has-text-centered">Admin Dashboard</h1>
-                    <div className="box has-text-centered" style={{ padding: "3rem" }}>
-                        <span className="icon is-large">
+                    <div className="box has-text-centered blacklist-loading-box">
+                        <span className="icon is-large blacklist-loading-icon">
                             <i className="fas fa-circle-notch fa-spin fa-2x"></i>
                         </span>
                         <p className="mt-3">Loading blacklisted users...</p>
@@ -94,8 +96,8 @@ function BlacklistManager()
             <div className="section">
                 <div className="container">
                     <h1 className="title has-text-centered">Admin Dashboard</h1>
-                    <div className="box">
-                        <div className="notification is-danger">
+                    <div className="box blacklist-box">
+                        <div className={`notification is-danger ${isDarkMode ? 'is-dark' : 'is-light'}`}>
                             <p><strong>Error:</strong> {error}</p>
                             <button className="button is-small is-light mt-2" onClick={fetchBlacklistedUsers}>
                                 <span className="icon">
@@ -113,7 +115,7 @@ function BlacklistManager()
     return (
         <div className="section">
             <div className="container">
-                <div className="box">
+                <div className="box blacklist-box">
                     <div className="mb-4">
                         <div className="level">
                             <div className="level-left">
@@ -129,7 +131,7 @@ function BlacklistManager()
                             <div className="level-right">
                                 <div className="level-item">
                                     <button
-                                        className="button is-light"
+                                        className={`button ${isDarkMode ? 'is-dark' : 'is-light'}`}
                                         onClick={fetchBlacklistedUsers}
                                         title="Refresh data"
                                     >
@@ -141,13 +143,13 @@ function BlacklistManager()
                                 </div>
                             </div>
                         </div>
-                        <p className="subtitle is-6 mt-2">
+                        <p className="subtitle is-6 mt-2 blacklist-subtitle">
                             Users who have been blacklisted for excessive room clearing. These users cannot perform any room actions until removed from the blacklist.
                         </p>
                     </div>
 
                     {blacklistedUsers.length === 0 ? (
-                        <div className="notification is-info is-light">
+                        <div className={`notification is-info ${isDarkMode ? 'is-dark' : 'is-light'}`} style={{ borderRadius: "8px" }}>
                             <span className="icon mr-2">
                                 <i className="fas fa-info-circle"></i>
                             </span>
@@ -155,7 +157,7 @@ function BlacklistManager()
                         </div>
                     ) : (
                         <div className="table-container">
-                            <table className="table is-fullwidth is-hoverable">
+                            <table className="table is-fullwidth is-hoverable dark-mode-table">
                                 <thead>
                                     <tr>
                                         <th>Email</th>

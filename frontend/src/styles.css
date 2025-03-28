@@ -1989,3 +1989,138 @@ body.dark-mode .navbar {
         white-space: nowrap;
     }
 }
+
+/* BlacklistManager styles */
+.blacklist-box {
+    background-color: var(--card-bg);
+    box-shadow: var(--box-shadow);
+    color: var(--text-color);
+    border-radius: 8px;
+}
+
+.blacklist-loading-box {
+    background-color: var(--card-bg);
+    box-shadow: var(--box-shadow);
+    padding: 3rem;
+}
+
+.blacklist-loading-icon {
+    color: var(--text-color);
+}
+
+.blacklist-subtitle {
+    color: var(--text-muted);
+}
+
+/* SearchPage styles */
+.search-box {
+    border-radius: 8px;
+    box-shadow: var(--box-shadow);
+    background-color: var(--card-bg);
+}
+
+.search-results-box {
+    border-radius: 8px;
+    box-shadow: var(--box-shadow);
+    min-height: 500px;
+    position: relative;
+    background-color: var(--card-bg);
+    color: var(--text-color);
+}
+
+.search-loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 5;
+    border-radius: 8px;
+}
+
+body.dark-mode .search-loading-overlay {
+    background-color: rgba(0,0,0,0.7);
+}
+
+body:not(.dark-mode) .search-loading-overlay {
+    background-color: rgba(255,255,255,0.7);
+}
+
+.search-filter-panel {
+    background-color: var(--card-bg-hover);
+    border-radius: 8px;
+    margin-bottom: 1rem;
+}
+
+/* Input styles for dark mode */
+.search-number-input {
+    border-radius: 6px 0 0 6px;
+    height: var(--component-height);
+    background-color: var(--input-bg);
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+
+.search-number-input-right {
+    border-radius: 0 6px 6px 0;
+    height: var(--component-height);
+    background-color: var(--input-bg);
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+
+.search-static-button {
+    height: var(--component-height);
+    background-color: var(--card-bg-hover);
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+
+/* Table styling for dark mode */
+.dark-mode-table {
+    background-color: var(--card-bg);
+    color: var(--text-color);
+}
+
+.dark-mode-table th {
+    color: var(--text-color);
+}
+
+.dark-mode-table td {
+    color: var(--text-color);
+}
+
+.dark-mode-table tr {
+    color: var(--text-color);
+    background-color: var(--card-bg);
+}
+
+.dark-mode-table tr:hover {
+    background-color: var(--card-bg-hover);
+}
+
+/* Pagination dark mode */
+.dark-mode-pagination a {
+    color: var(--text-color);
+}
+
+/* Labels for dark mode */
+.dark-mode-label {
+    color: var(--text-color);
+}
+
+/* Custom styles for select elements in dark mode */
+.dark-mode-select {
+    background-color: var(--card-bg);
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+
+/* Style for number display in results area */
+.results-count {
+    color: var(--text-muted);
+}
