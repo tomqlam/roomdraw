@@ -144,6 +144,7 @@ func GetSimpleFormattedDorm(c *gin.Context) {
 			RoomUUID:      r.RoomUUID,
 			HasFrosh:      r.HasFrosh,
 			FroshRoomType: r.FroshRoomType,
+			Dorm:          r.Dorm,
 		}
 
 		if len(r.Occupants) >= 1 {

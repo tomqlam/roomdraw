@@ -162,6 +162,7 @@ type RoomSimple struct {
 	Occupant4     int          `json:"occupant4"`
 	HasFrosh      bool         `json:"hasFrosh"`
 	FroshRoomType int          `json:"froshRoomType"`
+	Dorm          int          `json:"dorm"`
 }
 
 type RoomSimpler struct {
