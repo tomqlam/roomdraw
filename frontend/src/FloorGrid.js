@@ -79,10 +79,10 @@ function FloorGrid({ gridData })
                     print(userMap);
                     resolve({
                         occupants: [
-                            room.occupant1 !== 0 ? { value: room.occupant1.toString(), label: `${userMap[room.occupant1].FirstName} ${userMap[room.occupant1].LastName}` } : '',
-                            room.occupant2 !== 0 ? { value: room.occupant2.toString(), label: `${userMap[room.occupant2].FirstName} ${userMap[room.occupant2].LastName}` } : '',
-                            room.occupant3 !== 0 ? { value: room.occupant3.toString(), label: `${userMap[room.occupant3].FirstName} ${userMap[room.occupant3].LastName}` } : '',
-                            room.occupant4 !== 0 ? { value: room.occupant4.toString(), label: `${userMap[room.occupant4].FirstName} ${userMap[room.occupant4].LastName}` } : '',
+                            room.occupant1 !== 0 && userMap[room.occupant1] ? { value: room.occupant1.toString(), label: `${userMap[room.occupant1].FirstName} ${userMap[room.occupant1].LastName}` } : '',
+                            room.occupant2 !== 0 && userMap[room.occupant2] ? { value: room.occupant2.toString(), label: `${userMap[room.occupant2].FirstName} ${userMap[room.occupant2].LastName}` } : '',
+                            room.occupant3 !== 0 && userMap[room.occupant3] ? { value: room.occupant3.toString(), label: `${userMap[room.occupant3].FirstName} ${userMap[room.occupant3].LastName}` } : '',
+                            room.occupant4 !== 0 && userMap[room.occupant4] ? { value: room.occupant4.toString(), label: `${userMap[room.occupant4].FirstName} ${userMap[room.occupant4].LastName}` } : '',
                         ],
                         roomObject: room
                     });
@@ -211,7 +211,7 @@ function FloorGrid({ gridData })
         }
 
         // Selected person lives in this room
-        if (room.roomUUID === userMap[selectedID].RoomUUID)
+        if (userMap[selectedID] && room.roomUUID === userMap[selectedID].RoomUUID)
         {
             return {
                 ...gridItemStyle,
@@ -313,7 +313,7 @@ function FloorGrid({ gridData })
                     {
                         if (occupant !== 0)
                         {
-                            if (userMap[occupant].ReslifeRole !== 'none')
+                            if (userMap[occupant] && userMap[occupant].ReslifeRole !== 'none')
                             {
                                 if (shortestOccupant === null || userMap[occupant].ReslifeRole.length < shortestOccupant.length)
                                 {
@@ -395,15 +395,15 @@ function FloorGrid({ gridData })
             "senior": 4
         };
 
-        if (yearMapping[userMap[selectedID].Year] < pullPriority.year)
+        if (userMap[selectedID] && userMap[selectedID].Year && yearMapping[userMap[selectedID].Year] < pullPriority.year)
         {
             return false;
-        } else if (yearMapping[userMap[selectedID].Year] > pullPriority.year)
+        } else if (userMap[selectedID] && userMap[selectedID].Year && yearMapping[userMap[selectedID].Year] > pullPriority.year)
         {
             // you are older year
             return true;
         }
-        return userMap[selectedID].DrawNumber <= pullPriority.drawNumber;
+        return userMap[selectedID] && userMap[selectedID].DrawNumber <= pullPriority.drawNumber;
 
     }
 
