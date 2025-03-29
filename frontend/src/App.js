@@ -9,6 +9,7 @@ import BlacklistManager from './Admin/BlacklistManager';
 import BumpFroshModal from './BumpFroshModal';
 import BumpModal from './BumpModal';
 import Navbar from './components/Navbar';
+import FAQModal from './FAQModal';
 import FloorGrid from './FloorGrid';
 import { MyContext } from './MyContext';
 import SearchPage from './Search/SearchPage';
@@ -66,6 +67,7 @@ function App()
     const [isInDorm, setIsInDorm] = useState(true);
     const [lastSelectedID, setLastSelectedID] = useState(null); // Store last valid selection
     const [isSearchFocused, setIsSearchFocused] = useState(false); // Track if search is focused
+    const [showFAQModal, setShowFAQModal] = useState(false);
 
     // Validate selectedID when userMap loads
     useEffect(() =>
@@ -568,6 +570,19 @@ function App()
         }
     };
 
+    // Add effect to handle showing FAQ modal on first login
+    useEffect(() =>
+    {
+        if (credentials)
+        {
+            const hideWelcomeFAQ = localStorage.getItem('hideWelcomeFAQ');
+            if (!hideWelcomeFAQ)
+            {
+                setShowFAQModal(true);
+            }
+        }
+    }, [credentials]);
+
     return (
         <div className={`main-content ${isTransitioning ? 'transition-active' : ''}`}>
             {credentials && <Navbar />}
@@ -711,7 +726,7 @@ function App()
                         {canUserToggleInDorm(selectedID) === 0 &&
                             <div style={{ paddingTop: '1rem' }}>
                                 <p className="checkbox-label">
-                                    To forfeit in-dorm, pull into a single in {dormMapping[userMap[selectedID].InDorm]}
+                                    To forfeit in-dorm, pull into a dorm for which you don't have in-dorm, or pull into {dormMapping[userMap[selectedID].InDorm]} and toggle the switch.
                                 </p>
                             </div>
                         }
@@ -843,11 +858,37 @@ function App()
                 )}
             </div>
 
+            {/* Fixed FAQ button */}
+            {credentials && (
+                <button
+                    className="button is-primary is-rounded"
+                    style={{
+                        position: 'fixed',
+                        bottom: '20px',
+                        right: '20px',
+                        width: '40px',
+                        height: '40px',
+                        maxWidth: '40px',
+                        padding: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 29,
+                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)'
+                    }}
+                    onClick={() => setShowFAQModal(true)}
+                    title="Show FAQ"
+                >
+                    <i className="fas fa-info"></i>
+                </button>
+            )}
+
             {isModalOpen && <BumpModal />}
             {isSuiteNoteModalOpen && <SuiteNoteModal />}
             {isFroshModalOpen && <BumpFroshModal />}
             {isSettingsModalOpen && <SettingsModal />}
             {isUserSettingsModalOpen && <UserSettingsModal isOpen={isUserSettingsModalOpen} onClose={() => setIsUserSettingsModalOpen(false)} />}
+            <FAQModal isOpen={showFAQModal} onClose={() => setShowFAQModal(false)} />
         </div>
     );
 }

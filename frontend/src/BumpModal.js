@@ -687,10 +687,11 @@ function BumpModal()
 
                 </section>
                 <footer className="modal-card-foot" style={{ display: 'flex', justifyContent: 'space-between', flexDirection: 'column' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-                        <button className={`button is-primary ${loadingSubmit ? 'is-loading' : ''}`} onClick={handleSubmit}>Update room</button>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', gap: '10px' }}>
+                        <button className={`button is-primary ${loadingSubmit ? 'is-loading' : ''}`} style={{ flex: '1', maxWidth: '150px' }} onClick={handleSubmit}>Update room</button>
                         <button
                             className={`button is-danger ${loadingClearRoom ? 'is-loading' : ''}`}
+                            style={{ flex: '1', maxWidth: '150px' }}
                             onClick={() =>
                             {
                                 setLoadingClearRoom(true);
