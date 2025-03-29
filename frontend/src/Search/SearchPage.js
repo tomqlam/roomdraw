@@ -465,10 +465,10 @@ function SearchPage()
         setLoading(true);
         // showLoading will be set to true after 1 second by the useEffect
 
-        let direction = 'ascending';
-        if (sortConfig.key === key && sortConfig.direction === 'ascending')
+        let direction = 'asc';
+        if (sortConfig.key === key && sortConfig.direction === 'asc')
         {
-            direction = 'descending';
+            direction = 'desc';
         }
         setSortConfig({ key, direction });
         setPage(1); // Reset to first page when sorting changes
@@ -914,7 +914,7 @@ function SearchPage()
                                                 Dorm
                                                 <span className="icon is-small ml-1">
                                                     <i className={`fas ${sortConfig.key === 'DormName'
-                                                        ? (sortConfig.direction === 'ascending' ? 'fa-sort-up' : 'fa-sort-down')
+                                                        ? (sortConfig.direction === 'asc' ? 'fa-sort-up' : 'fa-sort-down')
                                                         : 'fa-sort'}`}></i>
                                                 </span>
                                             </th>
@@ -922,7 +922,7 @@ function SearchPage()
                                                 Room
                                                 <span className="icon is-small ml-1">
                                                     <i className={`fas ${sortConfig.key === 'RoomID'
-                                                        ? (sortConfig.direction === 'ascending' ? 'fa-sort-up' : 'fa-sort-down')
+                                                        ? (sortConfig.direction === 'asc' ? 'fa-sort-up' : 'fa-sort-down')
                                                         : 'fa-sort'}`}></i>
                                                 </span>
                                             </th>
@@ -930,7 +930,7 @@ function SearchPage()
                                                 Capacity
                                                 <span className="icon is-small ml-1">
                                                     <i className={`fas ${sortConfig.key === 'capacity'
-                                                        ? (sortConfig.direction === 'ascending' ? 'fa-sort-up' : 'fa-sort-down')
+                                                        ? (sortConfig.direction === 'asc' ? 'fa-sort-up' : 'fa-sort-down')
                                                         : 'fa-sort'}`}></i>
                                                 </span>
                                             </th>
@@ -976,7 +976,7 @@ function SearchPage()
                                                 Name
                                                 <span className="icon is-small ml-1">
                                                     <i className={`fas ${sortConfig.key === 'FirstName'
-                                                        ? (sortConfig.direction === 'ascending' ? 'fa-sort-up' : 'fa-sort-down')
+                                                        ? (sortConfig.direction === 'asc' ? 'fa-sort-up' : 'fa-sort-down')
                                                         : 'fa-sort'}`}></i>
                                                 </span>
                                             </th>
@@ -984,7 +984,7 @@ function SearchPage()
                                                 Year
                                                 <span className="icon is-small ml-1">
                                                     <i className={`fas ${sortConfig.key === 'year'
-                                                        ? (sortConfig.direction === 'ascending' ? 'fa-sort-up' : 'fa-sort-down')
+                                                        ? (sortConfig.direction === 'asc' ? 'fa-sort-up' : 'fa-sort-down')
                                                         : 'fa-sort'}`}></i>
                                                 </span>
                                             </th>
@@ -992,7 +992,7 @@ function SearchPage()
                                                 Draw Number
                                                 <span className="icon is-small ml-1">
                                                     <i className={`fas ${sortConfig.key === 'drawNumber'
-                                                        ? (sortConfig.direction === 'ascending' ? 'fa-sort-up' : 'fa-sort-down')
+                                                        ? (sortConfig.direction === 'asc' ? 'fa-sort-up' : 'fa-sort-down')
                                                         : 'fa-sort'}`}></i>
                                                 </span>
                                             </th>

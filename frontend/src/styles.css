@@ -1653,7 +1653,6 @@ body.dark-mode .info-display.clickable:hover {
     .info-display,
     .info-display.non-clickable {
         width: 100% !important;
-        min-width: 100% !important;
         max-width: 100% !important;
         justify-content: flex-start !important;
         padding: 0 1rem !important;
@@ -1777,7 +1776,7 @@ body.dark-mode .react-select__input {
 
     .button,
     .info-display {
-        width: 100% !important;
+        width: auto !important;
         padding: 0 1rem !important;
         justify-content: flex-start !important;
     }
@@ -2345,4 +2344,18 @@ body.dark-mode .pagination-link.is-current {
 .pagination-previous .icon,
 .pagination-next .icon {
     font-size: 0.75rem;
+}
+
+@media screen and (max-width: 768px) {
+    .button {
+        width: auto !important;
+        min-width: auto !important;
+    }
+
+    /* Keep circular buttons (like the FAQ button) properly sized */
+    .button.is-rounded {
+        width: 40px !important;
+        min-width: 40px !important;
+        max-width: 40px !important;
+    }
 }

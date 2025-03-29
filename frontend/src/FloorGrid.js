@@ -20,12 +20,6 @@ function FloorGrid({ gridData })
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
-    useEffect(() =>
-    {
-        // Update loading state when gridData changes
-        setIsLoading(!gridData?.suites?.length);
-    }, [gridData?.suites]);
-
     const {
         print,
         setIsModalOpen,
@@ -52,6 +46,12 @@ function FloorGrid({ gridData })
         activeTab,
         isDarkMode
     } = useContext(MyContext);
+
+    useEffect(() =>
+    {
+        // Update loading state when gridData or userMap changes
+        setIsLoading(!gridData?.suites?.length || !userMap);
+    }, [gridData?.suites, userMap]);
 
     function capitalizeFirstLetterOfEachWord(str)
     {
@@ -188,10 +188,10 @@ function FloorGrid({ gridData })
 
     }
     // given parameters, return grid item style with correct background color shading
-    const getGridItemStyle = (room, occupancy, maxOccupancy, suiteIndex, pullPriority) =>
+    const getGridItemStyle = (room, maxOccupancy, occupancy, suiteIndex, pullPriority) =>
     {
         // Not valid for pulling
-        if (occupancy < maxOccupancy || !userMap || !userMap[selectedID])
+        if (occupancy > maxOccupancy || !userMap)
         {
             return {
                 ...gridItemStyle,
@@ -221,11 +221,7 @@ function FloorGrid({ gridData })
         }
 
         let backgroundColor = (suiteIndex % 2 === 0 ? selectedPalette.evenSuite : selectedPalette.oddSuite);
-        if (pullPriority.isPreplaced)
-        {
-            backgroundColor = adjustColor(backgroundColor, 50);
-        }
-        if (!checkBumpable(pullPriority) && onlyShowBumpableRooms)
+        if ((pullPriority.isPreplaced || !checkBumpable(pullPriority)) && onlyShowBumpableRooms)
         {
             backgroundColor = adjustColor(backgroundColor, 50);
         }
@@ -277,6 +273,12 @@ function FloorGrid({ gridData })
 
     function getPullMethodByRoomNumber(roomNumber)
     {
+        // If userMap isn't loaded yet, show a loading indicator
+        if (!userMap)
+        {
+            return '...';
+        }
+
         // Iterate over each suite
         for (let suite of gridData.suites)
         {
@@ -284,8 +286,6 @@ function FloorGrid({ gridData })
             const room = suite.rooms.find(r => r.roomNumber.toString() === roomNumber.toString());
 
             // If the room exists, return the list of occupants
-
-
             if (room)
             {
                 if (room.hasFrosh)
@@ -442,7 +442,6 @@ function FloorGrid({ gridData })
                             style={{
                                 ...pullMethodStyle,
                                 gridRow: `span 3`,
-                                backgroundColor: suiteIndex % 2 === 0 ? selectedPalette.evenSuite : selectedPalette.oddSuite,
                                 opacity: 0.5,
                                 cursor: 'default'
                             }}
@@ -541,7 +540,9 @@ function FloorGrid({ gridData })
                                 {room.roomNumber}
                             </div>
                             <div
-                                style={getGridItemStyle(room, room.maxOccupancy, 1, suiteIndex, room.pullPriority)}
+                                style={{
+                                    ...pullMethodStyle,
+                                }}
                                 onClick={() => handleCellClick(room.roomNumber)}
                                 className="grid-cell"
                             >
@@ -550,9 +551,9 @@ function FloorGrid({ gridData })
                             {!isMobile && roomIndex === 0 && (
                                 <div
                                     style={{
-                                        ...pullMethodStyle,
+                                        ...gridItemStyle,
+                                        backgroundColor: (suiteIndex % 2 === 0 ? selectedPalette.evenSuite : selectedPalette.oddSuite),
                                         gridRow: `span ${suite.rooms.length}`,
-                                        backgroundColor: suiteIndex % 2 === 0 ? selectedPalette.evenSuite : selectedPalette.oddSuite,
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'center',
