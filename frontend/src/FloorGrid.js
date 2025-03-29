@@ -290,7 +290,11 @@ function FloorGrid({ gridData })
             {
                 if (room.hasFrosh)
                 {
-                    return "Frosh";
+                    if (room.dorm === 9) {
+                        return "Froshe";
+                    } else {
+                        return "Frosh";
+                    }
                 }
 
                 if (room.pullPriority.pullType === 3)
@@ -582,7 +586,7 @@ function FloorGrid({ gridData })
                                 style={getGridItemStyle(room, room.maxOccupancy, 1, suiteIndex, room.pullPriority)}
                                 onClick={() => handleCellClick(room.roomNumber)}
                                 className="grid-cell"
-                                data-full-name={room.maxOccupancy >= 1 ? (room.hasFrosh ? 'Frosh' : getNameById(room.occupant1)) : ''}
+                                data-full-name={room.maxOccupancy >= 1 ? (room.hasFrosh ? (room.dorm === 9 ? 'Froshe' : 'Frosh') : getNameById(room.occupant1)) : ''}
                             >
                                 {room.maxOccupancy >= 1 && (room.hasFrosh ? 'Frosh' : getNameById(room.occupant1))}
                             </div>
@@ -590,7 +594,7 @@ function FloorGrid({ gridData })
                                 style={getGridItemStyle(room, room.maxOccupancy, 2, suiteIndex, room.pullPriority)}
                                 onClick={() => handleCellClick(room.roomNumber)}
                                 className="grid-cell"
-                                data-full-name={room.maxOccupancy >= 2 ? (room.hasFrosh ? 'Frosh' : getNameById(room.occupant2)) : ''}
+                                data-full-name={room.maxOccupancy >= 2 ? (room.hasFrosh ? (room.dorm === 9 ? 'Froshe' : 'Frosh') : getNameById(room.occupant2)) : ''}
                             >
                                 {room.maxOccupancy >= 2 && (room.hasFrosh ? 'Frosh' : getNameById(room.occupant2))}
                             </div>
@@ -599,7 +603,7 @@ function FloorGrid({ gridData })
                                     style={getGridItemStyle(room, room.maxOccupancy, 3, suiteIndex, room.pullPriority)}
                                     onClick={() => handleCellClick(room.roomNumber)}
                                     className="grid-cell"
-                                    data-full-name={room.maxOccupancy >= 3 ? (room.hasFrosh ? 'Frosh' : getNameById(room.occupant3)) : ''}
+                                    data-full-name={room.maxOccupancy >= 3 ? (room.hasFrosh ? (room.dorm === 9 ? 'Froshe' : 'Frosh') : getNameById(room.occupant3)) : ''}
                                 >
                                     {room.maxOccupancy >= 3 && (room.hasFrosh ? 'Frosh' : getNameById(room.occupant3))}
                                 </div>
@@ -609,7 +613,7 @@ function FloorGrid({ gridData })
                                     style={getGridItemStyle(room, room.maxOccupancy, 4, suiteIndex, room.pullPriority)}
                                     onClick={() => handleCellClick(room.roomNumber)}
                                     className="grid-cell"
-                                    data-full-name={room.maxOccupancy >= 4 ? (room.hasFrosh ? 'Frosh' : getNameById(room.occupant4)) : ''}
+                                    data-full-name={room.maxOccupancy >= 4 ? (room.hasFrosh ? (room.dorm === 9 ? 'Froshe' : 'Frosh') : getNameById(room.occupant4)) : ''}
                                 >
                                     {room.maxOccupancy >= 4 && (room.hasFrosh ? 'Frosh' : getNameById(room.occupant4))}
                                 </div>
