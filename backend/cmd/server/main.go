@@ -55,9 +55,13 @@ func main() {
 	writeGroupAdmin := router.Group("/").Use(middleware.QueueMiddleware(requestQueue))
 
 	if config.RequireAuth {
-		readGroup.Use(middleware.JWTAuthMiddleware(false))
-		writeGroup.Use(middleware.JWTAuthMiddleware(false), middleware.BlacklistCheckMiddleware())
-		writeGroupAdmin.Use(middleware.JWTAuthMiddleware(true))
+		readGroup.Use(middleware.JWTAuthMiddleware(false), middleware.BetaTesterMiddleware())
+		writeGroup.Use(middleware.JWTAuthMiddleware(false), middleware.BlacklistCheckMiddleware(), middleware.BetaTesterMiddleware())
+		writeGroupAdmin.Use(middleware.JWTAuthMiddleware(true), middleware.BetaTesterMiddleware())
+	} else {
+		readGroup.Use(middleware.BetaTesterMiddleware())
+		writeGroup.Use(middleware.BetaTesterMiddleware())
+		writeGroupAdmin.Use(middleware.BetaTesterMiddleware())
 	}
 
 	// Define read-only routes

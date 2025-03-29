@@ -44,6 +44,76 @@ var (
 	keysCacheTime time.Time
 )
 
+func BetaTesterMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		email, exists := c.Get("email")
+		if !exists {
+			c.Next()
+			return
+		}
+		log.Println("Email:", email)
+		// List of authorized beta testers
+		betaTesters := []string{
+			"tlam@g.hmc.edu",
+			"smao@g.hmc.edu",
+			"elli@g.hmc.edu",
+			"kaguo@g.hmc.edu",
+			"aazhang@g.hmc.edu",
+			"nnickolov@g.hmc.edu",
+			"amcintoshlombardo@g.hmc.edu",
+			"wkirkland@g.hmc.edu",
+			"admedina@g.hmc.edu",
+			"huahuang@g.hmc.edu",
+			"jgonzalezsalgado@g.hmc.edu",
+			"sophiewang@g.hmc.edu",
+			"smichaelson@g.hmc.edu",
+			"jkeodara@g.hmc.edu",
+			"niluo@g.hmc.edu",
+			"stamayo@g.hmc.edu",
+			"rpenidelema@g.hmc.edu",
+			"alrosenberg@g.hmc.edu",
+			"meldeng@g.hmc.edu",
+			"edgrodriguez@g.hmc.edu",
+			"aniksharma@g.hmc.edu",
+			"ashetty@g.hmc.edu",
+			"simyang@g.hmc.edu",
+			"igodoy@g.hmc.edu",
+			"breis@g.hmc.edu",
+			"brmendoza@g.hmc.edu",
+			"lmansfield@g.hmc.edu",
+			"grwilliams@g.hmc.edu",
+			"lcromwell@g.hmc.edu",
+			"aenayati@g.hmc.edu",
+			"jeshuang@g.hmc.edu",
+			"perodriguez@g.hmc.edu",
+			"calmond@g.hmc.edu",
+			"dimehta@g.hmc.edu",
+			"mgaribaybrandt@g.hmc.edu",
+			"amcdaniel@g.hmc.edu",
+			"nisorena@g.hmc.edu",
+			"saraliu@g.hmc.edu",
+		}
+
+		// Check if the user's email is in the list of beta testers
+		authorized := false
+		for _, tester := range betaTesters {
+			if email == tester {
+				authorized = true
+				log.Println("Authorized:", email)
+				break
+			}
+		}
+
+		if !authorized {
+			log.Println("Not authorized:", email)
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized access"})
+			return
+		}
+
+		c.Next()
+	}
+}
+
 // FetchGooglePublicKeys fetches and caches Google's public keys for JWT validation.
 func FetchGooglePublicKeys() error {
 	cacheMutex.Lock()
