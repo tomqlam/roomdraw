@@ -132,12 +132,12 @@ function App()
                 }
 
                 // Check if the room has inherited priority
-                if (roomData.pull_priority.inherited.valid)
+                if (roomData.PullPriority.inherited.valid)
                 {
-                    setIsInDorm(roomData.pull_priority.inherited.hasInDorm);
+                    setIsInDorm(roomData.PullPriority.inherited.hasInDorm);
                 } else
                 {
-                    setIsInDorm(roomData.pull_priority.hasInDorm);
+                    setIsInDorm(roomData.PullPriority.hasInDorm);
                 }
             } catch (err)
             {
@@ -146,7 +146,7 @@ function App()
         };
 
         fetchRoomInfo();
-    }, [selectedID, refreshKey]);
+    }, [selectedID, refreshKey, getRoomUUIDFromUserID, handleErrorFromTokenExpiry]);
 
     useEffect(() =>
     {
