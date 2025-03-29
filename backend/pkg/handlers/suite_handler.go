@@ -266,79 +266,34 @@ func UpdateSuiteGenderPreference(c *gin.Context) {
 	}()
 
 	// Get all suites that can be gender preferenced
-	rows, err := tx.Query("SELECT suite_uuid, dorm FROM suites WHERE can_be_gender_preferenced = true")
+	suiteRows, err := tx.Query("SELECT suite_uuid FROM suites WHERE can_be_gender_preferenced = true")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get gender-preferenceable suites"})
 		return
 	}
-	defer rows.Close()
 
-	// Process each suite
-	for rows.Next() {
+	// Process each suite and put in into a list
+	var suiteUUIDs []uuid.UUID
+	for suiteRows.Next() {
 		var suiteUUID uuid.UUID
-		var dormId int
-		err = rows.Scan(&suiteUUID, &dormId)
+		err = suiteRows.Scan(&suiteUUID)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to scan suite data"})
 			return
 		}
-
-		// Get all rooms in the suite
-		var roomUUIDs models.UUIDArray
-		err = tx.QueryRow("SELECT rooms FROM suites WHERE suite_uuid = $1", suiteUUID).Scan(&roomUUIDs)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get rooms for suite"})
-			return
-		}
-
-		// Get all users in the suite
-		var users []models.UserRaw
-		for _, roomUUID := range roomUUIDs {
-			// Get occupants for this room
-			var occupantIds models.IntArray
-			err = tx.QueryRow("SELECT occupants FROM rooms WHERE room_uuid = $1", roomUUID).Scan(&occupantIds)
-			if err != nil {
-				log.Printf("Failed to get occupants for room %s: %v", roomUUID, err)
-				continue
-			}
-
-			// Get user data for each occupant
-			for _, occupantId := range occupantIds {
-				var user models.UserRaw
-				err = tx.QueryRow(`
-					SELECT id, year, first_name, last_name, email, draw_number, preplaced, in_dorm, 
-					sgroup_uuid, participated, participation_time, room_uuid, reslife_role, 
-					notifications_enabled, notification_created_at, notification_updated_at, gender_preferences
-					FROM users WHERE id = $1
-				`, occupantId).Scan(
-					&user.Id, &user.Year, &user.FirstName, &user.LastName, &user.Email,
-					&user.DrawNumber, &user.Preplaced, &user.InDorm, &user.SGroupUUID,
-					&user.Participated, &user.PartitipationTime, &user.RoomUUID, &user.ReslifeRole,
-					&user.NotificationsEnabled, &user.NotificationCreatedAt, &user.NotificationUpdatedAt,
-					&user.GenderPreferences,
-				)
-				if err != nil {
-					log.Printf("Failed to get user data for ID %d: %v", occupantId, err)
-					continue
-				}
-				users = append(users, user)
-			}
-		}
-
-		// Determine the gender preference for this suite
-		genderPreferences, found := GetSuiteGenderPreference(users, dormId)
-		if found {
-			// Update the suite's gender preference
-			_, err = tx.Exec("UPDATE suites SET gender_preferences = $1 WHERE suite_uuid = $2",
-				pq.Array(genderPreferences), suiteUUID)
-			if err != nil {
-				log.Printf("Failed to update gender preferences for suite %s: %v", suiteUUID, err)
-				continue
-			}
-			log.Printf("Updated gender preferences for suite %s to %v", suiteUUID, genderPreferences)
-		}
+		suiteUUIDs = append(suiteUUIDs, suiteUUID)
 	}
 
+	suiteRows.Close()
+
+	// Use the helper function to update gender preferences for each suite
+	for _, suiteUUID := range suiteUUIDs {
+		err = UpdateSuiteGenderPreferencesBySuiteUUID(tx, suiteUUID)
+		if err != nil {
+			log.Printf("Failed to update gender preferences for suite %s: %v", suiteUUID, err)
+			continue
+		}
+	}
 	c.JSON(http.StatusOK, gin.H{"message": "Suite gender preferences updated"})
 }
 
@@ -371,13 +326,6 @@ func UpdateSuiteGenderPreferencesBySuiteUUID(tx *sql.Tx, suiteUUID uuid.UUID) er
 	err = tx.QueryRow("SELECT rooms FROM suites WHERE suite_uuid = $1", suiteUUID).Scan(&roomUUIDs)
 	if err != nil {
 		log.Printf("Failed to get rooms for suite %s: %v", suiteUUID, err)
-		return err
-	}
-
-	// Ensure we have the most up-to-date data by performing a transaction sync
-	_, err = tx.Exec("SELECT 'SYNC_TRANSACTION_STATE' AS transaction_barrier")
-	if err != nil {
-		log.Printf("Failed to sync transaction: %v", err)
 		return err
 	}
 
