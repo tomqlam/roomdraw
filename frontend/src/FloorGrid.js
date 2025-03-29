@@ -290,9 +290,11 @@ function FloorGrid({ gridData })
             {
                 if (room.hasFrosh)
                 {
-                    if (room.dorm === 9) {
+                    if (room.dorm === 9)
+                    {
                         return "Froshe";
-                    } else {
+                    } else
+                    {
                         return "Frosh";
                     }
                 }
@@ -588,7 +590,7 @@ function FloorGrid({ gridData })
                                 className="grid-cell"
                                 data-full-name={room.maxOccupancy >= 1 ? (room.hasFrosh ? (room.dorm === 9 ? 'Froshe' : 'Frosh') : getNameById(room.occupant1)) : ''}
                             >
-                                {room.maxOccupancy >= 1 && (room.hasFrosh ? 'Frosh' : getNameById(room.occupant1))}
+                                {room.maxOccupancy >= 1 && (room.hasFrosh ? (room.dorm === 9 ? 'Froshe' : 'Frosh') : getNameById(room.occupant1))}
                             </div>
                             <div
                                 style={getGridItemStyle(room, room.maxOccupancy, 2, suiteIndex, room.pullPriority)}
@@ -596,7 +598,7 @@ function FloorGrid({ gridData })
                                 className="grid-cell"
                                 data-full-name={room.maxOccupancy >= 2 ? (room.hasFrosh ? (room.dorm === 9 ? 'Froshe' : 'Frosh') : getNameById(room.occupant2)) : ''}
                             >
-                                {room.maxOccupancy >= 2 && (room.hasFrosh ? 'Frosh' : getNameById(room.occupant2))}
+                                {room.maxOccupancy >= 2 && (room.hasFrosh ? (room.dorm === 9 ? 'Froshe' : 'Frosh') : getNameById(room.occupant2))}
                             </div>
                             {((activeTab === 'Atwood' || activeTab === 'Drinkward') || activeTab === 'Case') && (
                                 <div
@@ -605,7 +607,7 @@ function FloorGrid({ gridData })
                                     className="grid-cell"
                                     data-full-name={room.maxOccupancy >= 3 ? (room.hasFrosh ? (room.dorm === 9 ? 'Froshe' : 'Frosh') : getNameById(room.occupant3)) : ''}
                                 >
-                                    {room.maxOccupancy >= 3 && (room.hasFrosh ? 'Frosh' : getNameById(room.occupant3))}
+                                    {room.maxOccupancy >= 3 && (room.hasFrosh ? (room.dorm === 9 ? 'Froshe' : 'Frosh') : getNameById(room.occupant3))}
                                 </div>
                             )}
                             {activeTab === "Case" && (
@@ -615,7 +617,7 @@ function FloorGrid({ gridData })
                                     className="grid-cell"
                                     data-full-name={room.maxOccupancy >= 4 ? (room.hasFrosh ? (room.dorm === 9 ? 'Froshe' : 'Frosh') : getNameById(room.occupant4)) : ''}
                                 >
-                                    {room.maxOccupancy >= 4 && (room.hasFrosh ? 'Frosh' : getNameById(room.occupant4))}
+                                    {room.maxOccupancy >= 4 && (room.hasFrosh ? (room.dorm === 9 ? 'Froshe' : 'Frosh') : getNameById(room.occupant4))}
                                 </div>
                             )}
                         </React.Fragment>
