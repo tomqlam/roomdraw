@@ -4,6 +4,47 @@ import Select from "react-select";
 import AdminBumpModalFunctions from './AdminBumpModalFunctions';
 import { MyContext } from './MyContext';
 
+// Utility function to simplify gender preferences display
+const simplifyGenderPreferences = (preferences) =>
+{
+    if (!preferences || !preferences.length) return [];
+
+    const simplifiedPrefs = [...preferences];
+    const hasCisWoman = simplifiedPrefs.includes('Cis Woman');
+    const hasTransWoman = simplifiedPrefs.includes('Trans Woman');
+    const hasCisMan = simplifiedPrefs.includes('Cis Man');
+    const hasTransMan = simplifiedPrefs.includes('Trans Man');
+
+    // Replace Cis Woman and Trans Woman with Woman if both exist
+    if (hasCisWoman && hasTransWoman)
+    {
+        // Remove both individual preferences
+        const indexCisWoman = simplifiedPrefs.indexOf('Cis Woman');
+        simplifiedPrefs.splice(indexCisWoman, 1);
+
+        const indexTransWoman = simplifiedPrefs.indexOf('Trans Woman');
+        simplifiedPrefs.splice(indexTransWoman, 1);
+
+        // Add combined preference
+        simplifiedPrefs.push('Woman');
+    }
+
+    // Replace Cis Man and Trans Man with Man if both exist
+    if (hasCisMan && hasTransMan)
+    {
+        // Remove both individual preferences
+        const indexCisMan = simplifiedPrefs.indexOf('Cis Man');
+        simplifiedPrefs.splice(indexCisMan, 1);
+
+        const indexTransMan = simplifiedPrefs.indexOf('Trans Man');
+        simplifiedPrefs.splice(indexTransMan, 1);
+
+        // Add combined preference
+        simplifiedPrefs.push('Man');
+    }
+
+    return simplifiedPrefs;
+};
 
 function BumpModal()
 {
@@ -260,7 +301,11 @@ function BumpModal()
                             resolve(false);
                             return null;
                         }
-                        return response.json();
+                        return response.json().then(data =>
+                        {
+                            // Add status to the data object for error handling
+                            return { ...data, status: response.status };
+                        });
                     });
                 })
                 .then(data =>
@@ -313,17 +358,21 @@ function BumpModal()
 
                                 const names = data.occupants.map(getNameById).join(', ');
                                 setPullError("Please remove " + names + " from their existing room");
-
                             }
-
-
-
-
-                        } else
+                        }
+                        else if (data.error === "One or more of the proposed occupants is not preplaced" && data.occupants)
+                        {
+                            // Handle the case for non-preplaced occupants
+                            setPullError(data.error);
+                            // You could also show which occupants aren't preplaced if needed
+                            // const names = data.occupants.map(getNameById).join(', ');
+                            // setPullError(`One or more of the proposed occupants is not preplaced: ${names}`);
+                        }
+                        else
                         {
                             setPullError(data.error);
                         }
-                        setIsModalOpen(true);
+                        setLoadingSubmit(false);
                         setShowModalError(true);
                         resolve(false);
                     } else
@@ -335,9 +384,12 @@ function BumpModal()
                 })
                 .catch((error) =>
                 {
-                    console.error(error.error);
+                    console.error(error);
+                    setLoadingSubmit(false);
+                    setPullError("An unexpected error occurred. Please try again.");
+                    setShowModalError(true);
                     setRefreshKey(prev => prev + 1);
-                    resolve(true);
+                    resolve(false);
                 });
         });
     }
@@ -487,7 +539,23 @@ function BumpModal()
                     <button className="delete" aria-label="close" onClick={closeModal}></button>
                 </header>
                 <section className="modal-card-body">
+                    {/* Display error message once at the top of the modal */}
+                    {showModalError && (
+                        <div className="notification is-danger" style={{ marginBottom: '15px' }}>
+                            <p>{pullError}</p>
+                        </div>
+                    )}
 
+                    {/* Add Gender Preferences display */}
+                    {selectedSuiteObject && selectedSuiteObject.genderPreferences && selectedSuiteObject.genderPreferences.length > 0 && (
+                        <div className="notification is-warning" style={{ marginBottom: '15px' }}>
+                            <p className="has-text-weight-bold">This suite has the following gender preferences:</p>
+                            <p>{simplifyGenderPreferences(selectedSuiteObject.genderPreferences).join(' or ')}</p>
+                            <p className="mt-2">
+                                <strong>Note:</strong> Knowingly violating these gender preferences is an <strong>Honor Code violation</strong>.
+                            </p>
+                        </div>
+                    )}
 
                     <AdminBumpModalFunctions closeModal={closeModal} />
 
@@ -607,7 +675,6 @@ function BumpModal()
                     {/* Add your modal content here */}
 
 
-                    {showModalError && (<p class="help is-danger">{pullError}</p>)}
                     {peopleAlreadyInRoom.map((person, index) => (
                         <div key={index} style={{ marginTop: '5px' }} className="field">
                             <button className={`button is-danger ${loadingClearPerson[index] ? 'is-loading' : ''}`} onClick={() =>
@@ -629,7 +696,8 @@ function BumpModal()
                                 setLoadingClearRoom(true);
                                 handleClearRoom(selectedRoomObject.roomUUID, true, -1);
                             }}
-                            disabled={clearRoomStats.remainingClears <= 0 || clearRoomStats.isBlacklisted}
+                            disabled={clearRoomStats.remainingClears <= 0 || clearRoomStats.isBlacklisted || selectedRoomObject.pullPriority.isPreplaced}
+                            title={selectedRoomObject.pullPriority.isPreplaced ? "Cannot clear a preplaced room" : ""}
                         >
                             Clear room
                         </button>

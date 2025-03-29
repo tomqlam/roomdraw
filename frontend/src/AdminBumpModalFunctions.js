@@ -1,5 +1,5 @@
 import { jwtDecode } from 'jwt-decode';
-import { useContext } from 'react';
+import { useContext, useState } from 'react';
 import { MyContext } from './MyContext';
 
 
@@ -14,12 +14,22 @@ const AdminBumpModalFunctions = ({ closeModal }) =>
         setRefreshKey,
 
         handleErrorFromTokenExpiry,
+        setPullError,
+        setShowModalError,
 
 
     } = useContext(MyContext);
 
+    // Add local loading state
+    const [loading, setLoading] = useState({
+        frosh: false,
+        preplace: false,
+        removePreplace: false
+    });
+
     function postToFrosh(roomObject)
     {
+        setLoading(prev => ({ ...prev, frosh: true }));
         fetch(`${process.env.REACT_APP_API_URL}/frosh/${roomObject.roomUUID}`, {
             method: 'POST',
             headers: {
@@ -29,7 +39,14 @@ const AdminBumpModalFunctions = ({ closeModal }) =>
             .then(response => response.json())
             .then(data =>
             {
-                // commented console.log (data);
+                setLoading(prev => ({ ...prev, frosh: false }));
+                if (data.error)
+                {
+                    // Handle error case
+                    setPullError(data.error);
+                    setShowModalError(true);
+                    return;
+                }
                 closeModal();
                 setRefreshKey(prev => prev + 1);
                 if (handleErrorFromTokenExpiry(data))
@@ -40,11 +57,15 @@ const AdminBumpModalFunctions = ({ closeModal }) =>
             .catch((error) =>
             {
                 console.error('Error:', error);
+                setLoading(prev => ({ ...prev, frosh: false }));
+                setPullError("An unexpected error occurred. Please try again.");
+                setShowModalError(true);
             });
     }
 
     function preplaceOccupants(roomObject)
     {
+        setLoading(prev => ({ ...prev, preplace: true }));
         fetch(`${process.env.REACT_APP_API_URL}/rooms/preplace/${roomObject.roomUUID}`, {
             method: 'POST',
             headers: {
@@ -59,7 +80,14 @@ const AdminBumpModalFunctions = ({ closeModal }) =>
             .then(response => response.json())
             .then(data =>
             {
-                // commented console.log (data);
+                setLoading(prev => ({ ...prev, preplace: false }));
+                if (data.error)
+                {
+                    // Handle error case
+                    setPullError(data.error);
+                    setShowModalError(true);
+                    return;
+                }
                 closeModal();
                 setRefreshKey(prev => prev + 1);
                 if (handleErrorFromTokenExpiry(data))
@@ -70,24 +98,32 @@ const AdminBumpModalFunctions = ({ closeModal }) =>
             .catch((error) =>
             {
                 console.error('Error:', error);
+                setLoading(prev => ({ ...prev, preplace: false }));
+                setPullError("An unexpected error occurred. Please try again.");
+                setShowModalError(true);
             });
     }
 
     function removePreplaceOccupants(roomObject)
     {
-        fetch(`${process.env.REACT_APP_API_URL}/rooms/preplace/${roomObject.roomUUID}`, {
+        setLoading(prev => ({ ...prev, removePreplace: true }));
+        fetch(`${process.env.REACT_APP_API_URL}/rooms/preplace/remove/${roomObject.roomUUID}`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
-            },
-            body: JSON.stringify({
-                proposedOccupants: [],
-            }),
+            }
         })
             .then(response => response.json())
             .then(data =>
             {
-                // commented console.log (data);
+                setLoading(prev => ({ ...prev, removePreplace: false }));
+                if (data.error)
+                {
+                    // Handle error case
+                    setPullError(data.error);
+                    setShowModalError(true);
+                    return;
+                }
                 closeModal();
                 setRefreshKey(prev => prev + 1);
                 if (handleErrorFromTokenExpiry(data))
@@ -98,6 +134,9 @@ const AdminBumpModalFunctions = ({ closeModal }) =>
             .catch((error) =>
             {
                 console.error('Error:', error);
+                setLoading(prev => ({ ...prev, removePreplace: false }));
+                setPullError("An unexpected error occurred. Please try again.");
+                setShowModalError(true);
             });
     }
 
@@ -115,11 +154,11 @@ const AdminBumpModalFunctions = ({ closeModal }) =>
             <label className="label">Admin-Only Functions</label>
 
             <div className="buttons">
-                <button className="button is-warning" style={{ marginBottom: '0.5rem' }} onClick={() => postToFrosh(selectedRoomObject)}>Add Frosh</button>
-                <button className="button is-warning" style={{ marginBottom: '0.5rem' }} onClick={() => preplaceOccupants(selectedRoomObject)}>Pre-Place Occupants</button>
-                <button className="button is-warning" style={{ marginBottom: '0.5rem' }} onClick={() => removePreplaceOccupants(selectedRoomObject)}>Remove Pre-Placed Occupants</button>
+                <button className={`button is-warning ${loading.frosh ? 'is-loading' : ''}`} style={{ marginBottom: '0.5rem' }} onClick={() => postToFrosh(selectedRoomObject)}>Add Frosh</button>
+                <button className={`button is-warning ${loading.preplace ? 'is-loading' : ''}`} style={{ marginBottom: '0.5rem' }} onClick={() => preplaceOccupants(selectedRoomObject)}>Pre-Place Occupants</button>
+                <button className={`button is-warning ${loading.removePreplace ? 'is-loading' : ''}`} style={{ marginBottom: '0.5rem' }} onClick={() => removePreplaceOccupants(selectedRoomObject)}>Remove Pre-Placed Occupants</button>
             </div>
-            <p class="help is-danger">These are dangerous: be sure before toggling!</p>
+            <p className="help is-danger">These are dangerous: be sure before toggling!</p>
 
         </>
     );

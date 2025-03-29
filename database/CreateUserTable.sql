@@ -17,6 +17,7 @@ CREATE TABLE Users (
     notifications_enabled boolean NOT NULL DEFAULT false,
     notification_created_at timestamp WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     notification_updated_at timestamp WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    gender_preferences varchar[] NOT NULL DEFAULT '{}',
     
     PRIMARY KEY (id),
     FOREIGN KEY (sgroup_uuid) REFERENCES SuiteGroups(sgroup_uuid)

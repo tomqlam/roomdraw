@@ -103,19 +103,19 @@ type RoomRaw struct {
 }
 
 type SuiteRaw struct {
-	SuiteUUID              uuid.UUID `db:"suite_uuid"`
-	Dorm                   int       `db:"dorm"`
-	DormName               string    `db:"dorm_name"`
-	Floor                  int       `db:"floor"`
-	RoomCount              int       `db:"room_count"`
-	Rooms                  UUIDArray `db:"rooms"`
-	AlternativePull        bool      `db:"alternative_pull"`
-	SuiteDesign            string    `db:"suite_design"`
-	CanLockPull            bool      `db:"can_lock_pull"`
-	LockPulledRoom         uuid.UUID `db:"lock_pulled_room"`
-	ReslifeRoom            uuid.UUID `db:"reslife_room"`
-	GenderPreference       string    `db:"gender_preference"`
-	CanBeGenderPreferenced bool      `db:"can_be_gender_preferenced"`
+	SuiteUUID              uuid.UUID      `db:"suite_uuid"`
+	Dorm                   int            `db:"dorm"`
+	DormName               string         `db:"dorm_name"`
+	Floor                  int            `db:"floor"`
+	RoomCount              int            `db:"room_count"`
+	Rooms                  UUIDArray      `db:"rooms"`
+	AlternativePull        bool           `db:"alternative_pull"`
+	SuiteDesign            string         `db:"suite_design"`
+	CanLockPull            bool           `db:"can_lock_pull"`
+	LockPulledRoom         uuid.UUID      `db:"lock_pulled_room"`
+	ReslifeRoom            uuid.UUID      `db:"reslife_room"`
+	GenderPreferences      pq.StringArray `db:"gender_preferences"`
+	CanBeGenderPreferenced bool           `db:"can_be_gender_preferenced"`
 }
 
 type DormSimple struct {
@@ -138,12 +138,12 @@ type FloorSimpler struct {
 }
 
 type SuiteSimple struct {
-	Rooms            []RoomSimple `json:"rooms"`
-	SuiteDesign      string       `json:"suiteDesign"`
-	SuiteUUID        uuid.UUID    `json:"suiteUUID"`
-	GenderPreference string       `json:"genderPreference"`
-	AlternativePull  bool         `json:"alternative_pull"`
-	CanLockPull      bool         `json:"can_lock_pull"`
+	Rooms             []RoomSimple   `json:"rooms"`
+	SuiteDesign       string         `json:"suiteDesign"`
+	SuiteUUID         uuid.UUID      `json:"suiteUUID"`
+	GenderPreferences pq.StringArray `json:"genderPreferences"`
+	AlternativePull   bool           `json:"alternative_pull"`
+	CanLockPull       bool           `json:"can_lock_pull"`
 }
 
 type SuiteSimpler struct {
@@ -171,22 +171,23 @@ type RoomSimpler struct {
 }
 
 type UserRaw struct {
-	Id                    int         `db:"id"`
-	Year                  string      `db:"year"`
-	FirstName             string      `db:"first_name"`
-	LastName              string      `db:"last_name"`
-	Email                 string      `db:"email"`
-	DrawNumber            float64     `db:"draw_number"`
-	Preplaced             bool        `db:"preplaced"`
-	InDorm                int         `db:"in_dorm"`
-	SGroupUUID            uuid.UUID   `db:"sgroup_uuid"`
-	Participated          bool        `db:"participated"`
-	PartitipationTime     pq.NullTime `db:"participation_time"`
-	RoomUUID              uuid.UUID   `db:"room_uuid"`
-	ReslifeRole           string      `db:"reslife_role"`
-	NotificationsEnabled  bool        `db:"notifications_enabled"`
-	NotificationCreatedAt time.Time   `db:"notification_created_at"`
-	NotificationUpdatedAt time.Time   `db:"notification_updated_at"`
+	Id                    int            `db:"id"`
+	Year                  string         `db:"year"`
+	FirstName             string         `db:"first_name"`
+	LastName              string         `db:"last_name"`
+	Email                 string         `db:"email"`
+	DrawNumber            float64        `db:"draw_number"`
+	Preplaced             bool           `db:"preplaced"`
+	InDorm                int            `db:"in_dorm"`
+	SGroupUUID            uuid.UUID      `db:"sgroup_uuid"`
+	Participated          bool           `db:"participated"`
+	PartitipationTime     pq.NullTime    `db:"participation_time"`
+	RoomUUID              uuid.UUID      `db:"room_uuid"`
+	ReslifeRole           string         `db:"reslife_role"`
+	NotificationsEnabled  bool           `db:"notifications_enabled"`
+	NotificationCreatedAt time.Time      `db:"notification_created_at"`
+	NotificationUpdatedAt time.Time      `db:"notification_updated_at"`
+	GenderPreferences     pq.StringArray `db:"gender_preferences"`
 }
 
 type SuiteGroupRaw struct {
@@ -240,7 +241,7 @@ type InheritedPullPriority struct {
 }
 
 type OccupantUpdateRequest struct {
-	ProposedOccupants []int     `json:"proposedOccupants"`
+	ProposedOccupants IntArray  `json:"proposedOccupants"`
 	PullType          int       `json:"pullType"` // 0 = undefined, 1 = self, 2 = normal pull, 3 = lock pull, 4 = alternative pull
 	PullLeaderRoom    uuid.UUID `json:"pullLeaderRoom"`
 	UserJWT           string    `json:"userJWT"`
@@ -261,8 +262,8 @@ type GeneralRequest struct {
 }
 
 type PreplacedRequest struct {
-	ProposedOccupants []int  `json:"proposedOccupants"`
-	UserJWT           string `json:"userJWT"`
+	ProposedOccupants IntArray `json:"proposedOccupants"`
+	UserJWT           string   `json:"userJWT"`
 }
 
 // UserRateLimit represents an entry in the user_rate_limits table

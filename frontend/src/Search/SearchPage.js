@@ -34,13 +34,39 @@ function SearchPage()
     const [capacityOptions, setCapacityOptions] = useState([]);
     const [inDormOptions, setInDormOptions] = useState([]);
 
+    // Add state for preplaced filter
+    const [preplacedFilter, setPreplacedFilter] = useState(null);
+
+    // Add state for hasGenderPref filter
+    const [hasGenderPrefFilter, setHasGenderPrefFilter] = useState(null);
+
+    // Add state for specific gender preference filter
+    const [genderPrefFilter, setGenderPrefFilter] = useState([]);
+
+    // Add options for preplaced filter
+    const preplacedOptions = [
+        { value: true, label: 'Preplaced Only' },
+        { value: false, label: 'Non-Preplaced Only' }
+    ];
+
+    // Add options for hasGenderPref filter
+    const hasGenderPrefOptions = [
+        { value: true, label: 'Has Gender Preferences' },
+        { value: false, label: 'No Gender Preferences' }
+    ];
+
+    // Add options for specific gender preference filter
+    const genderPrefOptions = [
+        { value: 'Woman', label: 'Woman' },
+        { value: 'Man', label: 'Man' },
+        { value: 'Non-Binary', label: 'Non-Binary' }
+    ];
+
     // Custom styles for react-select to support dark mode
     const selectStyles = {
         control: (baseStyles) => ({
             ...baseStyles,
             backgroundColor: isDarkMode ? 'var(--card-bg)' : 'white',
-            borderColor: 'var(--border-color)',
-            boxShadow: 'var(--input-shadow)',
             '&:hover': {
                 borderColor: 'var(--primary-color)',
             },
@@ -65,13 +91,11 @@ function SearchPage()
                 : state.isSelected
                     ? 'white'
                     : 'inherit',
-            cursor: 'pointer',
         }),
         menu: (baseStyles) => ({
             ...baseStyles,
             backgroundColor: isDarkMode ? 'var(--card-bg)' : 'white',
             boxShadow: 'var(--box-shadow)',
-            zIndex: 10,
         }),
         input: (baseStyles) => ({
             ...baseStyles,
@@ -85,6 +109,26 @@ function SearchPage()
             ...baseStyles,
             color: isDarkMode ? 'var(--text-muted)' : 'hsl(0, 0%, 50%)',
         }),
+    };
+
+    // Custom checkbox option component for multi-select dropdowns
+    const MultiSelectOption = props =>
+    {
+        return (
+            <div
+                {...props.innerProps}
+                className={`multi-select-option ${props.isFocused ? 'focused' : ''}`}
+            >
+                <input
+                    type="checkbox"
+                    checked={props.isSelected}
+                    onChange={() => { }}
+                />
+                <span>
+                    {props.label}
+                </span>
+            </div>
+        );
     };
 
     // Utility function to convert dorm ID to dorm name
@@ -105,6 +149,48 @@ function SearchPage()
         };
 
         return dormMapping[dormId] || `Unknown (${dormId})`;
+    };
+
+    // Utility function to simplify gender preferences display
+    const simplifyGenderPreferences = (preferences) =>
+    {
+        if (!preferences || !preferences.length) return [];
+
+        const simplifiedPrefs = [...preferences];
+        const hasCisWoman = simplifiedPrefs.includes('Cis Woman');
+        const hasTransWoman = simplifiedPrefs.includes('Trans Woman');
+        const hasCisMan = simplifiedPrefs.includes('Cis Man');
+        const hasTransMan = simplifiedPrefs.includes('Trans Man');
+
+        // Replace Cis Woman and Trans Woman with Woman if both exist
+        if (hasCisWoman && hasTransWoman)
+        {
+            // Remove both individual preferences
+            const indexCisWoman = simplifiedPrefs.indexOf('Cis Woman');
+            simplifiedPrefs.splice(indexCisWoman, 1);
+
+            const indexTransWoman = simplifiedPrefs.indexOf('Trans Woman');
+            simplifiedPrefs.splice(indexTransWoman, 1);
+
+            // Add combined preference
+            simplifiedPrefs.push('Woman');
+        }
+
+        // Replace Cis Man and Trans Man with Man if both exist
+        if (hasCisMan && hasTransMan)
+        {
+            // Remove both individual preferences
+            const indexCisMan = simplifiedPrefs.indexOf('Cis Man');
+            simplifiedPrefs.splice(indexCisMan, 1);
+
+            const indexTransMan = simplifiedPrefs.indexOf('Trans Man');
+            simplifiedPrefs.splice(indexTransMan, 1);
+
+            // Add combined preference
+            simplifiedPrefs.push('Man');
+        }
+
+        return simplifiedPrefs;
     };
 
     // Handle delayed loading indicator
@@ -184,13 +270,19 @@ function SearchPage()
             // Add dorm filter if selected
             if (dormFilter.length > 0)
             {
-                params.append('dorm', dormFilter[0].value); // For now, use only the first selected dorm
+                dormFilter.forEach(dorm =>
+                {
+                    params.append('dorm', dorm.value);
+                });
             }
 
             // Add capacity filter if selected
             if (capacityFilter.length > 0)
             {
-                params.append('capacity', capacityFilter[0].value); // For now, use only the first selected capacity
+                capacityFilter.forEach(capacity =>
+                {
+                    params.append('capacity', capacity.value);
+                });
             }
 
             // Add sorting parameters
@@ -251,7 +343,10 @@ function SearchPage()
             // Add year filter if selected
             if (yearFilter.length > 0)
             {
-                params.append('year', yearFilter[0].value); // For now, use only the first selected year
+                yearFilter.forEach(year =>
+                {
+                    params.append('year', year.value);
+                });
             }
 
             // Add draw number range if specified
@@ -264,16 +359,54 @@ function SearchPage()
                 params.append('max_draw_number', drawNumberFilter.max);
             }
 
+            // Add hasGenderPref filter if selected
+            if (hasGenderPrefFilter !== null)
+            {
+                params.append('has_gender_preference', hasGenderPrefFilter.value);
+            }
+
+            // Add preplaced filter if selected
+            if (preplacedFilter !== null)
+            {
+                params.append('preplaced', preplacedFilter.value);
+            }
+
             // Add in-dorm filter if selected
             if (inDormFilter.length > 0)
             {
-                // Get dorm ID from the dorm name
-                const dormName = inDormFilter[0].value;
-                const dormRoom = rooms.find(room => room.DormName === dormName);
-                if (dormRoom)
+                inDormFilter.forEach(dorm =>
                 {
-                    params.append('in_dorm', dormRoom.Dorm);
-                }
+                    // Get dorm ID from the dorm name
+                    const dormName = dorm.value;
+                    const dormRoom = rooms.find(room => room.DormName === dormName);
+                    if (dormRoom)
+                    {
+                        params.append('in_dorm', dormRoom.Dorm);
+                    }
+                });
+            }
+
+            // Add gender preference filter if selected
+            if (genderPrefFilter.length > 0)
+            {
+                genderPrefFilter.forEach(pref =>
+                {
+                    if (pref.value === 'Woman')
+                    {
+                        // Add both Cis Woman and Trans Woman to the query
+                        params.append('gender_preference', 'Cis Woman');
+                        params.append('gender_preference', 'Trans Woman');
+                    } else if (pref.value === 'Man')
+                    {
+                        // Add both Cis Man and Trans Man to the query
+                        params.append('gender_preference', 'Cis Man');
+                        params.append('gender_preference', 'Trans Man');
+                    } else
+                    {
+                        // For other preferences like Non-Binary, add as is
+                        params.append('gender_preference', pref.value);
+                    }
+                });
             }
 
             // Add sorting parameters
@@ -357,6 +490,9 @@ function SearchPage()
         setYearFilter([]);
         setInDormFilter([]);
         setDrawNumberFilter({ min: '', max: '' });
+        setPreplacedFilter(null);
+        setHasGenderPrefFilter(null);
+        setGenderPrefFilter([]);
         setResults([]);
         setSortConfig({ key: '', direction: '' });
         setPage(1);
@@ -383,6 +519,95 @@ function SearchPage()
 
     return (
         <div className="section">
+            {/* Custom CSS for multi-select components */}
+            <style>
+                {`
+                /* Custom Dropdown Styles */
+                .react-select__control {
+                    min-height: 38px !important;
+                    height: auto !important;
+                    display: flex !important;
+                    align-items: center !important;
+                    width: 100% !important;
+                }
+                .react-select__value-container {
+                    padding: 2px 8px !important;
+                    display: flex !important;
+                    align-items: center !important;
+                    flex-wrap: wrap !important;
+                    height: auto !important;
+                    overflow: visible !important;
+                    width: 100% !important;
+                }
+                .react-select__input-container {
+                    margin: 0 !important;
+                    padding: 0 !important;
+                }
+                .react-select__placeholder {
+                    margin: 0 2px !important;
+                }
+                .react-select__multi-value {
+                    margin: 2px 4px 2px 0 !important;
+                    display: flex !important;
+                    align-items: center !important;
+                }
+                .react-select__indicators {
+                    align-self: center !important;
+                    height: 100% !important;
+                    display: flex !important;
+                    align-items: center !important;
+                }
+                .react-select__menu {
+                    width: 100% !important;
+                    z-index: 20 !important;
+                }
+                .react-select__option {
+                    padding: 8px 12px !important;
+                    display: flex !important;
+                    align-items: center !important;
+                }
+                .react-select__single-value {
+                    display: flex !important;
+                    align-items: center !important;
+                    margin: 0 2px !important;
+                }
+                
+                /* Container for react-select */
+                .react-select {
+                    width: 100% !important;
+                }
+                
+                .react-select > div {
+                    width: 100% !important;
+                }
+                
+                /* Custom MultiSelectOption styling */
+                .multi-select-option {
+                    padding: 8px 12px;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    background-color: white;
+                }
+                
+                .multi-select-option.focused {
+                    background-color: #f5f5f5;
+                }
+                
+                .multi-select-option input[type="checkbox"] {
+                    margin-right: 8px;
+                }
+                
+                body.dark-mode .multi-select-option {
+                    background-color: var(--card-bg);
+                    color: var(--text-color);
+                }
+                
+                body.dark-mode .multi-select-option.focused {
+                    background-color: var(--card-bg-hover);
+                }
+                `}
+            </style>
             <div className="container">
                 <h1 className="title has-text-centered mb-5">Search</h1>
 
@@ -428,90 +653,160 @@ function SearchPage()
                         <div className="px-4 py-3 search-filter-panel">
                             {searchType === 'rooms' ? (
                                 <div className="columns is-centered">
-                                    <div className="column is-5">
+                                    <div className="column is-5" style={{ display: 'flex', flexDirection: 'column', height: '100px' }}>
                                         <label className="label dark-mode-label">Dorm</label>
-                                        <Select
-                                            className="react-select"
-                                            classNamePrefix="react-select"
-                                            placeholder="All Dorms"
-                                            options={dormOptions}
-                                            value={dormFilter.length > 0 ? dormFilter[0] : null}
-                                            onChange={(option) => setDormFilter(option ? [option] : [])}
-                                            isClearable
-                                            styles={selectStyles}
-                                        />
+                                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', width: '100%' }}>
+                                            <Select
+                                                className="react-select"
+                                                classNamePrefix="react-select"
+                                                placeholder="All Dorms"
+                                                options={dormOptions}
+                                                value={dormFilter}
+                                                onChange={(options) => setDormFilter(options || [])}
+                                                isClearable
+                                                isMulti
+                                                closeMenuOnSelect={false}
+                                                hideSelectedOptions={false}
+                                                components={{ Option: MultiSelectOption }}
+                                                styles={{
+                                                    ...selectStyles
+                                                }}
+                                            />
+                                        </div>
                                     </div>
-                                    <div className="column is-5">
+                                    <div className="column is-5" style={{ display: 'flex', flexDirection: 'column', height: '100px' }}>
                                         <label className="label dark-mode-label">Room Capacity</label>
-                                        <Select
-                                            className="react-select"
-                                            classNamePrefix="react-select"
-                                            placeholder="Any Size"
-                                            options={capacityOptions}
-                                            value={capacityFilter.length > 0 ? capacityFilter[0] : null}
-                                            onChange={(option) => setCapacityFilter(option ? [option] : [])}
-                                            isClearable
-                                            styles={selectStyles}
-                                        />
+                                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', width: '100%' }}>
+                                            <Select
+                                                className="react-select"
+                                                classNamePrefix="react-select"
+                                                placeholder="Any Size"
+                                                options={capacityOptions}
+                                                value={capacityFilter}
+                                                onChange={(options) => setCapacityFilter(options || [])}
+                                                isClearable
+                                                isMulti
+                                                closeMenuOnSelect={false}
+                                                hideSelectedOptions={false}
+                                                components={{ Option: MultiSelectOption }}
+                                                styles={{
+                                                    ...selectStyles
+                                                }}
+                                            />
+                                        </div>
                                     </div>
                                 </div>
                             ) : (
-                                <div className="columns mb-0">
-                                    <div className="column is-one-third">
-                                        <label className="label dark-mode-label">Year</label>
-                                        <Select
-                                            className="react-select"
-                                            classNamePrefix="react-select"
-                                            placeholder="All Years"
-                                            options={yearOptions}
-                                            value={yearFilter.length > 0 ? yearFilter[0] : null}
-                                            onChange={(option) => setYearFilter(option ? [option] : [])}
-                                            isClearable
-                                            styles={selectStyles}
-                                        />
-                                    </div>
-                                    <div className="column is-one-third">
-                                        <label className="label dark-mode-label">In-Dorm Preference</label>
-                                        <Select
-                                            className="react-select"
-                                            classNamePrefix="react-select"
-                                            placeholder="Any Dorm"
-                                            options={inDormOptions}
-                                            value={inDormFilter.length > 0 ? inDormFilter[0] : null}
-                                            onChange={(option) => setInDormFilter(option ? [option] : [])}
-                                            isClearable
-                                            styles={selectStyles}
-                                        />
-                                    </div>
-                                    <div className="column is-one-third">
-                                        <label className="label dark-mode-label">Draw Number Range</label>
-                                        <div className="field has-addons">
-                                            <div className="control is-expanded">
-                                                <input
-                                                    className="input search-number-input"
-                                                    type="number"
-                                                    placeholder="Min"
-                                                    min="1"
-                                                    value={drawNumberFilter.min}
-                                                    onChange={(e) => setDrawNumberFilter({ ...drawNumberFilter, min: e.target.value })}
+                                <>
+                                    <div className="columns mb-3" style={{ alignItems: 'flex-start', display: 'flex' }}>
+                                        <div className="column is-3" style={{ display: 'flex', flexDirection: 'column', height: '100px' }}>
+                                            <label className="label dark-mode-label">Year</label>
+                                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', width: '100%' }}>
+                                                <Select
+                                                    className="react-select"
+                                                    classNamePrefix="react-select"
+                                                    placeholder="All Years"
+                                                    options={yearOptions}
+                                                    value={yearFilter}
+                                                    onChange={(options) => setYearFilter(options || [])}
+                                                    isClearable
+                                                    isMulti
+                                                    closeMenuOnSelect={false}
+                                                    hideSelectedOptions={false}
+                                                    components={{ Option: MultiSelectOption }}
+                                                    styles={{
+                                                        ...selectStyles
+                                                    }}
                                                 />
                                             </div>
-                                            <div className="control">
-                                                <a className="button is-static search-static-button">to</a>
+                                        </div>
+                                        <div className="column is-3" style={{ display: 'flex', flexDirection: 'column', height: '100px' }}>
+                                            <label className="label dark-mode-label">Has Gender Preference</label>
+                                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', width: '100%' }}>
+                                                <Select
+                                                    className="react-select"
+                                                    classNamePrefix="react-select"
+                                                    placeholder="Any"
+                                                    options={hasGenderPrefOptions}
+                                                    value={hasGenderPrefFilter}
+                                                    onChange={(option) => setHasGenderPrefFilter(option)}
+                                                    isClearable
+                                                    styles={{
+                                                        ...selectStyles
+                                                    }}
+                                                />
                                             </div>
-                                            <div className="control is-expanded">
-                                                <input
-                                                    className="input search-number-input-right"
-                                                    type="number"
-                                                    placeholder="Max"
-                                                    min="1"
-                                                    value={drawNumberFilter.max}
-                                                    onChange={(e) => setDrawNumberFilter({ ...drawNumberFilter, max: e.target.value })}
+                                        </div>
+                                        <div className="column is-3" style={{ display: 'flex', flexDirection: 'column', height: '100px' }}>
+                                            <label className="label dark-mode-label">Gender Preference</label>
+                                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', width: '100%' }}>
+                                                <Select
+                                                    className="react-select"
+                                                    classNamePrefix="react-select"
+                                                    placeholder="Any Gender"
+                                                    options={genderPrefOptions}
+                                                    value={genderPrefFilter}
+                                                    onChange={(options) => setGenderPrefFilter(options || [])}
+                                                    isClearable
+                                                    isMulti
+                                                    closeMenuOnSelect={false}
+                                                    hideSelectedOptions={false}
+                                                    components={{ Option: MultiSelectOption }}
+                                                    styles={{
+                                                        ...selectStyles
+                                                    }}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="column is-3" style={{ display: 'flex', flexDirection: 'column', height: '100px' }}>
+                                            <label className="label dark-mode-label">Preplaced Status</label>
+                                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', width: '100%' }}>
+                                                <Select
+                                                    className="react-select"
+                                                    classNamePrefix="react-select"
+                                                    placeholder="Any Status"
+                                                    options={preplacedOptions}
+                                                    value={preplacedFilter}
+                                                    onChange={(option) => setPreplacedFilter(option)}
+                                                    isClearable
+                                                    styles={{
+                                                        ...selectStyles
+                                                    }}
                                                 />
                                             </div>
                                         </div>
                                     </div>
-                                </div>
+                                    <div className="columns">
+                                        <div className="column is-6 is-offset-3">
+                                            <label className="label dark-mode-label">Draw Number Range</label>
+                                            <div className="field has-addons">
+                                                <div className="control is-expanded">
+                                                    <input
+                                                        className="input"
+                                                        type="number"
+                                                        placeholder="Min"
+                                                        min="1"
+                                                        value={drawNumberFilter.min}
+                                                        onChange={(e) => setDrawNumberFilter({ ...drawNumberFilter, min: e.target.value })}
+                                                    />
+                                                </div>
+                                                <div className="control">
+                                                    <span className="button is-static">to</span>
+                                                </div>
+                                                <div className="control is-expanded">
+                                                    <input
+                                                        className="input"
+                                                        type="number"
+                                                        placeholder="Max"
+                                                        min="1"
+                                                        value={drawNumberFilter.max}
+                                                        onChange={(e) => setDrawNumberFilter({ ...drawNumberFilter, max: e.target.value })}
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </>
                             )}
 
                             <div className="field is-grouped is-flex is-justify-content-center mt-4">
@@ -677,7 +972,7 @@ function SearchPage()
                                 <table className="table is-fullwidth is-hoverable dark-mode-table">
                                     <thead>
                                         <tr>
-                                            <th onClick={() => requestSort('FirstName')} className={getClassNamesFor('FirstName')} style={{ cursor: 'pointer', width: '25%' }}>
+                                            <th onClick={() => requestSort('FirstName')} className={getClassNamesFor('FirstName')} style={{ cursor: 'pointer', width: '20%' }}>
                                                 Name
                                                 <span className="icon is-small ml-1">
                                                     <i className={`fas ${sortConfig.key === 'FirstName'
@@ -685,7 +980,7 @@ function SearchPage()
                                                         : 'fa-sort'}`}></i>
                                                 </span>
                                             </th>
-                                            <th onClick={() => requestSort('year')} className={getClassNamesFor('year')} style={{ cursor: 'pointer', width: '20%' }}>
+                                            <th onClick={() => requestSort('year')} className={getClassNamesFor('year')} style={{ cursor: 'pointer', width: '15%' }}>
                                                 Year
                                                 <span className="icon is-small ml-1">
                                                     <i className={`fas ${sortConfig.key === 'year'
@@ -693,7 +988,7 @@ function SearchPage()
                                                         : 'fa-sort'}`}></i>
                                                 </span>
                                             </th>
-                                            <th onClick={() => requestSort('drawNumber')} className={getClassNamesFor('drawNumber')} style={{ cursor: 'pointer', width: '20%' }}>
+                                            <th onClick={() => requestSort('drawNumber')} className={getClassNamesFor('drawNumber')} style={{ cursor: 'pointer', width: '15%' }}>
                                                 Draw Number
                                                 <span className="icon is-small ml-1">
                                                     <i className={`fas ${sortConfig.key === 'drawNumber'
@@ -701,8 +996,11 @@ function SearchPage()
                                                         : 'fa-sort'}`}></i>
                                                 </span>
                                             </th>
-                                            <th style={{ width: '15%' }}>In-Dorm</th>
-                                            <th style={{ width: '20%' }}>Room</th>
+                                            <th style={{ width: '15%' }}>
+                                                Gender Preferences
+                                            </th>
+                                            <th style={{ width: '10%' }}>In-Dorm</th>
+                                            <th style={{ width: '15%' }}>Room</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -714,7 +1012,24 @@ function SearchPage()
                                                         {user.Year.charAt(0).toUpperCase() + user.Year.slice(1)}
                                                     </span>
                                                 </td>
-                                                <td>{user.DrawNumber}</td>
+                                                <td>
+                                                    {user.Preplaced
+                                                        ? <span className="tag is-success" style={{ borderRadius: '6px' }}>Preplaced</span>
+                                                        : user.DrawNumber}
+                                                </td>
+                                                <td>
+                                                    {user.GenderPreferences && user.GenderPreferences.length > 0 ? (
+                                                        <div className="tags">
+                                                            {simplifyGenderPreferences(user.GenderPreferences).map((pref, index) => (
+                                                                <span key={index} className="tag is-primary" style={{ borderRadius: '6px' }}>
+                                                                    {pref}
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    ) : (
+                                                        <span className="tag is-light" style={{ borderRadius: '6px' }}>None</span>
+                                                    )}
+                                                </td>
                                                 <td>
                                                     {getDormNameFromId(user.InDorm)}
                                                 </td>

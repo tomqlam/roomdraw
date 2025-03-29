@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"roomdraw/backend/pkg/database"
@@ -104,7 +105,7 @@ func GetSimpleFormattedDorm(c *gin.Context) {
 		rooms = append(rooms, d)
 	}
 
-	rows, err = tx.Query("SELECT suite_uuid, dorm, dorm_name, floor, room_count, rooms, alternative_pull, suite_design, can_lock_pull, reslife_room, gender_preference FROM suites WHERE UPPER(dorm_name) = UPPER($1)", dormNameParam)
+	rows, err = tx.Query("SELECT suite_uuid, dorm, dorm_name, floor, room_count, rooms, alternative_pull, suite_design, can_lock_pull, reslife_room, gender_preferences FROM suites WHERE UPPER(dorm_name) = UPPER($1)", dormNameParam)
 	if err != nil {
 		log.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database query failed on suites"})
@@ -114,7 +115,7 @@ func GetSimpleFormattedDorm(c *gin.Context) {
 	var suites []models.SuiteRaw
 	for rows.Next() {
 		var s models.SuiteRaw
-		if err := rows.Scan(&s.SuiteUUID, &s.Dorm, &s.DormName, &s.Floor, &s.RoomCount, &s.Rooms, &s.AlternativePull, &s.SuiteDesign, &s.CanLockPull, &s.ReslifeRoom, &s.GenderPreference); err != nil {
+		if err := rows.Scan(&s.SuiteUUID, &s.Dorm, &s.DormName, &s.Floor, &s.RoomCount, &s.Rooms, &s.AlternativePull, &s.SuiteDesign, &s.CanLockPull, &s.ReslifeRoom, &s.GenderPreferences); err != nil {
 			log.Println(err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Database scan failed on suites"})
 			return
@@ -167,12 +168,12 @@ func GetSimpleFormattedDorm(c *gin.Context) {
 		suiteUUIDString := s.SuiteUUID.String()
 		floor := suiteUUIDToFloorMap[s.SuiteUUID]
 		suite := models.SuiteSimple{
-			Rooms:            suiteToRoomMap[suiteUUIDString],
-			SuiteDesign:      s.SuiteDesign,
-			SuiteUUID:        s.SuiteUUID,
-			AlternativePull:  s.AlternativePull,
-			CanLockPull:      s.CanLockPull,
-			GenderPreference: s.GenderPreference,
+			Rooms:             suiteToRoomMap[suiteUUIDString],
+			SuiteDesign:       s.SuiteDesign,
+			SuiteUUID:         s.SuiteUUID,
+			AlternativePull:   s.AlternativePull,
+			CanLockPull:       s.CanLockPull,
+			GenderPreferences: s.GenderPreferences,
 		}
 
 		floorMap[floor] = append(floorMap[floor], suite)
@@ -682,6 +683,19 @@ func SelfPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 		return err
 	}
 
+	// Update gender preferences for the suite
+	err = UpdateSuiteGenderPreferencesBySuiteUUID(tx, currentRoomInfo.SuiteUUID)
+	if err != nil {
+		// If there's a gender preference conflict, fail the transaction
+		if strings.Contains(err.Error(), "no valid intersection of gender preferences") {
+			c.JSON(http.StatusConflict, gin.H{"error": "Cannot pull users with incompatible gender preferences. The users must have at least one gender preference in common."})
+			return err
+		}
+
+		// For other errors, log a warning but continue
+		log.Printf("Warning: Failed to update gender preferences for suite %s: %v", currentRoomInfo.SuiteUUID, err)
+	}
+
 	c.JSON(http.StatusOK, gin.H{"message": "Successfully updated occupants"})
 	return nil
 }
@@ -1051,6 +1065,19 @@ func NormalPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update sgroup_uuid in users table"})
 			return err
 		}
+
+		// Update gender preferences for the suite
+		err = UpdateSuiteGenderPreferencesBySuiteUUID(tx, currentRoomInfo.SuiteUUID)
+		if err != nil {
+			// If there's a gender preference conflict, fail the transaction
+			if strings.Contains(err.Error(), "no valid intersection of gender preferences") {
+				c.JSON(http.StatusConflict, gin.H{"error": "Cannot pull users with incompatible gender preferences. The users must have at least one gender preference in common."})
+				return err
+			}
+
+			// For other errors, log a warning but continue
+			log.Printf("Warning: Failed to update gender preferences for suite %s: %v", currentRoomInfo.SuiteUUID, err)
+		}
 	} else {
 		log.Println("Pull leader is in a suite group")
 
@@ -1120,6 +1147,19 @@ func NormalPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update sgroup_uuid in users table"})
 			return err
+		}
+
+		// Update gender preferences for the suite
+		err = UpdateSuiteGenderPreferencesBySuiteUUID(tx, currentRoomInfo.SuiteUUID)
+		if err != nil {
+			// If there's a gender preference conflict, fail the transaction
+			if strings.Contains(err.Error(), "no valid intersection of gender preferences") {
+				c.JSON(http.StatusConflict, gin.H{"error": "Cannot pull users with incompatible gender preferences. The users must have at least one gender preference in common."})
+				return err
+			}
+
+			// For other errors, log a warning but continue
+			log.Printf("Warning: Failed to update gender preferences for suite %s: %v", currentRoomInfo.SuiteUUID, err)
 		}
 	}
 
@@ -1460,6 +1500,19 @@ func LockPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update lock_pulled_room in suites table"})
 		return err
+	}
+
+	// Update gender preferences for the suite
+	err = UpdateSuiteGenderPreferencesBySuiteUUID(tx, currentRoomInfo.SuiteUUID)
+	if err != nil {
+		// If there's a gender preference conflict, fail the transaction
+		if strings.Contains(err.Error(), "no valid intersection of gender preferences") {
+			c.JSON(http.StatusConflict, gin.H{"error": "Cannot pull users with incompatible gender preferences. The users must have at least one gender preference in common."})
+			return err
+		}
+
+		// For other errors, log a warning but continue
+		log.Printf("Warning: Failed to update gender preferences for suite %s: %v", currentRoomInfo.SuiteUUID, err)
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Successfully updated occupants"})
@@ -1908,6 +1961,19 @@ func AlternativePull(c *gin.Context, request models.OccupantUpdateRequest) error
 
 	log.Println("Pull leader room: " + request.PullLeaderRoom.String())
 
+	// Update gender preferences for the suite
+	err = UpdateSuiteGenderPreferencesBySuiteUUID(tx, currentRoomInfo.SuiteUUID)
+	if err != nil {
+		// If there's a gender preference conflict, fail the transaction
+		if strings.Contains(err.Error(), "no valid intersection of gender preferences") {
+			c.JSON(http.StatusConflict, gin.H{"error": "Cannot pull users with incompatible gender preferences. The users must have at least one gender preference in common."})
+			return err
+		}
+
+		// For other errors, log a warning but continue
+		log.Printf("Warning: Failed to update gender preferences for suite %s: %v", currentRoomInfo.SuiteUUID, err)
+	}
+
 	c.JSON(http.StatusOK, gin.H{"message": "Successfully updated occupants"})
 	return nil
 }
@@ -2119,15 +2185,10 @@ func PreplaceOccupants(c *gin.Context) {
 		return
 	}
 
-	// if proposed occupants is empty, clear the room
+	// if proposed occupants is empty, return an error - we should use the dedicated endpoint instead
 	if len(request.ProposedOccupants) == 0 {
-		email := c.MustGet("email").(string)
-		err = clearRoom(currentRoomInfo.RoomUUID, tx, notificationQueue, email)
-		if err != nil {
-			log.Println(err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to remove the current occupants of the room"})
-			return
-		}
+		c.JSON(http.StatusBadRequest, gin.H{"error": "To remove preplaced occupants, use the dedicated endpoint instead"})
+		err = errors.New("empty proposed occupants array not allowed in this endpoint")
 		return
 	}
 
@@ -2151,8 +2212,31 @@ func PreplaceOccupants(c *gin.Context) {
 		return
 	}
 
+	// check that all proposed occupants are preplaced if not, return an error
+	var nonPreplacedOccupants models.IntArray
+	rows, err := tx.Query("SELECT id FROM users WHERE id = ANY($1) AND preplaced = false", pq.Array(request.ProposedOccupants))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to query preplaced status from users table"})
+		return
+	}
+
+	for rows.Next() {
+		var occupant int
+		if err := rows.Scan(&occupant); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to scan user id from query result"})
+			return
+		}
+		nonPreplacedOccupants = append(nonPreplacedOccupants, occupant)
+	}
+
+	if len(nonPreplacedOccupants) > 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "One or more of the proposed occupants is not preplaced", "occupants": nonPreplacedOccupants})
+		err = errors.New("one or more of the proposed occupants is not preplaced")
+		return
+	}
+
 	var occupantsAlreadyInRoom models.IntArray
-	rows, err := tx.Query("SELECT id FROM users WHERE id = ANY($1) AND room_uuid IS NOT NULL", pq.Array(request.ProposedOccupants))
+	rows, err = tx.Query("SELECT id FROM users WHERE id = ANY($1) AND room_uuid IS NOT NULL", pq.Array(request.ProposedOccupants))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to query room_uuid from users table"})
 		return
@@ -2247,6 +2331,121 @@ func PreplaceOccupants(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update pull_priority in rooms table"})
 		return
+	}
+
+	// Update gender preferences for the suite
+	updateErr := UpdateSuiteGenderPreferencesBySuiteUUID(tx, currentRoomInfo.SuiteUUID)
+	if updateErr != nil {
+		// If there's a gender preference conflict, fail the transaction
+		if strings.Contains(updateErr.Error(), "no valid intersection of gender preferences") {
+			c.JSON(http.StatusConflict, gin.H{"error": "Cannot preplace users with incompatible gender preferences. The preplaced users must have at least one gender preference in common."})
+			err = updateErr // Set err to updateErr so the transaction will be rolled back
+			return
+		}
+
+		// For other errors, log a warning but continue
+		log.Printf("Warning: Failed to update gender preferences for suite %s: %v", currentRoomInfo.SuiteUUID, updateErr)
+	}
+}
+
+// RemovePreplacedOccupantsHandler is a separate handler to specifically remove preplaced occupants from a room
+func RemovePreplacedOccupantsHandler(c *gin.Context) {
+	// Get the room UUID from the URL
+	roomUUIDParam := c.Param("roomuuid")
+
+	// Get the user's full name for logging
+	userFullName, exists := c.Get("user_full_name")
+	if !exists {
+		log.Print("Error: user_full_name not found in context")
+		userFullName = "unknown user"
+	}
+
+	log.Println(userFullName.(string) + " is attempting to remove preplaced occupants from room " + roomUUIDParam)
+
+	// Create a notification queue for any occupants that need to be notified
+	notificationQueue := models.NewBumpNotificationQueue()
+
+	// Start a transaction
+	tx, err := database.DB.Begin()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to start transaction"})
+		return
+	}
+
+	// Ensure the transaction is either committed or rolled back
+	defer func() {
+		if r := recover(); r != nil {
+			log.Println("Result for " + userFullName.(string) + ": failed to remove preplaced occupants from room " + roomUUIDParam + " because of panic " + r.(error).Error())
+			tx.Rollback()
+			panic(r)
+		} else if err != nil {
+			log.Println("Result for " + userFullName.(string) + ": failed to remove preplaced occupants from room " + roomUUIDParam + " because of error " + err.Error())
+			tx.Rollback()
+		} else {
+			log.Println("Result for " + userFullName.(string) + ": successfully removed preplaced occupants from room " + roomUUIDParam)
+			err = tx.Commit()
+
+			if err == nil {
+				for _, notification := range notificationQueue.Notifications {
+					SendBumpNotification(notification.UserID, notification.RoomID, notification.DormName)
+				}
+			}
+
+			c.JSON(http.StatusOK, gin.H{"message": "Successfully removed preplaced occupants"})
+		}
+	}()
+
+	// Get the current room information
+	var currentRoomInfo models.RoomRaw
+	err = tx.QueryRow("SELECT room_uuid, dorm, dorm_name, room_id, suite_uuid, max_occupancy, current_occupancy, occupants, pull_priority, has_frosh FROM rooms WHERE room_uuid = $1", roomUUIDParam).Scan(
+		&currentRoomInfo.RoomUUID,
+		&currentRoomInfo.Dorm,
+		&currentRoomInfo.DormName,
+		&currentRoomInfo.RoomID,
+		&currentRoomInfo.SuiteUUID,
+		&currentRoomInfo.MaxOccupancy,
+		&currentRoomInfo.CurrentOccupancy,
+		&currentRoomInfo.Occupants,
+		&currentRoomInfo.PullPriority,
+		&currentRoomInfo.HasFrosh,
+	)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to query room info from rooms table"})
+		return
+	}
+
+	// Check if the room has frosh
+	if currentRoomInfo.HasFrosh {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Room has frosh"})
+		err = errors.New("room has frosh")
+		return
+	}
+
+	// Check if the room is preplaced
+	if !currentRoomInfo.PullPriority.IsPreplaced {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Room is not preplaced"})
+		err = errors.New("room is not preplaced")
+		return
+	}
+
+	// Get the user's email for clearing the room
+	email := c.MustGet("email").(string)
+
+	// Clear the room
+	err = clearRoom(currentRoomInfo.RoomUUID, tx, notificationQueue, email)
+	if err != nil {
+		log.Println(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to remove the occupants of the room"})
+		return
+	}
+
+	// Update gender preferences for the suite after clearing the room
+	updateErr := UpdateSuiteGenderPreferencesBySuiteUUID(tx, currentRoomInfo.SuiteUUID)
+	if updateErr != nil {
+		log.Printf("Warning: Failed to update gender preferences for suite %s after removing preplaced occupants: %v", currentRoomInfo.SuiteUUID, updateErr)
+	} else {
+		log.Printf("Successfully updated gender preferences for suite %s after removing preplaced occupants", currentRoomInfo.SuiteUUID)
 	}
 }
 
@@ -2461,6 +2660,108 @@ func ClearRoomHandler(c *gin.Context) {
 		return
 	}
 
+	// Ensure the transaction is either committed or rolled back
+	defer func() {
+		if r := recover(); r != nil {
+			log.Println("Result for " + userFullName.(string) + ": failed to clear room " + roomUUIDParam + " because of panic")
+			tx.Rollback()
+			panic(r)
+		} else if err != nil {
+			log.Println("Result for " + userFullName.(string) + ": failed to clear room " + roomUUIDParam + " because of error " + err.Error())
+			tx.Rollback()
+		} else {
+			log.Println("Result for " + userFullName.(string) + ": successfully cleared room " + roomUUIDParam)
+			err = tx.Commit()
+
+			if err == nil {
+				// Send notifications if needed
+				for _, notification := range notificationQueue.Notifications {
+					log.Println("Notifying bumped users ...")
+					SendBumpNotification(notification.UserID, notification.RoomID, notification.DormName)
+				}
+
+				// Fetch the updated count from the database using the model
+				var updatedUserLimit models.UserRateLimit
+				err = database.DB.QueryRow(`
+					SELECT email, clear_room_count, clear_room_date, is_blacklisted, blacklisted_at, blacklisted_reason 
+					FROM user_rate_limits 
+					WHERE email = $1
+				`, emailStr).Scan(
+					&updatedUserLimit.Email,
+					&updatedUserLimit.ClearRoomCount,
+					&updatedUserLimit.ClearRoomDate,
+					&updatedUserLimit.IsBlacklisted,
+					&updatedUserLimit.BlacklistedAt,
+					&updatedUserLimit.BlacklistedReason,
+				)
+
+				if err != nil {
+					log.Printf("Error fetching updated clear count: %v", err)
+					// If room was already empty, keep the same count, otherwise increment
+					updatedUserLimit.ClearRoomCount = userLimit.ClearRoomCount
+					// Define roomAlreadyEmpty by checking if room occupancy is 0
+					roomAlreadyEmpty := false
+					var currentOccupancy int
+					err = database.DB.QueryRow("SELECT current_occupancy FROM rooms WHERE room_uuid = $1", roomUUIDParam).Scan(&currentOccupancy)
+					if err == nil {
+						roomAlreadyEmpty = currentOccupancy == 0
+					}
+					if !roomAlreadyEmpty {
+						updatedUserLimit.ClearRoomCount += 1 // Fallback to calculation if fetch fails
+					}
+				}
+
+				// Log the updated values
+				log.Printf("Updated clear count for user %s: %d", emailStr, updatedUserLimit.ClearRoomCount)
+
+				// Check if this operation pushed the user over the limit and blacklist them if so
+				if updatedUserLimit.ClearRoomCount >= MAX_DAILY_CLEARS && !updatedUserLimit.IsBlacklisted {
+					// Start a new transaction for blacklisting
+					blacklistTx, err := database.DB.Begin()
+					if err != nil {
+						log.Printf("Error starting blacklist transaction: %v", err)
+					} else {
+						now := time.Now()
+						reason := "Exceeded daily clear room limit"
+						_, err = blacklistTx.Exec(
+							"UPDATE user_rate_limits SET is_blacklisted = true, blacklisted_at = $1, blacklisted_reason = $2 WHERE email = $3",
+							now, reason, emailStr)
+						if err != nil {
+							log.Printf("Error blacklisting user: %v", err)
+							blacklistTx.Rollback()
+						} else {
+							err = blacklistTx.Commit()
+							if err != nil {
+								log.Printf("Error committing blacklist transaction: %v", err)
+							} else {
+								updatedUserLimit.IsBlacklisted = true
+								log.Printf("User %s has been blacklisted after reaching clear room limit", emailStr)
+							}
+						}
+					}
+				}
+
+				// Calculate minutes until midnight Pacific Time
+				midnight := time.Date(pacificNow.Year(), pacificNow.Month(), pacificNow.Day(), 0, 0, 0, 0, loc)
+				if pacificNow.After(midnight) {
+					midnight = midnight.Add(24 * time.Hour)
+				}
+				minutesUntilReset := int(midnight.Sub(pacificNow).Minutes())
+
+				// Return the updated count to the client
+				c.JSON(http.StatusOK, gin.H{
+					"message":         "Successfully cleared room",
+					"clearRoomCount":  updatedUserLimit.ClearRoomCount,
+					"maxDailyClears":  MAX_DAILY_CLEARS,
+					"remainingClears": MAX_DAILY_CLEARS - updatedUserLimit.ClearRoomCount,
+					"resetsInMinutes": minutesUntilReset,
+					"pacificDate":     today,
+					"isBlacklisted":   updatedUserLimit.IsBlacklisted,
+				})
+			}
+		}
+	}()
+
 	// Get current room info to check if it can be cleared
 	var currentRoomInfo models.RoomRaw
 	err = tx.QueryRow("SELECT room_uuid, dorm, dorm_name, room_id, suite_uuid, max_occupancy, current_occupancy, occupants, pull_priority, has_frosh FROM rooms WHERE room_uuid = $1", roomUUIDParam).Scan(
@@ -2476,22 +2777,21 @@ func ClearRoomHandler(c *gin.Context) {
 		&currentRoomInfo.HasFrosh,
 	)
 	if err != nil {
-		tx.Rollback()
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to query room info from rooms table"})
 		return
 	}
 
 	// Check if the room has frosh - if so, don't allow clearing it
 	if currentRoomInfo.HasFrosh {
-		tx.Rollback()
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Cannot clear a room with frosh"})
+		err = errors.New("room has frosh")
 		return
 	}
 
 	// If the room is preplaced, don't allow clearing
 	if currentRoomInfo.PullPriority.IsPreplaced {
-		tx.Rollback()
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Cannot clear a preplaced room"})
+		err = errors.New("room is preplaced")
 		return
 	}
 
@@ -2503,7 +2803,6 @@ func ClearRoomHandler(c *gin.Context) {
 	err = clearRoom(currentRoomInfo.RoomUUID, tx, notificationQueue, emailStr)
 	if err != nil {
 		log.Println(err)
-		tx.Rollback()
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to clear room"})
 		return
 	}
@@ -2516,103 +2815,12 @@ func ClearRoomHandler(c *gin.Context) {
 		_, err = tx.Exec("UPDATE user_rate_limits SET clear_room_count = clear_room_count + 1 WHERE email = $1", emailStr)
 		if err != nil {
 			log.Printf("Error updating clear count: %v", err)
-			tx.Rollback()
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update clear count"})
 			return
 		}
 	} else {
 		log.Printf("Not incrementing clear count for user %s (room was already empty)", emailStr)
 	}
-
-	// Commit transaction
-	err = tx.Commit()
-	if err != nil {
-		log.Printf("Failed to commit transaction: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to commit transaction"})
-		return
-	}
-
-	log.Println("Result for " + userFullName.(string) + ": successfully cleared room " + roomUUIDParam)
-
-	// Send notifications if needed
-	for _, notification := range notificationQueue.Notifications {
-		log.Println("Notifying bumped users ...")
-		SendBumpNotification(notification.UserID, notification.RoomID, notification.DormName)
-	}
-
-	// Fetch the updated count from the database using the model
-	var updatedUserLimit models.UserRateLimit
-	err = database.DB.QueryRow(`
-		SELECT email, clear_room_count, clear_room_date, is_blacklisted, blacklisted_at, blacklisted_reason 
-		FROM user_rate_limits 
-		WHERE email = $1
-	`, emailStr).Scan(
-		&updatedUserLimit.Email,
-		&updatedUserLimit.ClearRoomCount,
-		&updatedUserLimit.ClearRoomDate,
-		&updatedUserLimit.IsBlacklisted,
-		&updatedUserLimit.BlacklistedAt,
-		&updatedUserLimit.BlacklistedReason,
-	)
-
-	if err != nil {
-		log.Printf("Error fetching updated clear count: %v", err)
-		// If room was already empty, keep the same count, otherwise increment
-		updatedUserLimit.ClearRoomCount = userLimit.ClearRoomCount
-		if !roomAlreadyEmpty {
-			updatedUserLimit.ClearRoomCount += 1 // Fallback to calculation if fetch fails
-		}
-	}
-
-	// Log the updated values
-	log.Printf("Updated clear count for user %s: %d", emailStr, updatedUserLimit.ClearRoomCount)
-
-	// Check if this operation pushed the user over the limit and blacklist them if so
-	if updatedUserLimit.ClearRoomCount >= MAX_DAILY_CLEARS && !updatedUserLimit.IsBlacklisted {
-		// Start a new transaction for blacklisting
-		blacklistTx, err := database.DB.Begin()
-		if err != nil {
-			log.Printf("Error starting blacklist transaction: %v", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
-			return
-		}
-
-		now := time.Now()
-		reason := "Exceeded daily clear room limit"
-		_, err = blacklistTx.Exec(
-			"UPDATE user_rate_limits SET is_blacklisted = true, blacklisted_at = $1, blacklisted_reason = $2 WHERE email = $3",
-			now, reason, emailStr)
-		if err != nil {
-			log.Printf("Error blacklisting user: %v", err)
-			blacklistTx.Rollback()
-		} else {
-			err = blacklistTx.Commit()
-			if err != nil {
-				log.Printf("Error committing blacklist transaction: %v", err)
-			} else {
-				updatedUserLimit.IsBlacklisted = true
-				log.Printf("User %s has been blacklisted after reaching clear room limit", emailStr)
-			}
-		}
-	}
-
-	// Calculate minutes until midnight Pacific Time
-	midnight := time.Date(pacificNow.Year(), pacificNow.Month(), pacificNow.Day(), 0, 0, 0, 0, loc)
-	if pacificNow.After(midnight) {
-		midnight = midnight.Add(24 * time.Hour)
-	}
-	minutesUntilReset := int(midnight.Sub(pacificNow).Minutes())
-
-	// Return the updated count to the client
-	c.JSON(http.StatusOK, gin.H{
-		"message":         "Successfully cleared room",
-		"clearRoomCount":  updatedUserLimit.ClearRoomCount,
-		"maxDailyClears":  MAX_DAILY_CLEARS,
-		"remainingClears": MAX_DAILY_CLEARS - updatedUserLimit.ClearRoomCount,
-		"resetsInMinutes": minutesUntilReset,
-		"pacificDate":     today,
-		"isBlacklisted":   updatedUserLimit.IsBlacklisted,
-	})
 }
 
 // GetRoomsPagedAndSorted handles getting rooms with pagination, sorting and filtering
@@ -2641,8 +2849,8 @@ func GetRoomsPagedAndSorted(c *gin.Context) {
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
 	sortBy := c.DefaultQuery("sort_by", "dorm_name")
 	sortOrder := c.DefaultQuery("sort_order", "asc")
-	dormFilter := c.Query("dorm")
-	capacityFilter := c.Query("capacity")
+	dormValues := c.QueryArray("dorm")
+	capacityValues := c.QueryArray("capacity")
 	emptyOnly := c.DefaultQuery("empty_only", "false")
 
 	// Validate parameters
@@ -2664,24 +2872,48 @@ func GetRoomsPagedAndSorted(c *gin.Context) {
 	args := []interface{}{}
 	argCount := 1
 
-	if dormFilter != "" {
-		whereClause += " WHERE dorm_name = $" + strconv.Itoa(argCount)
-		args = append(args, dormFilter)
-		argCount++
-	}
+	if len(dormValues) > 0 {
+		if whereClause == "" {
+			whereClause += " WHERE"
+		} else {
+			whereClause += " AND"
+		}
 
-	if capacityFilter != "" {
-		capacity, err := strconv.Atoi(capacityFilter)
-		if err == nil {
-			if whereClause == "" {
-				whereClause += " WHERE"
-			} else {
-				whereClause += " AND"
-			}
-			whereClause += " max_occupancy = $" + strconv.Itoa(argCount)
-			args = append(args, capacity)
+		whereClause += " ("
+		dormPlaceholders := make([]string, len(dormValues))
+		for i, dorm := range dormValues {
+			dormPlaceholders[i] = fmt.Sprintf("dorm_name = $%d", argCount)
+			args = append(args, dorm)
 			argCount++
 		}
+		whereClause += strings.Join(dormPlaceholders, " OR ")
+		whereClause += ")"
+	}
+
+	if len(capacityValues) > 0 {
+		if whereClause == "" {
+			whereClause += " WHERE"
+		} else {
+			whereClause += " AND"
+		}
+
+		whereClause += " ("
+		capacityPlaceholders := make([]string, 0, len(capacityValues))
+		for _, capacityStr := range capacityValues {
+			capacity, err := strconv.Atoi(capacityStr)
+			if err == nil {
+				capacityPlaceholders = append(capacityPlaceholders, fmt.Sprintf("max_occupancy = $%d", argCount))
+				args = append(args, capacity)
+				argCount++
+			}
+		}
+
+		if len(capacityPlaceholders) > 0 {
+			whereClause += strings.Join(capacityPlaceholders, " OR ")
+		} else {
+			whereClause += " FALSE" // If no valid capacities, add a condition that's always false
+		}
+		whereClause += ")"
 	}
 
 	if emptyOnly == "true" {

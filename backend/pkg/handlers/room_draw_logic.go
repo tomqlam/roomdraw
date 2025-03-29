@@ -193,3 +193,83 @@ func comparePullPriority(priority1 models.PullPriority, priority2 models.PullPri
 		return p1EffectiveDrawNumber < p2EffectiveDrawNumber
 	}
 }
+
+// hasIntersection checks if two string arrays have any elements in common
+func hasIntersection(arr1, arr2 []string) bool {
+	for _, item1 := range arr1 {
+		for _, item2 := range arr2 {
+			if item1 == item2 {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// findIntersection returns the intersection of two string arrays
+func findIntersection(arr1, arr2 []string) []string {
+	result := []string{}
+	for _, item1 := range arr1 {
+		for _, item2 := range arr2 {
+			if item1 == item2 {
+				result = append(result, item1)
+				break
+			}
+		}
+	}
+	return result
+}
+
+// findIntersectionOfPreferences returns the intersection of multiple string arrays
+func findIntersectionOfPreferences(preferencesArray [][]string) []string {
+	if len(preferencesArray) == 0 {
+		return []string{}
+	}
+
+	result := preferencesArray[0]
+	for i := 1; i < len(preferencesArray); i++ {
+		result = findIntersection(result, preferencesArray[i])
+	}
+	return result
+}
+
+// GetSuiteGenderPreference determines the gender preference for a suite based on the priority of its occupants
+// Returns the gender preferences array and a boolean indicating if a preference was found
+func GetSuiteGenderPreference(users []models.UserRaw, dormId int) ([]string, bool) {
+	// If there are no users, there's no gender preference
+	if len(users) == 0 {
+		return []string{}, false
+	}
+
+	// First, check if there are any preplaced users
+	var preplacedUsersPreferences [][]string
+	for _, user := range users {
+		if user.Preplaced && len(user.GenderPreferences) > 0 {
+			preplacedUsersPreferences = append(preplacedUsersPreferences, user.GenderPreferences)
+		}
+	}
+
+	// If there are preplaced users with preferences, find the intersection of their preferences
+	if len(preplacedUsersPreferences) > 0 {
+		intersection := findIntersectionOfPreferences(preplacedUsersPreferences)
+		if len(intersection) > 0 {
+			return intersection, true
+		}
+		// If no intersection found between preplaced users, return an error case
+		log.Printf("Warning: No intersection found between preplaced users' gender preferences")
+		return []string{}, false
+	}
+
+	// If no preplaced users with preferences, use priority-based selection for non-preplaced users
+	sortedUsers := sortUsersByPriority(users, dormId)
+
+	// Find the first user with non-empty gender preferences
+	for _, user := range sortedUsers {
+		if len(user.GenderPreferences) > 0 {
+			return user.GenderPreferences, true
+		}
+	}
+
+	// No gender preference found
+	return []string{}, false
+}

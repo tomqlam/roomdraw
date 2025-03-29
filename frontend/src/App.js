@@ -461,6 +461,9 @@ function App()
         if (!userMap)
         {
             return "Loading...";
+        } else if (userMap[id].Preplaced)
+        {
+            return "Preplaced";
         } else if (userMap[id].InDorm && userMap[id].InDorm !== 0)
         {
             // has in dorm
@@ -673,7 +676,8 @@ function App()
                                 {selectedID && userMap && userMap[selectedID] ? (
                                     <>
                                         <span style={{ fontWeight: '500' }}>
-                                            {userMap[selectedID].Year.charAt(0).toUpperCase() + userMap[selectedID].Year.slice(1)} #{userMap[selectedID].DrawNumber}
+                                            {userMap[selectedID].Preplaced ? "Preplaced" :
+                                                `${userMap[selectedID].Year.charAt(0).toUpperCase() + userMap[selectedID].Year.slice(1)} #${userMap[selectedID].DrawNumber}`}
                                         </span>
                                         <span className="separator">•</span>
                                         <span style={{ color: 'var(--text-color)' }}>

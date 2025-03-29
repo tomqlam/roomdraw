@@ -265,7 +265,7 @@ function SuiteNoteModal()
             <div className="modal-background" onClick={() => setIsSuiteNoteModalOpen(false)}></div>
             <div className="modal-card">
                 <header className="modal-card-head">
-                    <p className="modal-card-title">Update suite notes</p>
+                    <p className="modal-card-title">Update suite design</p>
                     <button className="delete" aria-label="close" onClick={() => setIsSuiteNoteModalOpen(false)}></button>
                 </header>
                 <section className="modal-card-body">

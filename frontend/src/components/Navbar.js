@@ -211,16 +211,7 @@ function Navbar()
                                 );
                             }
                             return null;
-                        })() : (
-                            <div className="info-display non-clickable mobile-stack-item" style={{ maxWidth: 'fit-content' }}>
-                                <span className="icon">
-                                    <i className="fas fa-user"></i>
-                                </span>
-                                <span style={{ fontWeight: '500' }}>
-                                    Guest
-                                </span>
-                            </div>
-                        )}
+                        })() : null}
                         {isValidUser && userID && userMap && userMap[userID] ? (
                             <div
                                 onClick={() => myRoom !== `no room yet` ? handleTakeMeThere(myRoom, true) : null}
@@ -238,7 +229,7 @@ function Navbar()
                         ) : (
                             <div className="info-display non-clickable mobile-stack-item">
                                 <span style={{ color: 'var(--text-color)' }}>
-                                    Viewing only
+                                    Viewing as Guest
                                 </span>
                             </div>
                         )}

@@ -2,11 +2,13 @@ package handlers
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"net/http"
 	"roomdraw/backend/pkg/database"
 	"roomdraw/backend/pkg/models"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -46,10 +48,13 @@ func GetUsersPagedAndSorted(c *gin.Context) {
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
 	sortBy := c.DefaultQuery("sort_by", "id")
 	sortOrder := c.DefaultQuery("sort_order", "asc")
-	year := c.Query("year")
+	yearValues := c.QueryArray("year")
 	minDrawNumber := c.Query("min_draw_number")
 	maxDrawNumber := c.Query("max_draw_number")
-	inDorm := c.Query("in_dorm")
+	inDormValues := c.QueryArray("in_dorm")
+	genderPreferenceValues := c.QueryArray("gender_preference")
+	preplacedQuery := c.Query("preplaced")
+	hasGenderPrefQuery := c.Query("has_gender_preference")
 
 	// Validate parameters
 	if page < 1 {
@@ -63,17 +68,29 @@ func GetUsersPagedAndSorted(c *gin.Context) {
 	offset := (page - 1) * limit
 
 	// Build base query
-	baseQuery := "SELECT id, year, first_name, last_name, draw_number, preplaced, in_dorm, sgroup_uuid, participated, participation_time, room_uuid, reslife_role, email FROM users"
+	baseQuery := "SELECT id, year, first_name, last_name, draw_number, preplaced, in_dorm, sgroup_uuid, participated, participation_time, room_uuid, reslife_role, email, gender_preferences FROM users"
 
 	// Build WHERE clause
 	whereClause := ""
 	args := []interface{}{}
 	argCount := 1
 
-	if year != "" {
-		whereClause += " WHERE year = $" + strconv.Itoa(argCount)
-		args = append(args, year)
-		argCount++
+	if len(yearValues) > 0 {
+		if whereClause == "" {
+			whereClause += " WHERE"
+		} else {
+			whereClause += " AND"
+		}
+
+		whereClause += " ("
+		yearPlaceholders := make([]string, len(yearValues))
+		for i, year := range yearValues {
+			yearPlaceholders[i] = fmt.Sprintf("year = $%d", argCount)
+			args = append(args, year)
+			argCount++
+		}
+		whereClause += strings.Join(yearPlaceholders, " OR ")
+		whereClause += ")"
 	}
 
 	if minDrawNumber != "" {
@@ -104,16 +121,87 @@ func GetUsersPagedAndSorted(c *gin.Context) {
 		}
 	}
 
-	if inDorm != "" {
-		dormID, err := strconv.Atoi(inDorm)
+	if len(inDormValues) > 0 {
+		if whereClause == "" {
+			whereClause += " WHERE"
+		} else {
+			whereClause += " AND"
+		}
+
+		whereClause += " ("
+		dormPlaceholders := make([]string, len(inDormValues))
+		for i, dormID := range inDormValues {
+			dormInt, err := strconv.Atoi(dormID)
+			if err == nil {
+				dormPlaceholders[i] = fmt.Sprintf("in_dorm = $%d", argCount)
+				args = append(args, dormInt)
+				argCount++
+			} else {
+				// If conversion fails, make sure we have a valid placeholder
+				dormPlaceholders[i] = "FALSE"
+			}
+		}
+		cleanedPlaceholders := []string{}
+		for _, p := range dormPlaceholders {
+			if p != "FALSE" {
+				cleanedPlaceholders = append(cleanedPlaceholders, p)
+			}
+		}
+
+		if len(cleanedPlaceholders) > 0 {
+			whereClause += strings.Join(cleanedPlaceholders, " OR ")
+			whereClause += ")"
+		} else {
+			// If there are no valid dorm IDs, add a condition that's always false
+			whereClause += " FALSE)"
+		}
+	}
+
+	if len(genderPreferenceValues) > 0 {
+		if whereClause == "" {
+			whereClause += " WHERE"
+		} else {
+			whereClause += " AND"
+		}
+
+		whereClause += " ("
+		genderPrefPlaceholders := make([]string, len(genderPreferenceValues))
+		for i, genderPref := range genderPreferenceValues {
+			genderPrefPlaceholders[i] = fmt.Sprintf("$%d = ANY(gender_preferences)", argCount)
+			args = append(args, genderPref)
+			argCount++
+		}
+		whereClause += strings.Join(genderPrefPlaceholders, " OR ")
+		whereClause += ")"
+	}
+
+	if hasGenderPrefQuery != "" {
+		hasGenderPref, err := strconv.ParseBool(hasGenderPrefQuery)
 		if err == nil {
 			if whereClause == "" {
 				whereClause += " WHERE"
 			} else {
 				whereClause += " AND"
 			}
-			whereClause += " in_dorm = $" + strconv.Itoa(argCount)
-			args = append(args, dormID)
+
+			if hasGenderPref {
+				whereClause += " array_length(gender_preferences, 1) > 0"
+			} else {
+				whereClause += " (gender_preferences IS NULL OR array_length(gender_preferences, 1) IS NULL OR array_length(gender_preferences, 1) = 0)"
+			}
+		}
+	}
+
+	if preplacedQuery != "" {
+		preplaced, err := strconv.ParseBool(preplacedQuery)
+		if err == nil {
+			if whereClause == "" {
+				whereClause += " WHERE"
+			} else {
+				whereClause += " AND"
+			}
+			whereClause += " preplaced = $" + strconv.Itoa(argCount)
+			args = append(args, preplaced)
 			argCount++
 		}
 	}
@@ -136,6 +224,9 @@ func GetUsersPagedAndSorted(c *gin.Context) {
 	if sortOrder != "asc" && sortOrder != "desc" {
 		sortOrder = "asc" // Default to ascending if invalid
 	}
+
+	// Log the final query for debugging
+	log.Printf("User search query: %s%s with args: %v", baseQuery, whereClause, args)
 
 	// Count total records query
 	countQuery := "SELECT COUNT(*) FROM users" + whereClause
@@ -168,7 +259,7 @@ func GetUsersPagedAndSorted(c *gin.Context) {
 		var user models.UserRaw
 		if err := rows.Scan(&user.Id, &user.Year, &user.FirstName, &user.LastName, &user.DrawNumber,
 			&user.Preplaced, &user.InDorm, &user.SGroupUUID, &user.Participated,
-			&user.PartitipationTime, &user.RoomUUID, &user.ReslifeRole, &user.Email); err != nil {
+			&user.PartitipationTime, &user.RoomUUID, &user.ReslifeRole, &user.Email, &user.GenderPreferences); err != nil {
 			log.Println(err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Database scan failed"})
 			return
@@ -187,7 +278,7 @@ func GetUsersPagedAndSorted(c *gin.Context) {
 
 func GetUsersIdMap(c *gin.Context) {
 	// Example SQL query
-	rows, err := database.DB.Query("SELECT id, year, first_name, last_name, draw_number, preplaced, in_dorm, sgroup_uuid, participated, participation_time,room_uuid, reslife_role FROM users")
+	rows, err := database.DB.Query("SELECT id, year, first_name, last_name, draw_number, preplaced, in_dorm, sgroup_uuid, participated, participation_time, room_uuid, reslife_role, gender_preferences FROM users")
 	if err != nil {
 
 		log.Println(err)
@@ -199,7 +290,7 @@ func GetUsersIdMap(c *gin.Context) {
 	userMap := make(map[int]models.UserRaw)
 	for rows.Next() {
 		var user models.UserRaw
-		if err := rows.Scan(&user.Id, &user.Year, &user.FirstName, &user.LastName, &user.DrawNumber, &user.Preplaced, &user.InDorm, &user.SGroupUUID, &user.Participated, &user.PartitipationTime, &user.RoomUUID, &user.ReslifeRole); err != nil {
+		if err := rows.Scan(&user.Id, &user.Year, &user.FirstName, &user.LastName, &user.DrawNumber, &user.Preplaced, &user.InDorm, &user.SGroupUUID, &user.Participated, &user.PartitipationTime, &user.RoomUUID, &user.ReslifeRole, &user.GenderPreferences); err != nil {
 			// Handle scan error
 			log.Println(err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Database scan failed"})
@@ -217,10 +308,11 @@ func GetUser(c *gin.Context) {
 
 	// Query for a single user
 	var user models.UserRaw
-	err := database.DB.QueryRow("SELECT id, year, first_name, last_name, draw_number, preplaced, in_dorm, sgroup_uuid, participated, participation_time, room_uuid, reslife_role, email FROM users WHERE id=$1", userid).Scan(
+	err := database.DB.QueryRow("SELECT id, year, first_name, last_name, draw_number, preplaced, in_dorm, sgroup_uuid, participated, participation_time, room_uuid, reslife_role, email, gender_preferences FROM users WHERE id=$1", userid).Scan(
 		&user.Id, &user.Year, &user.FirstName, &user.LastName, &user.DrawNumber,
 		&user.Preplaced, &user.InDorm, &user.SGroupUUID, &user.Participated,
 		&user.PartitipationTime, &user.RoomUUID, &user.ReslifeRole, &user.Email,
+		&user.GenderPreferences,
 	)
 
 	if err != nil {

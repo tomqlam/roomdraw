@@ -89,8 +89,10 @@ func main() {
 	writeGroupAdmin.POST("/frosh/:roomuuid", handlers.AddFroshHandler)
 	writeGroupAdmin.POST("/frosh/remove/:roomuuid", handlers.RemoveFroshHandler)
 	writeGroupAdmin.POST("/rooms/preplace/:roomuuid", handlers.PreplaceOccupants)
+	writeGroupAdmin.POST("/rooms/preplace/remove/:roomuuid", handlers.RemovePreplacedOccupantsHandler)
 	writeGroupAdmin.GET("/admin/blacklisted-users", handlers.GetBlacklistedUsers)
 	writeGroupAdmin.POST("/admin/blacklist/remove/:email", handlers.RemoveUserBlacklist)
+	writeGroupAdmin.POST("/admin/suites/update-gender-preferences", handlers.UpdateSuiteGenderPreference)
 
 	log.Println("RequireAuth:", config.RequireAuth)
 

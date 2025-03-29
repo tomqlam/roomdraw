@@ -298,23 +298,43 @@ body.dark-mode .select:after {
     height: var(--component-height) !important;
     min-height: var(--component-height) !important;
     min-width: var(--min-component-width) !important;
-    max-width: var(--max-component-width) !important;
-    width: fit-content !important;
+    width: 100% !important;
     border-radius: 6px !important;
     border-color: var(--border-color) !important;
     transition: all var(--transition-speed) ease !important;
+    display: flex !important;
+    align-items: center !important;
 }
 
 .react-select__placeholder {
     white-space: nowrap !important;
     text-overflow: ellipsis !important;
     overflow: hidden !important;
+    margin: 0 2px !important;
 }
 
 .react-select__value-container {
     width: 100% !important;
     min-width: var(--min-component-width) !important;
-    padding: 0 0.75rem !important;
+    padding: 2px 8px !important;
+    display: flex !important;
+    align-items: center !important;
+    flex-wrap: wrap !important;
+    height: auto !important;
+    overflow: visible !important;
+}
+
+.react-select__multi-value {
+    margin: 2px 4px 2px 0 !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+.react-select__indicators {
+    align-self: center !important;
+    height: 100% !important;
+    display: flex !important;
+    align-items: center !important;
 }
 
 .react-select__control:hover {
@@ -337,15 +357,23 @@ body.dark-mode .react-select__control--is-focused {
 
 .react-select__single-value {
     color: var(--text-color) !important;
+    display: flex !important;
+    align-items: center !important;
+    margin: 0 2px !important;
 }
 
 .react-select__menu {
     background-color: var(--card-bg) !important;
+    width: 100% !important;
+    z-index: 20 !important;
 }
 
 .react-select__option {
     color: var(--text-color) !important;
     transition: background-color var(--transition-speed) ease !important;
+    padding: 8px 12px !important;
+    display: flex !important;
+    align-items: center !important;
 }
 
 .react-select__option--is-focused {
@@ -367,6 +395,15 @@ body.dark-mode .react-select__option--is-selected {
 .react-select__input-container {
     margin: 0 !important;
     padding: 0 !important;
+}
+
+/* Container for react-select */
+.react-select {
+    width: 100% !important;
+}
+
+.react-select>div {
+    width: 100% !important;
 }
 
 /* Interactive display boxes */

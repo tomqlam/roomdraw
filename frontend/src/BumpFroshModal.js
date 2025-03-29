@@ -120,12 +120,14 @@ const BumpFroshModal = () =>
                     <button className="delete" aria-label="close" onClick={() => setIsFroshModalOpen(false)}></button>
                 </header>
                 <section className="modal-card-body">
-                    {((jwtDecode(credentials).email === "tlam@g.hmc.edu") || (jwtDecode(credentials).email === "smao@g.hmc.edu")) && <button onClick={() => removeFrosh(selectedRoomObject)}>Remove Frosh</button>}
+                    {((jwtDecode(credentials).email === "tlam@g.hmc.edu") || (jwtDecode(credentials).email === "smao@g.hmc.edu")) &&
+                        <button className="button is-warning mb-3" onClick={() => removeFrosh(selectedRoomObject)}>Remove Frosh</button>
+                    }
 
-                    <label className="label">{filteredRooms.length > 0 ? 'Bump these frosh to a new room' : 'Unbumpable frosh'}</label>                    {filteredRooms.length !== 0 && <div className="select" style={{ marginRight: "10px" }}>
+                    <label className="label">{filteredRooms.length > 0 ? 'Bump these frosh to a new room' : 'Unbumpable frosh'}</label>
+                    {filteredRooms.length !== 0 && <div className="select" style={{ marginRight: "10px" }}>
                         <select value={targetRoom} onChange={(event) => handleSelectChange(event)}>
-                            {((jwtDecode(credentials).email === "tlam@g.hmc.edu") || (jwtDecode(credentials).email === "smao@g.hmc.edu")) && <button onClick={() => removeFrosh(selectedRoomObject)}>Remove Frosh</button>}
-                            <option value="">Select a frosh room</option>
+                            <option value="NONE">Select a frosh room</option>
                             {rooms && filteredRooms
                                 .map((room, index) => (
                                     <option key={index} value={room.RoomUUID}>Room {room.RoomID}</option>
@@ -134,13 +136,20 @@ const BumpFroshModal = () =>
                         </select>
                     </div>}
                     <p>All the members of the target suite must agree before you can bump frosh there</p>
-                    {froshBumpError !== "" && <p class="help is-danger">{froshBumpError}</p>}
+                    {froshBumpError !== "" && <p className="help is-danger">{froshBumpError}</p>}
 
 
                 </section>
                 <footer className="modal-card-foot" style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    {filteredRooms.length !== 0 && <button className={`button is-primary ${froshBumpLoading ? "is-loading" : ""}`} onClick={handleBumpFrosh}>Bump these frosh!</button>}
-
+                    {filteredRooms.length !== 0 &&
+                        <button
+                            className={`button is-primary ${froshBumpLoading ? "is-loading" : ""}`}
+                            onClick={handleBumpFrosh}
+                            disabled={targetRoom === "NONE" || targetRoom === ""}
+                        >
+                            Bump these frosh!
+                        </button>
+                    }
                 </footer>
             </div>
         </div>
