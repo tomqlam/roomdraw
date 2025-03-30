@@ -62,11 +62,6 @@ func SetSuiteDesign(c *gin.Context) {
 	// extract file name from URL
 	currentSuiteDesign = currentSuiteDesign[strings.LastIndex(currentSuiteDesign, "/")+1:]
 
-	// Create new Config to be initialize a Client.
-	log.Println("BunnyNet credentials - Zone:", config.BunnyNetStorageZone)
-	log.Println("BunnyNet credentials - Read Key (first 5 chars):", config.BunnyNetReadAPIKey[:5]+"...")
-	log.Println("BunnyNet credentials - Write Key (first 5 chars):", config.BunnyNetWriteAPIKey[:5]+"...")
-
 	cfg := &bunnystorage.Config{
 		StorageZone: config.BunnyNetStorageZone,
 		Key:         config.BunnyNetWriteAPIKey,
@@ -77,13 +72,6 @@ func SetSuiteDesign(c *gin.Context) {
 	client, err := bunnystorage.NewClient(cfg)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create BunnyStorage client"})
-		return
-	}
-
-	// delete the current suite design from BunnyStorage
-	_, err = client.Delete(c, "suite_designs", currentSuiteDesign)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete current suite design"})
 		return
 	}
 
@@ -201,38 +189,6 @@ func DeleteSuiteDesign(c *gin.Context) {
 
 	if !suiteExists {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Suite not found"})
-		return
-	}
-
-	// query for the current suite design
-	var currentSuiteDesign string
-	err = tx.QueryRow("SELECT suite_design FROM suites WHERE suite_uuid = $1", suiteUUID).Scan(&currentSuiteDesign)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get current suite design"})
-		return
-	}
-
-	// extract file name from URL
-	currentSuiteDesign = currentSuiteDesign[strings.LastIndex(currentSuiteDesign, "/")+1:]
-
-	// Create new Config to be initialize a Client.
-	cfg := &bunnystorage.Config{
-		StorageZone: config.BunnyNetStorageZone,
-		Key:         config.BunnyNetWriteAPIKey,
-		ReadOnlyKey: config.BunnyNetReadAPIKey,
-		Endpoint:    bunnystorage.EndpointLosAngeles,
-	}
-
-	client, err := bunnystorage.NewClient(cfg)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create BunnyStorage client"})
-		return
-	}
-
-	// delete the current suite design from BunnyStorage
-	_, err = client.Delete(c, "suite_designs", currentSuiteDesign)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete current suite design"})
 		return
 	}
 
