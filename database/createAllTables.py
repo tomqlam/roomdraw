@@ -45,3 +45,8 @@ with engine.connect() as connection:
         query = file.read()
         result = connection.execute(text(query))
         connection.commit()
+
+    with open('CreateRateLimitTable.sql', 'r', encoding='utf-8') as file:
+        query = file.read()
+        result = connection.execute(text(query))
+        connection.commit() 
