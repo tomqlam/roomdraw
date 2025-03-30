@@ -92,6 +92,12 @@ function BumpModal()
         remainingClears: 10,
         isBlacklisted: false
     });
+    // Add state for room clearing confirmation
+    const [showClearConfirmation, setShowClearConfirmation] = useState(false);
+    const [clearConfirmationStep, setClearConfirmationStep] = useState(0);
+    const [roomToClear, setRoomToClear] = useState(null);
+    const [roomToClearCloseModal, setRoomToClearCloseModal] = useState(false);
+    const [roomToClearPersonIndex, setRoomToClearPersonIndex] = useState(-1);
 
     useEffect(() =>
     {
@@ -507,6 +513,69 @@ function BumpModal()
         });
     }
 
+    const initiateRoomClear = (roomUUID, closeModalBool, personIndex) =>
+    {
+        // Store the room details for when confirmation is complete
+        setRoomToClear(roomUUID);
+        setRoomToClearCloseModal(closeModalBool);
+        setRoomToClearPersonIndex(personIndex);
+
+        // Show the first confirmation step
+        setShowClearConfirmation(true);
+        setClearConfirmationStep(1);
+    };
+
+    const confirmClearRoom = () =>
+    {
+        // Move to second confirmation step
+        setClearConfirmationStep(2);
+    };
+
+    const cancelClearRoom = () =>
+    {
+        // Reset confirmation state
+        setShowClearConfirmation(false);
+        setClearConfirmationStep(0);
+        setRoomToClear(null);
+        setRoomToClearCloseModal(false);
+        setRoomToClearPersonIndex(-1);
+
+        // Reset loading state if needed
+        setLoadingClearRoom(false);
+        if (roomToClearPersonIndex !== -1)
+        {
+            setLoadingClearPerson(loadingClearPerson.map((item, itemIndex) =>
+                itemIndex === roomToClearPersonIndex ? false : item
+            ));
+        }
+    };
+
+    const executeClearRoom = () =>
+    {
+        // Hide confirmation dialog
+        setShowClearConfirmation(false);
+        setClearConfirmationStep(0);
+
+        // Set the appropriate loading state
+        if (roomToClearPersonIndex === -1)
+        {
+            setLoadingClearRoom(true);
+        } else
+        {
+            setLoadingClearPerson(loadingClearPerson.map((item, itemIndex) =>
+                itemIndex === roomToClearPersonIndex ? true : item
+            ));
+        }
+
+        // Execute the actual clear room operation
+        handleClearRoom(roomToClear, roomToClearCloseModal, roomToClearPersonIndex);
+
+        // Reset the stored values
+        setRoomToClear(null);
+        setRoomToClearCloseModal(false);
+        setRoomToClearPersonIndex(-1);
+    };
+
     // Function to format the minutes until reset
     const formatTimeUntilReset = (minutes) =>
     {
@@ -679,11 +748,57 @@ function BumpModal()
                         <div key={index} style={{ marginTop: '5px' }} className="field">
                             <button className={`button is-danger ${loadingClearPerson[index] ? 'is-loading' : ''}`} onClick={() =>
                             {
-                                setLoadingClearPerson(loadingClearPerson.map((item, itemIndex) => itemIndex === index ? true : item));
-                                handleClearRoom(getRoomUUIDFromUserID(person), false, index);
+                                initiateRoomClear(getRoomUUIDFromUserID(person), false, index);
                             }}>Clear {getNameById(person)}'s existing room</button>
                         </div>
                     ))}
+
+                    {/* Room Clear Confirmation Modal */}
+                    {showClearConfirmation && (
+                        <div className="modal is-active">
+                            <div className="modal-background"></div>
+                            <div className="modal-card">
+                                <header className="modal-card-head">
+                                    <p className="modal-card-title">
+                                        {clearConfirmationStep === 1 ? "Warning: Room Clear Operation" : "Final Confirmation"}
+                                    </p>
+                                </header>
+                                <section className="modal-card-body">
+                                    {clearConfirmationStep === 1 ? (
+                                        <div>
+                                            <div className="notification is-warning">
+                                                <p className="has-text-weight-bold">Warning: Clearing a room is a dangerous operation</p>
+                                                <p>This will remove ALL occupants from the room and cannot be undone.</p>
+                                                <p>Occupants will need to re-select their rooms.</p>
+                                                <p className="mt-2">Do you want to proceed?</p>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div>
+                                            <div className="notification is-danger">
+                                                <p className="has-text-weight-bold">FINAL WARNING</p>
+                                                <p>You are about to permanently clear this room. This action:</p>
+                                                <ul style={{ marginLeft: '20px', marginTop: '10px', listStyleType: 'disc' }}>
+                                                    <li>Cannot be undone</li>
+                                                    <li>Will remove all occupants</li>
+                                                    <li>May cause disruption to the room selection process</li>
+                                                </ul>
+                                                <p className="mt-3 has-text-weight-bold">Are you absolutely certain you want to continue?</p>
+                                            </div>
+                                        </div>
+                                    )}
+                                </section>
+                                <footer className="modal-card-foot" style={{ justifyContent: 'space-between' }}>
+                                    <button className="button" onClick={cancelClearRoom}>Cancel</button>
+                                    {clearConfirmationStep === 1 ? (
+                                        <button className="button is-warning" onClick={confirmClearRoom}>Proceed to Confirmation</button>
+                                    ) : (
+                                        <button className="button is-danger" onClick={executeClearRoom}>Yes, Clear Room</button>
+                                    )}
+                                </footer>
+                            </div>
+                        </div>
+                    )}
 
                 </section>
                 <footer className="modal-card-foot" style={{ display: 'flex', justifyContent: 'space-between', flexDirection: 'column' }}>
@@ -694,8 +809,7 @@ function BumpModal()
                             style={{ flex: '1', maxWidth: '150px' }}
                             onClick={() =>
                             {
-                                setLoadingClearRoom(true);
-                                handleClearRoom(selectedRoomObject.roomUUID, true, -1);
+                                initiateRoomClear(selectedRoomObject.roomUUID, true, -1);
                             }}
                             disabled={clearRoomStats.remainingClears <= 0 || clearRoomStats.isBlacklisted || selectedRoomObject.pullPriority.isPreplaced}
                             title={selectedRoomObject.pullPriority.isPreplaced ? "Cannot clear a preplaced room" : ""}
