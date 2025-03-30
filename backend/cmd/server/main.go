@@ -6,6 +6,7 @@ import (
 	"roomdraw/backend/pkg/database"
 	"roomdraw/backend/pkg/handlers"
 	"roomdraw/backend/pkg/middleware"
+	"roomdraw/backend/pkg/logging"
 	"time"
 
 	"github.com/gin-contrib/cors"
@@ -51,13 +52,29 @@ func main() {
 
 	// Group routes by read and write operations
 	readGroup := router.Group("/")
-	writeGroup := router.Group("/").Use(middleware.QueueMiddleware(requestQueue))
-	writeGroupAdmin := router.Group("/").Use(middleware.QueueMiddleware(requestQueue))
-
 	if config.RequireAuth {
-		readGroup.Use(middleware.JWTAuthMiddleware(false))
-		writeGroup.Use(middleware.JWTAuthMiddleware(false), middleware.BlacklistCheckMiddleware())
-		writeGroupAdmin.Use(middleware.JWTAuthMiddleware(true))
+		// Apply JWT only if required, non-blocking for read? Adjust as needed.
+		// If JWTAuthMiddleware aborts on failure, unauthenticated users can't read.
+		// Consider a less strict auth check for reads if needed.
+		readGroup.Use(middleware.JWTAuthMiddleware(false)) // Check token if present, but don't *require* it? Or require for all?
+	}
+
+	// Write group - applies Queue, Logging, JWT (required), Blacklist
+	writeGroup := router.Group("/")
+	writeGroup.Use(middleware.QueueMiddleware(requestQueue))       // 1. Serialize
+	if config.RequireAuth {                                        // Only add Auth/Blacklist if required
+		writeGroup.Use(logging.TransactionLogMiddleware())         // 2. Add Request ID
+		writeGroup.Use(middleware.JWTAuthMiddleware(false))    // 3. Authenticate (non-admin) & add user info to context
+		writeGroup.Use(middleware.BlacklistCheckMiddleware())  // 4. Check blacklist
+	}
+
+	// Admin Write group - applies Queue, Logging, JWT (admin required)
+	writeGroupAdmin := router.Group("/")
+	writeGroupAdmin.Use(middleware.QueueMiddleware(requestQueue))  // 1. Serialize
+	if config.RequireAuth {                                       // Only add Auth if required
+		writeGroupAdmin.Use(logging.TransactionLogMiddleware())    // 2. Add Request ID
+		writeGroupAdmin.Use(middleware.JWTAuthMiddleware(true)) // 3. Authenticate (admin required) & add user info
+		// No BlacklistCheck needed for admins? Add if needed.
 	}
 
 	// Define read-only routes

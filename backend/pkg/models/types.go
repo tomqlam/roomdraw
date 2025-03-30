@@ -276,3 +276,9 @@ type UserRateLimit struct {
 	BlacklistedAt     sql.NullTime   `db:"blacklisted_at"`
 	BlacklistedReason sql.NullString `db:"blacklisted_reason"`
 }
+
+const (
+	EntityTypeRoom  = "ROOM"
+	EntityTypeUser  = "USER"
+	EntityTypeSuite = "SUITE"
+)

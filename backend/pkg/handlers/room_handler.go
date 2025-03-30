@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"roomdraw/backend/pkg/database"
+	"roomdraw/backend/pkg/logging"
 	"roomdraw/backend/pkg/models"
 	"strconv"
 	"strings"
@@ -305,8 +306,64 @@ func GetSimplerFormattedDorm(c *gin.Context) {
 	c.JSON(http.StatusOK, dorm)
 }
 
+func getRoomStateRaw(roomUUID string) (*models.RoomRaw, error) {
+	var room models.RoomRaw
+	// Include all columns that represent the state you want to log
+	err := database.DB.QueryRow(`
+        SELECT room_uuid, dorm, dorm_name, room_id, suite_uuid, max_occupancy,
+               current_occupancy, occupants, pull_priority, sgroup_uuid, has_frosh, frosh_room_type
+        FROM rooms
+        WHERE room_uuid = $1`, roomUUID).Scan(
+		&room.RoomUUID, &room.Dorm, &room.DormName, &room.RoomID, &room.SuiteUUID,
+		&room.MaxOccupancy, &room.CurrentOccupancy, &room.Occupants, &room.PullPriority,
+		&room.SGroupUUID, &room.HasFrosh, &room.FroshRoomType,
+	)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil // Room not found is a valid state (doesn't exist)
+		}
+		return nil, fmt.Errorf("failed to query room state for %s: %w", roomUUID, err)
+	}
+	return &room, nil
+}
+
+func compareRoomStatesForLogging(state1, state2 *models.RoomRaw) bool {
+	if state1 == nil || state2 == nil {
+		return state1 == state2 // Both nil is considered same, one nil isn't
+	}
+	// Compare relevant fields: occupants, pull_priority, sgroup_uuid, etc.
+	// Example:
+	// occupantsSame := compareIntArrays(state1.Occupants.Elements, state2.Occupants.Elements) // Need helper for array compare
+	// prioritySame := state1.PullPriority == state2.PullPriority // Assumes PullPriority is comparable or implement deep compare
+	// sgroupSame := state1.SGroupUUID == state2.SGroupUUID
+	// return occupantsSame && prioritySame && sgroupSame // Add more fields as needed
+
+	// For now, assume any difference means changed state for simplicity
+	state1Json, _ := json.Marshal(state1)
+	state2Json, _ := json.Marshal(state2)
+	return string(state1Json) == string(state2Json)
+
+}
+
 func ToggleInDorm(c *gin.Context) {
 	roomUUIDParam := c.Param("roomuuid")
+	_, err := uuid.Parse(roomUUIDParam) // Validate UUID format early
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid room UUID format"})
+		return
+	}
+
+	// --- Transactional Logging: Get Previous State ---
+	previousRoomState, err := getRoomStateRaw(roomUUIDParam)
+	if err != nil {
+		log.Printf("Error fetching previous room state for TOGGLE_IN_DORM %s: %v", roomUUIDParam, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve current room state"})
+		return
+	}
+	if previousRoomState == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Room not found"})
+		return
+	}
 
 	// Start a transaction
 	tx, err := database.DB.Begin()
@@ -315,17 +372,62 @@ func ToggleInDorm(c *gin.Context) {
 		return
 	}
 
-	// Ensure the transaction is either committed or rolled back
+	// Defer rollback and handle commit/error for logging
+	var commitErr error
 	defer func() {
 		if r := recover(); r != nil {
 			tx.Rollback()
-			panic(r)
-		} else if err != nil {
-			tx.Rollback()
-		} else {
-			err = tx.Commit()
+			// Re-panic if needed, or handle
+			log.Printf("PANIC during TOGGLE_IN_DORM for %s: %v", roomUUIDParam, r)
+			// Ensure response indicates server error if not already sent
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error due to panic"})
+			return
 		}
-	}()
+		if err != nil { // Error occurred within the handler logic before commit
+			log.Printf("Rolling back transaction for TOGGLE_IN_DORM %s due to error: %v", roomUUIDParam, err)
+			tx.Rollback()
+			// We won't log if an error caused rollback before commit
+			return
+		}
+		// No error before commit, attempt commit
+		commitErr = tx.Commit()
+		if commitErr != nil {
+			log.Printf("Failed to commit transaction for TOGGLE_IN_DORM %s: %v", roomUUIDParam, commitErr)
+			// Don't log if commit failed
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Database transaction commit error"})
+			return
+		}
+
+		// --- Transactional Logging: Get New State & Log (ONLY IF COMMIT SUCCEEDED) ---
+		newRoomState, fetchErr := getRoomStateRaw(roomUUIDParam)
+		if fetchErr != nil {
+			log.Printf("Error fetching new room state for TOGGLE_IN_DORM %s after commit: %v", roomUUIDParam, fetchErr)
+			// Log the operation anyway, but new state might be nil/incomplete
+		}
+
+		logDetails := map[string]interface{}{
+			"previous_pull_priority": previousRoomState.PullPriority, // Log the specific part that changed
+			// Add any other relevant details if needed
+		}
+
+		loggingErr := logging.LogOperation(
+			c,                     // Pass the Gin context
+			"TOGGLE_IN_DORM",      // Operation Type
+			models.EntityTypeRoom, // Entity Type
+			roomUUIDParam,         // Entity ID
+			previousRoomState,     // State Before (fetched before tx)
+			newRoomState,          // State After (fetched after successful commit)
+			logDetails,            // Additional Details
+		)
+		if loggingErr != nil {
+			// Log the logging error, but the main operation succeeded.
+			log.Printf("WARNING: Failed to log TOGGLE_IN_DORM operation for %s: %v", roomUUIDParam, loggingErr)
+		}
+
+		// Send success response *after* logging attempt
+		c.JSON(http.StatusOK, gin.H{"message": "Successfully toggled in dorm status for room " + roomUUIDParam})
+
+	}() // End of defer func
 
 	// get the current room's into
 	var currentRoomInfo models.RoomRaw
@@ -424,11 +526,32 @@ func UpdateRoomOccupants(c *gin.Context) {
 func SelfPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 	// the room uuid is in the url
 	roomUUIDParam := c.Param("roomuuid")
+	_, err := uuid.Parse(roomUUIDParam) // Validate UUID format early
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid room UUID format"})
+		return errors.New("invalid room UUID format")
+	}
+
+	// --- Transactional Logging: Get Previous State ---
+	previousRoomState, err := getRoomStateRaw(roomUUIDParam)
+	if err != nil {
+		log.Printf("Error fetching previous room state for SELF_PULL %s: %v", roomUUIDParam, err)
+		return errors.New("failed to retrieve current room state")
+	}
+	if previousRoomState == nil {
+		return errors.New("room not found")
+	}
 
 	userFullName, exists := c.Get("user_full_name")
 	if !exists {
 		log.Print("Error: user_full_name not found in context")
 		userFullName = "unknown user"
+	}
+
+	userEmail, exists := c.Get("email")
+	if !exists {
+		log.Print("Error: email not found in context")
+		userEmail = "unknown user email"
 	}
 
 	log.Println(userFullName.(string) + " is attempting a self pull for room " + roomUUIDParam)
@@ -455,27 +578,90 @@ func SelfPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 		return err
 	}
 
-	// Ensure the transaction is either committed or rolled back
+	// Defer rollback/commit and logging logic
+	var commitErr error
+	var genderUpdateErr error // To store non-fatal gender update errors
 	defer func() {
+		// Handle panic first
 		if r := recover(); r != nil {
-			log.Println("Result for " + userFullName.(string) + ": failed to Self Pull room " + roomUUIDParam + " because of panic " + r.(error).Error())
 			tx.Rollback()
-			panic(r)
-		} else if err != nil {
-			log.Println("Result for " + userFullName.(string) + ": failed to Self Pull room " + roomUUIDParam + " because of error " + err.Error())
-			tx.Rollback()
-		} else {
-			log.Println("Result for " + userFullName.(string) + ": successfully Self Pulled room " + roomUUIDParam)
-			err = tx.Commit()
-
-			if err == nil {
-				for _, notification := range notificationQueue.Notifications {
-					log.Println("Notifying bumped users ...")
-					SendBumpNotification(notification.UserID, notification.RoomID, notification.DormName)
-				}
-			}
+			log.Printf("PANIC during SELF_PULL for %s by %s: %v", roomUUIDParam, userEmail, r)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error due to panic"})
+			return
 		}
-	}()
+
+		// Handle errors that occurred *before* commit attempt
+		if err != nil {
+			log.Printf("Rolling back transaction for SELF_PULL %s by %s due to error: %v", roomUUIDParam, userEmail, err)
+			tx.Rollback()
+			// Don't log or send notifications if core logic failed
+			// Response should have been sent where the error occurred
+			return
+		}
+
+		// Attempt to commit
+		commitErr = tx.Commit()
+		if commitErr != nil {
+			log.Printf("Failed to commit transaction for SELF_PULL %s by %s: %v", roomUUIDParam, userEmail, commitErr)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Database transaction commit error"})
+			return
+		}
+
+		// --- COMMIT SUCCEEDED ---
+		log.Printf("Successfully committed SELF_PULL for room %s by %s", roomUUIDParam, userEmail)
+
+		// Send Bump Notifications (only after successful commit)
+		for _, notification := range notificationQueue.Notifications {
+			log.Printf("Queueing bump notification for user %d from room %s (%s)", notification.UserID, notification.RoomID, notification.DormName)
+			// Call the actual send function (make sure it's non-blocking or handled async)
+			go SendBumpNotification(notification.UserID, notification.RoomID, notification.DormName)
+		}
+
+		// --- Transactional Logging: Get New State & Log ---
+		newRoomState, fetchErr := getRoomStateRaw(roomUUIDParam)
+		if fetchErr != nil {
+			log.Printf("Error fetching new room state for SELF_PULL %s after commit: %v", roomUUIDParam, fetchErr)
+			// Log the operation anyway, new state might be nil/incomplete in the log record
+		}
+
+		// Prepare details for logging
+		bumpedOccupantIDs := make([]int, 0, len(notificationQueue.Notifications))
+		for _, n := range notificationQueue.Notifications {
+			bumpedOccupantIDs = append(bumpedOccupantIDs, n.UserID)
+		}
+
+		logDetails := map[string]interface{}{
+			"proposed_occupants": proposedOccupants,
+			// Use previousRoomState for accurate pre-change data
+			"previous_occupants":   previousRoomState.Occupants,
+			"previous_sgroup_uuid": previousRoomState.SGroupUUID, // Could be nil/invalid
+			"bumped_occupant_ids":  bumpedOccupantIDs,
+			// Add status of secondary operations like gender update
+			"gender_update_error": nil, // Default to nil
+		}
+		if genderUpdateErr != nil {
+			logDetails["gender_update_error"] = genderUpdateErr.Error()
+		}
+
+		// Call LogOperation
+		loggingErr := logging.LogOperation(
+			c,                     // Pass the Gin context
+			"SELF_PULL",           // Operation Type
+			models.EntityTypeRoom, // Entity Type
+			roomUUIDParam,         // Entity ID
+			previousRoomState,     // State Before (fetched before tx)
+			newRoomState,          // State After (fetched after successful commit)
+			logDetails,            // Additional Details
+		)
+		if loggingErr != nil {
+			// Log the logging error, but the main operation succeeded.
+			log.Printf("WARNING: Failed to log SELF_PULL operation for %s: %v", roomUUIDParam, loggingErr)
+		}
+
+		// Send success response *after* logging attempt
+		c.JSON(http.StatusOK, gin.H{"message": "Successfully updated occupants"})
+
+	}() // End of defer func
 
 	var currentRoomInfo models.RoomRaw
 	err = tx.QueryRow("SELECT room_uuid, dorm, dorm_name, room_id, suite_uuid, max_occupancy, current_occupancy, occupants, pull_priority, has_frosh FROM rooms WHERE room_uuid = $1", roomUUIDParam).Scan(
@@ -697,7 +883,6 @@ func SelfPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 		log.Printf("Warning: Failed to update gender preferences for suite %s: %v", currentRoomInfo.SuiteUUID, err)
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Successfully updated occupants"})
 	return nil
 }
 
@@ -709,6 +894,12 @@ func NormalPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 	if !exists {
 		log.Print("Error: user_full_name not found in context")
 		userFullName = "unknown user"
+	}
+
+	userEmail, exists := c.Get("email")
+	if !exists {
+		log.Print("Error: email not found in context")
+		userEmail = "unknown user email"
 	}
 
 	proposedOccupants := request.ProposedOccupants
@@ -731,6 +922,29 @@ func NormalPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 		proposedOccupantsMap[occupant] = true
 	}
 
+	// --- Transactional Logging: Get Previous State ---
+	previousRoomState, err := getRoomStateRaw(roomUUIDParam)
+	if err != nil {
+		log.Printf("Error fetching previous room state for NORMAL_PULL %s: %v", roomUUIDParam, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve current room state"})
+		return err
+	}
+	if previousRoomState == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Target room not found"})
+		return sql.ErrNoRows
+	}
+	// Fetch previous state of pull leader room IF its state might change significantly (e.g., sgroup_uuid, inherited priority)
+	previousPullLeaderRoomState, err := getRoomStateRaw(request.PullLeaderRoom.String())
+	if err != nil {
+		log.Printf("Error fetching previous pull leader room state for NORMAL_PULL %s: %v", request.PullLeaderRoom.String(), err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve pull leader room state"})
+		return err
+	}
+	if previousPullLeaderRoomState == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Pull leader room not found"})
+		return sql.ErrNoRows
+	}
+
 	// Create notification queue
 	notificationQueue := models.NewBumpNotificationQueue()
 
@@ -741,23 +955,122 @@ func NormalPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 		return err
 	}
 
+	var commitErr error
+	var genderUpdateErr error       // To store non-fatal gender update errors
+	var createdSGroupUUID uuid.UUID // To store newly created group ID for logging
+	var joinedSGroupUUID uuid.UUID  // To store the ID of the group joined
+
 	// Ensure the transaction is either committed or rolled back
 	defer func() {
 		if r := recover(); r != nil {
 			tx.Rollback()
-			panic(r)
-		} else if err != nil {
+			log.Printf("PANIC during NORMAL_PULL for %s by %s: %v", roomUUIDParam, userEmail, r)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error due to panic"})
+			return
+		}
+		if err != nil {
+			log.Printf("Rolling back transaction for NORMAL_PULL %s by %s due to error: %v", roomUUIDParam, userEmail, err)
 			tx.Rollback()
-		} else {
-			err = tx.Commit()
-			// Send notifications only after successful commit
-			if err == nil {
-				for _, notification := range notificationQueue.Notifications {
-					SendBumpNotification(notification.UserID, notification.RoomID, notification.DormName)
-				}
+			return // Error response should have been sent
+		}
+		commitErr = tx.Commit()
+		if commitErr != nil {
+			log.Printf("Failed to commit transaction for NORMAL_PULL %s by %s: %v", roomUUIDParam, userEmail, commitErr)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Database transaction commit error"})
+			return
+		}
+
+		// --- COMMIT SUCCEEDED ---
+		log.Printf("Successfully committed NORMAL_PULL for room %s by %s", roomUUIDParam, userEmail)
+
+		// Send Bump Notifications
+		for _, notification := range notificationQueue.Notifications {
+			go SendBumpNotification(notification.UserID, notification.RoomID, notification.DormName)
+		}
+
+		// --- Transactional Logging: Get New State & Log ---
+		newRoomState, fetchErr := getRoomStateRaw(roomUUIDParam)
+		if fetchErr != nil {
+			log.Printf("Error fetching new room state for NORMAL_PULL %s after commit: %v", roomUUIDParam, fetchErr)
+		}
+
+		// Fetch new state of pull leader room
+		newPullLeaderRoomState, fetchLeaderErr := getRoomStateRaw(request.PullLeaderRoom.String())
+		if fetchLeaderErr != nil {
+			log.Printf("Error fetching new pull leader room state for NORMAL_PULL %s after commit: %v", request.PullLeaderRoom.String(), fetchLeaderErr)
+		}
+
+		// Prepare details
+		bumpedOccupantIDs := make([]int, 0, len(notificationQueue.Notifications))
+		for _, n := range notificationQueue.Notifications {
+			bumpedOccupantIDs = append(bumpedOccupantIDs, n.UserID)
+		}
+
+		logDetails := map[string]interface{}{
+			"proposed_occupants":          proposedOccupants,
+			"pull_leader_room":            request.PullLeaderRoom,
+			"previous_occupants":          previousRoomState.Occupants,
+			"previous_sgroup_uuid":        previousRoomState.SGroupUUID,           // Target room's original group
+			"previous_leader_sgroup_uuid": previousPullLeaderRoomState.SGroupUUID, // Leader's original group
+			"bumped_occupant_ids":         bumpedOccupantIDs,
+			"created_sgroup_uuid":         nil, // Default
+			"joined_sgroup_uuid":          nil, // Default
+			"gender_update_error":         nil, // Default
+		}
+		if createdSGroupUUID != uuid.Nil {
+			logDetails["created_sgroup_uuid"] = createdSGroupUUID
+		}
+		if joinedSGroupUUID != uuid.Nil {
+			logDetails["joined_sgroup_uuid"] = joinedSGroupUUID
+		}
+		if genderUpdateErr != nil {
+			logDetails["gender_update_error"] = genderUpdateErr.Error()
+		}
+
+		// Log primary operation on the target room
+		loggingErr := logging.LogOperation(
+			c,                     // Pass the Gin context
+			"NORMAL_PULL",         // Operation Type
+			models.EntityTypeRoom, // Entity Type
+			roomUUIDParam,         // Entity ID
+			previousRoomState,     // State Before target room
+			newRoomState,          // State After target room
+			logDetails,            // Additional Details
+		)
+		if loggingErr != nil {
+			log.Printf("WARNING: Failed to log NORMAL_PULL operation for target room %s: %v", roomUUIDParam, loggingErr)
+		}
+
+		// Optionally log the change to the pull leader room if significant state changed
+		// Determine if leader state changed enough to warrant a separate log entry
+		leaderStateChanged := !compareRoomStatesForLogging(previousPullLeaderRoomState, newPullLeaderRoomState) // Implement compareRoomStatesForLogging
+
+		if leaderStateChanged {
+			leaderLogDetails := map[string]interface{}{
+				"pull_action_target_room": roomUUIDParam,
+				"related_occupants":       proposedOccupants,
+				"reason":                  "Participant in NORMAL_PULL",
+				"previous_sgroup_uuid":    previousPullLeaderRoomState.SGroupUUID,
+				"new_sgroup_uuid":         newPullLeaderRoomState.SGroupUUID, // Assuming sgroup is the main change
+			}
+			leaderLoggingErr := logging.LogOperation(
+				c,
+				"UPDATE_ROOM_STATE", // Or a more specific type like "UPDATE_PULL_LEADER_STATE"
+				models.EntityTypeRoom,
+				request.PullLeaderRoom.String(), // Leader Room ID
+				previousPullLeaderRoomState,
+				newPullLeaderRoomState,
+				leaderLogDetails,
+			)
+			if leaderLoggingErr != nil {
+				log.Printf("WARNING: Failed to log state change for pull leader room %s during NORMAL_PULL: %v", request.PullLeaderRoom.String(), leaderLoggingErr)
 			}
 		}
-	}()
+
+		// Send success response *after* logging attempt
+		c.JSON(http.StatusOK, gin.H{"message": "Successfully updated occupants"})
+
+	}() // End of defer func
 
 	var currentRoomInfo models.RoomRaw
 	err = tx.QueryRow("SELECT room_uuid, dorm, dorm_name, room_id, suite_uuid, max_occupancy, current_occupancy, occupants, pull_priority, has_frosh FROM rooms WHERE room_uuid = $1", roomUUIDParam).Scan(
@@ -1164,7 +1477,6 @@ func NormalPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 		}
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Successfully updated occupants"})
 	return nil
 }
 
@@ -1176,6 +1488,12 @@ func LockPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 	if !exists {
 		log.Print("Error: user_full_name not found in context")
 		userFullName = "unknown user"
+	}
+
+	userEmail, exists := c.Get("email")
+	if !exists {
+		log.Print("Error: email not found in context")
+		userEmail = "unknown user email"
 	}
 
 	log.Println(userFullName.(string) + " is attempting a lock pull for room " + roomUUIDParam)
@@ -1192,6 +1510,29 @@ func LockPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 		proposedOccupantsMap[occupant] = true
 	}
 
+	previousRoomState, err := getRoomStateRaw(roomUUIDParam)
+	if err != nil { /* ... handle error ... */
+		return err
+	}
+	if previousRoomState == nil { /* ... handle not found ... */
+		return sql.ErrNoRows
+	}
+	// Suite (to check previous lock status)
+	var previousSuiteState *models.SuiteRaw // Use pointer type
+	// Need getSuiteStateRaw helper function
+	previousSuiteState, err = getSuiteStateRaw(previousRoomState.SuiteUUID.String()) // Fetch suite using room's suite_uuid
+	if err != nil {
+		log.Printf("Error fetching previous suite state %s for LOCK_PULL: %v", previousRoomState.SuiteUUID.String(), err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve suite state"})
+		return err
+	}
+	if previousSuiteState == nil {
+		// This shouldn't happen if the room exists, implies data inconsistency
+		log.Printf("ERROR: Suite %s not found for existing room %s during LOCK_PULL", previousRoomState.SuiteUUID.String(), roomUUIDParam)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal data inconsistency: Suite not found"})
+		return errors.New("suite not found for room")
+	}
+
 	// Create notification queue
 	notificationQueue := models.NewBumpNotificationQueue()
 
@@ -1202,23 +1543,98 @@ func LockPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 		return err
 	}
 
+	var commitErr error
+	var genderUpdateErr error
+
 	// Ensure the transaction is either committed or rolled back
 	defer func() {
-		if r := recover(); r != nil {
-			tx.Rollback()
-			panic(r)
-		} else if err != nil {
-			tx.Rollback()
-		} else {
-			err = tx.Commit()
-			// Send notifications only after successful commit
-			if err == nil {
-				for _, notification := range notificationQueue.Notifications {
-					SendBumpNotification(notification.UserID, notification.RoomID, notification.DormName)
-				}
+		if r := recover(); r != nil { /* ... handle panic rollback ... */
+			return
+		}
+		if err != nil { /* ... handle error rollback ... */
+			return
+		}
+		commitErr = tx.Commit()
+		if commitErr != nil { /* ... handle commit error ... */
+			return
+		}
+
+		// --- COMMIT SUCCEEDED ---
+		log.Printf("Successfully committed LOCK_PULL for room %s by %s", roomUUIDParam, userEmail)
+
+		// Send Bump Notifications (if any, unlikely for lock pull)
+		for _, notification := range notificationQueue.Notifications {
+			go SendBumpNotification(notification.UserID, notification.RoomID, notification.DormName)
+		}
+
+		// --- Transactional Logging: Get New State & Log ---
+		newRoomState, fetchErr := getRoomStateRaw(roomUUIDParam)
+		if fetchErr != nil {
+			log.Printf("Error fetching new room state for LOCK_PULL %s: %v", roomUUIDParam, fetchErr)
+		}
+		// Fetch new suite state
+		newSuiteState, fetchSuiteErr := getSuiteStateRaw(previousRoomState.SuiteUUID.String()) // Use stored SuiteUUID
+		if fetchSuiteErr != nil {
+			log.Printf("Error fetching new suite state %s for LOCK_PULL: %v", previousRoomState.SuiteUUID.String(), fetchSuiteErr)
+		}
+
+		// Prepare details
+		bumpedOccupantIDs := make([]int, 0, len(notificationQueue.Notifications))
+		for _, n := range notificationQueue.Notifications {
+			bumpedOccupantIDs = append(bumpedOccupantIDs, n.UserID)
+		}
+
+		logDetails := map[string]interface{}{
+			"proposed_occupants":        proposedOccupants,
+			"previous_occupants":        previousRoomState.Occupants,
+			"previous_sgroup_uuid":      previousRoomState.SGroupUUID,
+			"previous_suite_lock_state": previousSuiteState.LockPulledRoom, // From pre-fetched suite state
+			"bumped_occupant_ids":       bumpedOccupantIDs,
+			"gender_update_error":       nil,
+		}
+		if genderUpdateErr != nil {
+			logDetails["gender_update_error"] = genderUpdateErr.Error()
+		}
+
+		// Log primary operation on the target room
+		loggingErr := logging.LogOperation(
+			c, "LOCK_PULL", models.EntityTypeRoom, roomUUIDParam,
+			previousRoomState, // Room state before
+			newRoomState,      // Room state after
+			logDetails,
+		)
+		if loggingErr != nil {
+			log.Printf("WARNING: Failed to log LOCK_PULL room operation %s: %v", roomUUIDParam, loggingErr)
+		}
+
+		// Log the change to the suite entity
+		// Check if suite state actually changed (LockPulledRoom field)
+		suiteStateChanged := previousSuiteState.LockPulledRoom != newSuiteState.LockPulledRoom // Assuming LockPulledRoom is comparable
+
+		if suiteStateChanged {
+			suiteLogDetails := map[string]interface{}{
+				"reason":              "Suite lock status updated by LOCK_PULL",
+				"locking_room_uuid":   roomUUIDParam,
+				"locking_occupants":   proposedOccupants,
+				"previous_lock_state": previousSuiteState.LockPulledRoom,
+			}
+			suiteLoggingErr := logging.LogOperation(
+				c, "UPDATE_SUITE_LOCK", // More specific type
+				models.EntityTypeSuite,                // Entity Type is SUITE
+				previousSuiteState.SuiteUUID.String(), // Suite UUID is the entity ID
+				previousSuiteState,                    // Suite state before
+				newSuiteState,                         // Suite state after
+				suiteLogDetails,
+			)
+			if suiteLoggingErr != nil {
+				log.Printf("WARNING: Failed to log LOCK_PULL suite operation %s: %v", previousSuiteState.SuiteUUID.String(), suiteLoggingErr)
 			}
 		}
-	}()
+
+		// Send success response *after* logging attempt
+		c.JSON(http.StatusOK, gin.H{"message": "Successfully updated occupants"})
+
+	}() // End of defer func
 
 	var currentRoomInfo models.RoomRaw
 	err = tx.QueryRow("SELECT room_uuid, dorm, dorm_name, room_id, suite_uuid, max_occupancy, current_occupancy, occupants, pull_priority, has_frosh FROM rooms WHERE room_uuid = $1", roomUUIDParam).Scan(
@@ -1516,7 +1932,6 @@ func LockPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 		log.Printf("Warning: Failed to update gender preferences for suite %s: %v", currentRoomInfo.SuiteUUID, err)
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Successfully updated occupants"})
 	return nil
 }
 
@@ -1536,6 +1951,28 @@ func AlternativePull(c *gin.Context, request models.OccupantUpdateRequest) error
 	if !exists {
 		log.Print("Error: user_full_name not found in context")
 		userFullName = "unknown user"
+	}
+
+	userEmail, exists := c.Get("email")
+	if !exists {
+		log.Print("Error: email not found in context")
+		userEmail = "unknown user email"
+	}
+
+	previousRoomState, err := getRoomStateRaw(roomUUIDParam)
+	if err != nil { /* ... handle error ... */
+		return err
+	}
+	if previousRoomState == nil { /* ... handle not found ... */
+		return sql.ErrNoRows
+	}
+	// Pull Leader Room
+	previousPullLeaderRoomState, err := getRoomStateRaw(request.PullLeaderRoom.String())
+	if err != nil { /* ... handle error ... */
+		return err
+	}
+	if previousPullLeaderRoomState == nil { /* ... handle leader not found ... */
+		return sql.ErrNoRows
 	}
 
 	log.Println(userFullName.(string) + " is attempting an alternative pull for room " + roomUUIDParam + " with occupants " + strings.Join(proposedOccupantStrings, ", "))
@@ -1560,23 +1997,103 @@ func AlternativePull(c *gin.Context, request models.OccupantUpdateRequest) error
 		return err
 	}
 
-	// Ensure the transaction is either committed or rolled back
+	// Defer rollback/commit and logging logic
+	var commitErr error
+	var genderUpdateErr error
+	var createdSGroupUUID uuid.UUID                        // Store created group ID for logging
+	var alternativeGroupPriorityForLog models.PullPriority // Store calculated priority
+
 	defer func() {
-		if r := recover(); r != nil {
-			tx.Rollback()
-			panic(r)
-		} else if err != nil {
-			tx.Rollback()
-		} else {
-			err = tx.Commit()
-			// Send notifications only after successful commit
-			if err == nil {
-				for _, notification := range notificationQueue.Notifications {
-					SendBumpNotification(notification.UserID, notification.RoomID, notification.DormName)
-				}
+		if r := recover(); r != nil { /* ... handle panic rollback ... */
+			return
+		}
+		if err != nil { /* ... handle error rollback ... */
+			return
+		}
+		commitErr = tx.Commit()
+		if commitErr != nil { /* ... handle commit error ... */
+			return
+		}
+
+		// --- COMMIT SUCCEEDED ---
+		log.Printf("Successfully committed ALTERNATIVE_PULL for room %s by %s", roomUUIDParam, userEmail)
+
+		// Send Bump Notifications
+		for _, notification := range notificationQueue.Notifications {
+			go SendBumpNotification(notification.UserID, notification.RoomID, notification.DormName)
+		}
+
+		// --- Transactional Logging: Get New State & Log ---
+		newRoomState, fetchErr := getRoomStateRaw(roomUUIDParam)
+		if fetchErr != nil {
+			log.Printf("Error fetching new room state %s: %v", roomUUIDParam, fetchErr)
+		}
+		newPullLeaderRoomState, fetchLeaderErr := getRoomStateRaw(request.PullLeaderRoom.String())
+		if fetchLeaderErr != nil {
+			log.Printf("Error fetching new leader room state %s: %v", request.PullLeaderRoom.String(), fetchLeaderErr)
+		}
+
+		// Prepare details
+		bumpedOccupantIDs := make([]int, 0, len(notificationQueue.Notifications))
+		for _, n := range notificationQueue.Notifications {
+			bumpedOccupantIDs = append(bumpedOccupantIDs, n.UserID)
+		}
+
+		logDetails := map[string]interface{}{
+			"proposed_occupants":          proposedOccupants,
+			"pull_leader_room":            request.PullLeaderRoom,
+			"previous_occupants":          previousRoomState.Occupants,
+			"previous_sgroup_uuid":        previousRoomState.SGroupUUID,
+			"previous_leader_sgroup_uuid": previousPullLeaderRoomState.SGroupUUID,
+			"bumped_occupant_ids":         bumpedOccupantIDs,
+			"created_sgroup_uuid":         createdSGroupUUID,              // Will be non-nil if group was created
+			"alternative_group_priority":  alternativeGroupPriorityForLog, // The calculated 2nd best priority
+			"gender_update_error":         nil,
+		}
+		if genderUpdateErr != nil {
+			logDetails["gender_update_error"] = genderUpdateErr.Error()
+		}
+
+		// Log primary operation on the target room
+		loggingErr := logging.LogOperation(
+			c, "ALTERNATIVE_PULL", models.EntityTypeRoom, roomUUIDParam,
+			previousRoomState, // Target room before
+			newRoomState,      // Target room after
+			logDetails,
+		)
+		if loggingErr != nil {
+			log.Printf("WARNING: Failed log ALT_PULL target room %s: %v", roomUUIDParam, loggingErr)
+		}
+
+		// Log change to the pull leader room
+		// Determine if leader state changed enough to warrant a separate log entry
+		leaderStateChanged := !compareRoomStatesForLogging(previousPullLeaderRoomState, newPullLeaderRoomState) // Implement compareRoomStatesForLogging
+
+		if leaderStateChanged {
+			leaderLogDetails := map[string]interface{}{
+				"pull_action_target_room": roomUUIDParam,
+				"related_occupants":       proposedOccupants,
+				"reason":                  "Participant in ALTERNATIVE_PULL",
+				"previous_sgroup_uuid":    previousPullLeaderRoomState.SGroupUUID,
+				"new_sgroup_uuid":         newPullLeaderRoomState.SGroupUUID,
+				"previous_priority":       previousPullLeaderRoomState.PullPriority,
+				"new_priority":            newPullLeaderRoomState.PullPriority, // Check if priority.inherited changed
+			}
+			leaderLoggingErr := logging.LogOperation(
+				c, "UPDATE_ROOM_STATE", models.EntityTypeRoom, request.PullLeaderRoom.String(),
+				previousPullLeaderRoomState, // Leader room before
+				newPullLeaderRoomState,      // Leader room after
+				leaderLogDetails,
+			)
+			if leaderLoggingErr != nil {
+				log.Printf("WARNING: Failed log ALT_PULL leader room %s: %v", request.PullLeaderRoom.String(), leaderLoggingErr)
 			}
 		}
-	}()
+
+		// Send success response *after* logging attempt
+		c.JSON(http.StatusOK, gin.H{"message": "Successfully updated occupants"})
+
+	}() // End of defer func
 
 	var currentRoomInfo models.RoomRaw
 	err = tx.QueryRow("SELECT room_uuid, dorm, dorm_name, room_id, suite_uuid, max_occupancy, current_occupancy, occupants, pull_priority, has_frosh FROM rooms WHERE room_uuid = $1", roomUUIDParam).Scan(
@@ -1975,7 +2492,6 @@ func AlternativePull(c *gin.Context, request models.OccupantUpdateRequest) error
 		log.Printf("Warning: Failed to update gender preferences for suite %s: %v", currentRoomInfo.SuiteUUID, err)
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Successfully updated occupants"})
 	return nil
 }
 
@@ -2565,89 +3081,78 @@ func ClearRoomHandler(c *gin.Context) {
 	}
 	log.Println(userFullName.(string) + " is attempting to clear room " + roomUUIDParam)
 
-	// Check rate limits for clear room operations
-	const MAX_DAILY_CLEARS = 10
+	const MAX_DAILY_CLEARS = 10 // Keep your constant
 
-	// Get the current date in Pacific Time
-	loc, err := time.LoadLocation("America/Los_Angeles")
-	if err != nil {
-		log.Printf("Error loading Pacific timezone: %v", err)
-		// Fall back to UTC if unable to load Pacific time
-		loc = time.UTC
+	// Get the current date in Pacific Time (needed for comparison and potential insert/update)
+	loc, errLoadLocation := time.LoadLocation("America/Los_Angeles")
+	if errLoadLocation != nil {
+		log.Printf("Error loading Pacific timezone: %v", errLoadLocation)
+		loc = time.UTC // Fallback
 	}
 	pacificNow := time.Now().In(loc)
 	today := pacificNow.Format("2006-01-02") // YYYY-MM-DD format
 	todayDate, _ := time.Parse("2006-01-02", today)
 
-	// Check if the user has a rate limit record for today
-	var userLimit models.UserRateLimit
-	err = database.DB.QueryRow(`
-		SELECT email, clear_room_count, clear_room_date, is_blacklisted, blacklisted_at, blacklisted_reason
-		FROM user_rate_limits 
-		WHERE email = $1
-	`, emailStr).Scan(
-		&userLimit.Email,
-		&userLimit.ClearRoomCount,
-		&userLimit.ClearRoomDate,
-		&userLimit.IsBlacklisted,
-		&userLimit.BlacklistedAt,
-		&userLimit.BlacklistedReason,
+	// Check initial rate limit status before starting the main transaction
+	var initialUserLimit models.UserRateLimit
+	errRateLimit := database.DB.QueryRow(`
+        SELECT email, clear_room_count, clear_room_date, is_blacklisted, blacklisted_at, blacklisted_reason
+        FROM user_rate_limits WHERE email = $1`, emailStr).Scan(
+		&initialUserLimit.Email, &initialUserLimit.ClearRoomCount, &initialUserLimit.ClearRoomDate,
+		&initialUserLimit.IsBlacklisted, &initialUserLimit.BlacklistedAt, &initialUserLimit.BlacklistedReason,
 	)
 
-	if err != nil {
-		if err == sql.ErrNoRows {
-			// First clear for this user, create a new record
-			_, err = database.DB.Exec("INSERT INTO user_rate_limits (email, clear_room_count, clear_room_date) VALUES ($1, 0, $2)", emailStr, today)
-			if err != nil {
-				log.Printf("Error creating rate limit record: %v", err)
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
-				return
-			}
-			userLimit.Email = emailStr
-			userLimit.ClearRoomCount = 0
-			userLimit.ClearRoomDate.Valid = true
-			userLimit.ClearRoomDate.Time = todayDate
-			userLimit.IsBlacklisted = false
+	if errRateLimit != nil {
+		if errors.Is(errRateLimit, sql.ErrNoRows) {
+			// No record yet, user is not blacklisted and count is 0. Will insert later if needed.
+			initialUserLimit.Email = emailStr
+			initialUserLimit.ClearRoomCount = 0
+			initialUserLimit.IsBlacklisted = false
+			initialUserLimit.ClearRoomDate.Valid = true // Assume we'll set today if record is created
+			initialUserLimit.ClearRoomDate.Time = todayDate
+			log.Printf("No existing rate limit record for %s.", emailStr)
 		} else {
-			log.Printf("Error checking rate limits: %v", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+			log.Printf("Error checking initial rate limits for %s: %v", emailStr, errRateLimit)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to check rate limits"})
+			return
+		}
+	} else {
+		// Record exists, check if blacklisted
+		if initialUserLimit.IsBlacklisted {
+			log.Printf("User %s is already blacklisted. Denying clear room request.", emailStr)
+			c.JSON(http.StatusForbidden, gin.H{"error": "Your account is restricted due to previous activity. Please contact an administrator.", "blacklisted": true})
+			return
+		}
+
+		// Check if date needs reset (do this *before* the main transaction if possible)
+		recordDateStr := today // Default if not valid
+		if initialUserLimit.ClearRoomDate.Valid {
+			recordDateStr = initialUserLimit.ClearRoomDate.Time.Format("2006-01-02")
+		}
+		if recordDateStr != today {
+			log.Printf("Rate limit date mismatch for %s (%s vs %s). Count will be reset.", emailStr, recordDateStr, today)
+			// The update/insert logic within the transaction will handle the reset.
+			initialUserLimit.ClearRoomCount = 0 // Reset count conceptually for pre-check
+		}
+
+		// Pre-check if already over limit (e.g., if MAX_DAILY_CLEARS was lowered)
+		if initialUserLimit.ClearRoomCount >= MAX_DAILY_CLEARS {
+			log.Printf("User %s already met or exceeded clear limit (%d) for today (%s). Denying clear room request.", emailStr, initialUserLimit.ClearRoomCount, today)
+			// Optionally blacklist here, though the logic later will catch it too.
+			c.JSON(http.StatusTooManyRequests, gin.H{
+				"error":       "You have already reached the daily limit for clearing rooms.",
+				"blacklisted": false, // Not necessarily blacklisted yet, just at limit
+			})
 			return
 		}
 	}
 
-	// Check if we need to reset the counter (if date has changed)
-	recordDateStr := today // Default to today if ClearRoomDate is not valid
-	if userLimit.ClearRoomDate.Valid {
-		recordDateStr = userLimit.ClearRoomDate.Time.Format("2006-01-02")
+	// --- Transactional Logging: Get Previous State ---
+	previousRoomState, err := getRoomStateRaw(roomUUIDParam)
+	if err != nil { /* ... handle fetch error ... */
+		return
 	}
-
-	if recordDateStr != today {
-		// Reset the counter for a new day
-		_, err = database.DB.Exec("UPDATE user_rate_limits SET clear_room_count = 0, clear_room_date = $1 WHERE email = $2",
-			today, emailStr)
-		if err != nil {
-			log.Printf("Error resetting rate limit: %v", err)
-		}
-		userLimit.ClearRoomCount = 0
-	}
-
-	// Check if the user is already at or has exceeded their limit
-	if userLimit.ClearRoomCount >= MAX_DAILY_CLEARS {
-		// Blacklist the user
-		now := time.Now()
-		reason := "Exceeded daily clear room limit"
-		_, err = database.DB.Exec(
-			"UPDATE user_rate_limits SET is_blacklisted = true, blacklisted_at = $1, blacklisted_reason = $2 WHERE email = $3",
-			now, reason, emailStr)
-		if err != nil {
-			log.Printf("Error blacklisting user: %v", err)
-		}
-
-		log.Printf("User %s has been blacklisted for exceeding clear room rate limit", emailStr)
-		c.JSON(http.StatusTooManyRequests, gin.H{
-			"error":       "You have exceeded the daily limit for clearing rooms. Your account has been temporarily restricted. Please contact an administrator.",
-			"blacklisted": true,
-		})
+	if previousRoomState == nil { /* ... handle not found ... */
 		return
 	}
 
@@ -2661,107 +3166,121 @@ func ClearRoomHandler(c *gin.Context) {
 		return
 	}
 
-	// Ensure the transaction is either committed or rolled back
+	var commitErr error
+	var clearedOccupantsForLog models.IntArray = previousRoomState.Occupants
+	var roomAlreadyEmpty bool // Flag to track if room was empty before clear
+
 	defer func() {
 		if r := recover(); r != nil {
-			log.Println("Result for " + userFullName.(string) + ": failed to clear room " + roomUUIDParam + " because of panic")
 			tx.Rollback()
-			panic(r)
-		} else if err != nil {
-			log.Println("Result for " + userFullName.(string) + ": failed to clear room " + roomUUIDParam + " because of error " + err.Error())
+			log.Printf("PANIC during CLEAR_ROOM for %s by %s: %v", roomUUIDParam, emailStr, r)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error due to panic"})
+			return
+		}
+		if err != nil {
+			log.Printf("Rolling back transaction for CLEAR_ROOM %s by %s due to error: %v", roomUUIDParam, emailStr, err)
 			tx.Rollback()
+			return // Error response should have been sent
+		}
+
+		commitErr = tx.Commit()
+		if commitErr != nil {
+			log.Printf("Failed to commit transaction for CLEAR_ROOM %s by %s: %v", emailStr, roomUUIDParam, commitErr)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Database transaction commit error"})
+			return
+		}
+
+		// --- COMMIT SUCCEEDED ---
+		log.Printf("Successfully committed CLEAR_ROOM for room %s by %s", roomUUIDParam, emailStr)
+
+		// Send Bump Notifications
+		for _, notification := range notificationQueue.Notifications {
+			go SendBumpNotification(notification.UserID, notification.RoomID, notification.DormName)
+		}
+
+		// --- Transactional Logging: Get New State & Log ---
+		newRoomState, fetchErr := getRoomStateRaw(roomUUIDParam)
+		if fetchErr != nil {
+			log.Printf("Error fetching new room state for CLEAR_ROOM %s: %v", roomUUIDParam, fetchErr)
+		}
+
+		logDetails := map[string]interface{}{
+			"cleared_occupants": clearedOccupantsForLog,
+		}
+		loggingErr := logging.LogOperation(c, "CLEAR_ROOM", models.EntityTypeRoom, roomUUIDParam, previousRoomState, newRoomState, logDetails)
+		if loggingErr != nil {
+			log.Printf("WARNING: Failed to log CLEAR_ROOM operation for %s: %v", roomUUIDParam, loggingErr)
+		}
+
+		// --- Rate Limiting Post-Commit Fetch & Blacklist Logic ---
+		var updatedUserLimit models.UserRateLimit
+		// This fetch happens *after* the main transaction committed the count increment (if any)
+		rateLimitFetchErr := database.DB.QueryRow(`
+            SELECT email, clear_room_count, clear_room_date, is_blacklisted, blacklisted_at, blacklisted_reason
+            FROM user_rate_limits WHERE email = $1`, emailStr).Scan(
+			&updatedUserLimit.Email, &updatedUserLimit.ClearRoomCount, &updatedUserLimit.ClearRoomDate,
+			&updatedUserLimit.IsBlacklisted, &updatedUserLimit.BlacklistedAt, &updatedUserLimit.BlacklistedReason,
+		)
+
+		if rateLimitFetchErr != nil {
+			// This is problematic - the count was likely updated, but we can't confirm or check blacklist easily.
+			log.Printf("CRITICAL: Error fetching updated rate limit for %s after successful clear: %v. Blacklist check skipped.", emailStr, rateLimitFetchErr)
+			// Fallback: Use the initial count + 1 if the room wasn't empty? Less accurate.
+			updatedUserLimit = initialUserLimit // Start with initial state
+			if !roomAlreadyEmpty {
+				updatedUserLimit.ClearRoomCount++ // Increment conceptually
+			}
+			// Cannot reliably check IsBlacklisted status here.
 		} else {
-			log.Println("Result for " + userFullName.(string) + ": successfully cleared room " + roomUUIDParam)
-			err = tx.Commit()
+			// Log the fetched updated count
+			log.Printf("Fetched updated clear count for user %s: %d", emailStr, updatedUserLimit.ClearRoomCount)
 
-			if err == nil {
-				// Send notifications if needed
-				for _, notification := range notificationQueue.Notifications {
-					log.Println("Notifying bumped users ...")
-					SendBumpNotification(notification.UserID, notification.RoomID, notification.DormName)
-				}
-
-				// Fetch the updated count from the database using the model
-				var updatedUserLimit models.UserRateLimit
-				err = database.DB.QueryRow(`
-					SELECT email, clear_room_count, clear_room_date, is_blacklisted, blacklisted_at, blacklisted_reason 
-					FROM user_rate_limits 
-					WHERE email = $1
-				`, emailStr).Scan(
-					&updatedUserLimit.Email,
-					&updatedUserLimit.ClearRoomCount,
-					&updatedUserLimit.ClearRoomDate,
-					&updatedUserLimit.IsBlacklisted,
-					&updatedUserLimit.BlacklistedAt,
-					&updatedUserLimit.BlacklistedReason,
-				)
-
-				if err != nil {
-					log.Printf("Error fetching updated clear count: %v", err)
-					// If room was already empty, keep the same count, otherwise increment
-					updatedUserLimit.ClearRoomCount = userLimit.ClearRoomCount
-					// Define roomAlreadyEmpty by checking if room occupancy is 0
-					roomAlreadyEmpty := false
-					var currentOccupancy int
-					err = database.DB.QueryRow("SELECT current_occupancy FROM rooms WHERE room_uuid = $1", roomUUIDParam).Scan(&currentOccupancy)
-					if err == nil {
-						roomAlreadyEmpty = currentOccupancy == 0
-					}
-					if !roomAlreadyEmpty {
-						updatedUserLimit.ClearRoomCount += 1 // Fallback to calculation if fetch fails
-					}
-				}
-
-				// Log the updated values
-				log.Printf("Updated clear count for user %s: %d", emailStr, updatedUserLimit.ClearRoomCount)
-
-				// Check if this operation pushed the user over the limit and blacklist them if so
-				if updatedUserLimit.ClearRoomCount >= MAX_DAILY_CLEARS && !updatedUserLimit.IsBlacklisted {
-					// Start a new transaction for blacklisting
-					blacklistTx, err := database.DB.Begin()
-					if err != nil {
-						log.Printf("Error starting blacklist transaction: %v", err)
+			// Check if this operation pushed the user over the limit and blacklist them if so
+			if updatedUserLimit.ClearRoomCount >= MAX_DAILY_CLEARS && !updatedUserLimit.IsBlacklisted {
+				log.Printf("User %s reached clear limit (%d). Attempting to blacklist.", emailStr, updatedUserLimit.ClearRoomCount)
+				// Start a new transaction specifically for blacklisting
+				blacklistTx, btErr := database.DB.Begin()
+				if btErr != nil {
+					log.Printf("Error starting blacklist transaction for %s: %v", emailStr, btErr)
+				} else {
+					now := time.Now() // Use current time for blacklist timestamp
+					reason := fmt.Sprintf("Exceeded daily clear room limit (%d) on %s", MAX_DAILY_CLEARS, today)
+					_, execBlErr := blacklistTx.Exec(
+						"UPDATE user_rate_limits SET is_blacklisted = true, blacklisted_at = $1, blacklisted_reason = $2 WHERE email = $3",
+						now, reason, emailStr)
+					if execBlErr != nil {
+						log.Printf("Error executing blacklist update for %s: %v", emailStr, execBlErr)
+						blacklistTx.Rollback()
 					} else {
-						now := time.Now()
-						reason := "Exceeded daily clear room limit"
-						_, err = blacklistTx.Exec(
-							"UPDATE user_rate_limits SET is_blacklisted = true, blacklisted_at = $1, blacklisted_reason = $2 WHERE email = $3",
-							now, reason, emailStr)
-						if err != nil {
-							log.Printf("Error blacklisting user: %v", err)
-							blacklistTx.Rollback()
+						blCommitErr := blacklistTx.Commit()
+						if blCommitErr != nil {
+							log.Printf("Error committing blacklist transaction for %s: %v", emailStr, blCommitErr)
 						} else {
-							err = blacklistTx.Commit()
-							if err != nil {
-								log.Printf("Error committing blacklist transaction: %v", err)
-							} else {
-								updatedUserLimit.IsBlacklisted = true
-								log.Printf("User %s has been blacklisted after reaching clear room limit", emailStr)
-							}
+							updatedUserLimit.IsBlacklisted = true // Update local struct reflect change
+							log.Printf("User %s successfully blacklisted.", emailStr)
+							// TODO: Consider sending a blacklist notification email here?
 						}
 					}
 				}
-
-				// Calculate minutes until midnight Pacific Time
-				midnight := time.Date(pacificNow.Year(), pacificNow.Month(), pacificNow.Day(), 0, 0, 0, 0, loc)
-				if pacificNow.After(midnight) {
-					midnight = midnight.Add(24 * time.Hour)
-				}
-				minutesUntilReset := int(midnight.Sub(pacificNow).Minutes())
-
-				// Return the updated count to the client
-				c.JSON(http.StatusOK, gin.H{
-					"message":         "Successfully cleared room",
-					"clearRoomCount":  updatedUserLimit.ClearRoomCount,
-					"maxDailyClears":  MAX_DAILY_CLEARS,
-					"remainingClears": MAX_DAILY_CLEARS - updatedUserLimit.ClearRoomCount,
-					"resetsInMinutes": minutesUntilReset,
-					"pacificDate":     today,
-					"isBlacklisted":   updatedUserLimit.IsBlacklisted,
-				})
 			}
 		}
-	}()
+
+		// Calculate minutes until reset (uses pacificNow calculated earlier)
+		midnight := time.Date(pacificNow.Year(), pacificNow.Month(), pacificNow.Day()+1, 0, 0, 0, 0, loc) // Start of *next* day in PT
+		minutesUntilReset := int(time.Until(midnight).Minutes())
+
+		// Send success response including rate limit info
+		c.JSON(http.StatusOK, gin.H{
+			"message":         fmt.Sprintf("Room %s cleared successfully", roomUUIDParam),
+			"clearRoomCount":  updatedUserLimit.ClearRoomCount, // Use the fetched/calculated count
+			"maxDailyClears":  MAX_DAILY_CLEARS,
+			"remainingClears": max(0, MAX_DAILY_CLEARS-updatedUserLimit.ClearRoomCount), // Ensure non-negative
+			"resetsInMinutes": minutesUntilReset,
+			"pacificDate":     today,
+			"isBlacklisted":   updatedUserLimit.IsBlacklisted, // Use fetched/updated status
+		})
+
+	}() // End of defer func
 
 	// Get current room info to check if it can be cleared
 	var currentRoomInfo models.RoomRaw
@@ -2797,7 +3316,7 @@ func ClearRoomHandler(c *gin.Context) {
 	}
 
 	// Check if the room is already empty
-	roomAlreadyEmpty := currentRoomInfo.CurrentOccupancy == 0
+	roomAlreadyEmpty = currentRoomInfo.CurrentOccupancy == 0
 	log.Printf("Room %s current occupancy: %d (empty: %v)", roomUUIDParam, currentRoomInfo.CurrentOccupancy, roomAlreadyEmpty)
 
 	// Clear the room

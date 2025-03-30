@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"roomdraw/backend/pkg/config"
 	"roomdraw/backend/pkg/database"
+	"roomdraw/backend/pkg/logging"
 	"roomdraw/backend/pkg/models"
 	"strings"
 
@@ -16,6 +17,20 @@ import (
 	"github.com/google/uuid"
 	"github.com/lib/pq"
 )
+
+func getSuiteStateRaw(suiteUUID string) (*models.SuiteRaw, error) {
+	var suite models.SuiteRaw
+	err := database.DB.QueryRow(`
+		SELECT suite_uuid, dorm, dorm_name, floor, room_count, rooms, alternative_pull, suite_design
+		FROM suites
+		WHERE suite_uuid = $1`, suiteUUID).Scan(
+		&suite.SuiteUUID, &suite.Dorm, &suite.DormName, &suite.Floor, &suite.RoomCount, &suite.Rooms, &suite.AlternativePull, &suite.SuiteDesign,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query suite state for %s: %w", suiteUUID, err)
+	}
+	return &suite, nil
+}
 
 func SetSuiteDesign(c *gin.Context) {
 	suiteUUID := c.Param("suiteuuid")
@@ -26,17 +41,97 @@ func SetSuiteDesign(c *gin.Context) {
 		return
 	}
 
-	// Ensure the transaction is either committed or rolled back
+	userEmail, exists := c.Get("email")
+	if !exists {
+		log.Print("Error: email not found in context")
+		userEmail = "unknown user email"
+	}
+
+	userFullName, exists := c.Get("user_full_name")
+	if !exists {
+		log.Print("Error: user_full_name not found in context")
+		userFullName = "unknown user"
+	}
+
+	log.Printf("%s (%s) is attempting to set suite design for suite %s", userFullName, userEmail, suiteUUID)
+
+	var previousSuiteState *models.SuiteRaw // Use pointer type
+	previousSuiteState, err = getSuiteStateRaw(suiteUUID)
+	if err != nil {
+		log.Printf("Error fetching previous suite state %s for LOCK_PULL: %v", previousSuiteState.SuiteUUID.String(), err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve suite state"})
+		return
+	}
+	if previousSuiteState == nil {
+		// This shouldn't happen if the room exists, implies data inconsistency
+		log.Printf("ERROR: Suite %s not found for existing room during LOCK_PULL", suiteUUID)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal data inconsistency: Suite not found"})
+		return
+	}
+
+	// Defer rollback/commit and logging logic
+	var commitErr error
+
 	defer func() {
+		originalErr := err // Capture error from main body
+
 		if r := recover(); r != nil {
 			tx.Rollback()
-			panic(r)
-		} else if err != nil {
-			tx.Rollback()
-		} else {
-			err = tx.Commit()
+			log.Printf("PANIC during SET_SUITE_DESIGN for suite %s by %s: %v", suiteUUID, userEmail, r)
+			if !c.Writer.Written() {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error due to panic"})
+			}
+			// Consider re-panic if needed: panic(r)
+			return
 		}
-	}()
+		if originalErr != nil {
+			log.Printf("Rolling back transaction for SET_SUITE_DESIGN for suite %s by %s due to error: %v", suiteUUID, userEmail, originalErr)
+			tx.Rollback()
+			return // Error response should have been sent
+		}
+
+		commitErr = tx.Commit()
+		if commitErr != nil {
+			log.Printf("ERROR during COMMIT for SET_SUITE_DESIGN for suite %s by %s: %v", suiteUUID, userEmail, commitErr)
+			if !c.Writer.Written() {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Database transaction commit error"})
+			}
+			return
+		}
+
+		// --- COMMIT SUCCEEDED ---
+		log.Printf("Committed transaction for SET_SUITE_DESIGN for suite %s by %s", suiteUUID, userEmail)
+
+		// --- Transactional Logging ---
+		newSuiteState, fetchErr := getSuiteStateRaw(suiteUUID)
+		if fetchErr != nil {
+			log.Printf("Error fetching new suite state %s for SET_SUITE_DESIGN: %v", suiteUUID, fetchErr)
+		}
+
+		logDetails := map[string]interface{}{
+			"previous_suite_design_url": previousSuiteState.SuiteDesign, // From pre-fetched state
+			"new_suite_design_url":      newSuiteState.SuiteDesign,      // From post-fetched state
+			// Add original filename if needed: "original_filename": fileHeader.Filename,
+		}
+
+		loggingErr := logging.LogOperation(
+			c, "SET_SUITE_DESIGN", // Operation Type
+			models.EntityTypeSuite, // Entity Type
+			suiteUUID,              // Entity ID
+			previousSuiteState,     // State Before
+			newSuiteState,          // State After
+			logDetails,             // Additional Details
+		)
+		if loggingErr != nil {
+			log.Printf("WARNING: Failed to log SET_SUITE_DESIGN operation for %s: %v", suiteUUID, loggingErr)
+		}
+
+		// Send success response *after* logging attempt
+		if !c.Writer.Written() {
+			c.JSON(http.StatusOK, gin.H{"message": "Suite design updated"})
+		}
+
+	}() // End of defer func
 
 	// ensure the suite exists
 	var suiteExists bool
@@ -149,35 +244,113 @@ func SetSuiteDesign(c *gin.Context) {
 
 	log.Println("Uploaded suite design to BunnyStorage:", imageUrl)
 
-	// commit the transaction
-	err = tx.Commit()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to commit transaction"})
-		return
-	}
-
 	c.JSON(http.StatusOK, gin.H{"message": "Suite design updated"})
 }
 
 func DeleteSuiteDesign(c *gin.Context) {
 	suiteUUID := c.Param("suiteuuid")
+
+	userEmail, exists := c.Get("email")
+	if !exists {
+		log.Print("Error: email not found in context")
+		userEmail = "unknown user email"
+	}
+
+	userFullName, exists := c.Get("user_full_name")
+	if !exists {
+		log.Print("Error: user_full_name not found in context")
+		userFullName = "unknown user"
+	}
+
+	log.Printf("%s (%s) is attempting to delete suite design for suite %s", userFullName, userEmail, suiteUUID)
+
+	var previousSuiteState *models.SuiteRaw // Use pointer type
+	previousSuiteState, err := getSuiteStateRaw(suiteUUID)
+	if err != nil {
+		log.Printf("Error fetching previous suite state %s for DELETE_SUITE_DESIGN: %v", previousSuiteState.SuiteUUID.String(), err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve suite state"})
+		return
+	}
+	if previousSuiteState == nil {
+		// This shouldn't happen if the room exists, implies data inconsistency
+		log.Printf("ERROR: Suite %s not found for existing room during DELETE_SUITE_DESIGN", suiteUUID)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal data inconsistency: Suite not found"})
+		return
+	}
+
 	tx, err := database.DB.Begin()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to start transaction"})
 		return
 	}
 
-	// Ensure the transaction is either committed or rolled back
+	// Defer rollback/commit and logging logic
+	var commitErr error
+
 	defer func() {
+		originalErr := err // Capture error from main body
+
 		if r := recover(); r != nil {
 			tx.Rollback()
-			panic(r)
-		} else if err != nil {
-			tx.Rollback()
-		} else {
-			err = tx.Commit()
+			log.Printf("PANIC during DELETE_SUITE_DESIGN for suite %s by %s: %v", suiteUUID, userEmail, r)
+			if !c.Writer.Written() {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error due to panic"})
+			}
+			// Consider re-panic: panic(r)
+			return
 		}
-	}()
+		if originalErr != nil {
+			log.Printf("Rolling back transaction for DELETE_SUITE_DESIGN for suite %s by %s due to error: %v", suiteUUID, userEmail, originalErr)
+			tx.Rollback()
+			return // Error response should have been sent
+		}
+		commitErr = tx.Commit()
+		if commitErr != nil {
+			log.Printf("ERROR during COMMIT for DELETE_SUITE_DESIGN for suite %s by %s: %v", suiteUUID, userEmail, commitErr)
+			if !c.Writer.Written() {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Database transaction commit error"})
+			}
+			return
+		}
+
+		// --- COMMIT SUCCEEDED ---
+		log.Printf("Committed transaction for DELETE_SUITE_DESIGN for suite %s by %s", suiteUUID, userEmail)
+
+		// --- TODO Optional: Delete file from BunnyNet ---
+		// This should happen *after* commit ideally. If it fails, log a warning.
+		// Extract filename from previousDesignUrlForLog
+		// Create BunnyNet client
+		// Call client.Delete(...)
+		// Handle/log deletion errors, but don't fail the response if DB commit succeeded.
+
+		// --- Transactional Logging ---
+		newSuiteState, fetchErr := getSuiteStateRaw(suiteUUID) // Fetch state after deletion
+		if fetchErr != nil {
+			log.Printf("Error fetching new suite state %s for DELETE_SUITE_DESIGN: %v", suiteUUID, fetchErr)
+		}
+
+		logDetails := map[string]interface{}{
+			"deleted_suite_design_url": previousSuiteState.SuiteDesign, // Log the URL that was removed
+		}
+
+		loggingErr := logging.LogOperation(
+			c, "DELETE_SUITE_DESIGN", // Operation Type
+			models.EntityTypeSuite, // Entity Type
+			suiteUUID,              // Entity ID
+			previousSuiteState,     // State Before
+			newSuiteState,          // State After (should have empty suite_design)
+			logDetails,             // Additional Details
+		)
+		if loggingErr != nil {
+			log.Printf("WARNING: Failed to log DELETE_SUITE_DESIGN operation for %s: %v", suiteUUID, loggingErr)
+		}
+
+		// Send success response *after* logging attempt
+		if !c.Writer.Written() {
+			c.JSON(http.StatusOK, gin.H{"message": "Suite design deleted"})
+		}
+
+	}() // End of defer func
 
 	// ensure the suite exists
 	var suiteExists bool
