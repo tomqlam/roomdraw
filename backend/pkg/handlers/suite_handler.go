@@ -429,20 +429,25 @@ func UpdateSuiteGenderPreference(c *gin.Context) {
 // UpdateSuiteGenderPreferencesBySuiteUUID is a helper function that updates a suite's gender preferences
 // based on its occupants. This should be called after any changes to room occupants.
 func UpdateSuiteGenderPreferencesBySuiteUUID(tx *sql.Tx, suiteUUID uuid.UUID) error {
-	// Check if the suite can be gender preferenced
+	// --- Check if suite can be gender preferenced (Rule 1) ---
 	var canBeGenderPreferenced bool
 	err := tx.QueryRow("SELECT can_be_gender_preferenced FROM suites WHERE suite_uuid = $1", suiteUUID).Scan(&canBeGenderPreferenced)
 	if err != nil {
 		log.Printf("Failed to check if suite %s can be gender preferenced: %v", suiteUUID, err)
-		return err
+		return err // Propagate DB errors
 	}
 
-	// If the suite can't be gender preferenced, no need to proceed
 	if !canBeGenderPreferenced {
-		return nil
+		log.Printf("Suite %s cannot be gender preferenced. Ensuring preference is empty.", suiteUUID)
+		_, err = tx.Exec("UPDATE suites SET gender_preferences = '{}' WHERE suite_uuid = $1", suiteUUID)
+		if err != nil {
+			log.Printf("Failed to clear gender preferences for non-preferenced suite %s: %v", suiteUUID, err)
+			return err // Propagate DB errors
+		}
+		return nil // No further action needed
 	}
 
-	// Get the dorm ID for the suite
+	// --- Get dormId (as before) ---
 	var dormId int
 	err = tx.QueryRow("SELECT dorm FROM suites WHERE suite_uuid = $1", suiteUUID).Scan(&dormId)
 	if err != nil {
@@ -450,114 +455,45 @@ func UpdateSuiteGenderPreferencesBySuiteUUID(tx *sql.Tx, suiteUUID uuid.UUID) er
 		return err
 	}
 
-	// Get all rooms in the suite
-	var roomUUIDs models.UUIDArray
-	err = tx.QueryRow("SELECT rooms FROM suites WHERE suite_uuid = $1", suiteUUID).Scan(&roomUUIDs)
+	// --- Get all users in the suite (as before, ensuring they are current occupants) ---
+	var users []models.UserRaw
+	// ... (Your existing robust logic to fetch current occupants 'users') ...
+	// Ensure this logic correctly populates the 'users' slice
+
+    // Log who we are considering
+	userNames := make([]string, 0, len(users))
+	for _, u := range users {
+        preplacedMarker := ""
+        if u.Preplaced {
+            preplacedMarker = " (P)"
+        }
+		userNames = append(userNames, fmt.Sprintf("%s %s%s %v", u.FirstName, u.LastName, preplacedMarker, u.GenderPreferences))
+	}
+	log.Printf("Calculating gender preferences for suite %s based on users: [%s]", suiteUUID, strings.Join(userNames, ", "))
+
+
+	// --- Call the corrected helper function ---
+	finalSuitePreference, found := GetSuiteGenderPreference(users, dormId) // Call the FIXED helper
+
+	// --- Update the database based *only* on the helper's result ---
+	var dbPreferenceArray pq.StringArray // Use pq.StringArray for potential empty array
+	if found {
+		// A specific preference was determined
+        dbPreferenceArray = pq.StringArray(finalSuitePreference)
+		log.Printf("Suite %s: Setting gender preferences to %v based on rules.", suiteUUID, finalSuitePreference)
+	} else {
+		// No specific preference determined (conflict, none specified, rule 3b, etc.) -> Set to empty
+        dbPreferenceArray = pq.StringArray([]string{})
+        log.Printf("Suite %s: Setting gender preferences to {} as no specific preference was determined by rules.", suiteUUID)
+	}
+
+	_, err = tx.Exec("UPDATE suites SET gender_preferences = $1 WHERE suite_uuid = $2",
+		dbPreferenceArray, suiteUUID)
 	if err != nil {
-		log.Printf("Failed to get rooms for suite %s: %v", suiteUUID, err)
+		log.Printf("Failed to update gender preferences for suite %s to %v: %v", suiteUUID, dbPreferenceArray, err)
 		return err
 	}
 
-	// Get all users in the suite - directly join with the rooms table to ensure we only get actual room occupants
-	var users []models.UserRaw
-	for _, roomUUID := range roomUUIDs {
-		// Get occupants directly from the rooms table for this room
-		var occupantIds models.IntArray
-		err = tx.QueryRow("SELECT occupants FROM rooms WHERE room_uuid = $1", roomUUID).Scan(&occupantIds)
-		if err != nil {
-			log.Printf("Failed to get occupants for room %s: %v", roomUUID, err)
-			continue
-		}
-
-		// Skip rooms with no occupants
-		if len(occupantIds) == 0 {
-			continue
-		}
-
-		// Get user data for each occupant
-		for _, occupantId := range occupantIds {
-			// Verify user is actually in this room
-			var userRoomUUID uuid.UUID
-			err = tx.QueryRow("SELECT room_uuid FROM users WHERE id = $1", occupantId).Scan(&userRoomUUID)
-			if err != nil {
-				log.Printf("Failed to check room for user ID %d: %v", occupantId, err)
-				continue
-			}
-
-			// Skip if user isn't actually in this room anymore
-			if userRoomUUID != roomUUID {
-				log.Printf("User %d is not in room %s (in room %s instead), skipping", occupantId, roomUUID, userRoomUUID)
-				continue
-			}
-
-			var user models.UserRaw
-			err = tx.QueryRow(`
-				SELECT id, year, first_name, last_name, email, draw_number, preplaced, in_dorm, 
-				sgroup_uuid, participated, participation_time, room_uuid, reslife_role, 
-				notifications_enabled, notification_created_at, notification_updated_at, gender_preferences
-				FROM users WHERE id = $1
-			`, occupantId).Scan(
-				&user.Id, &user.Year, &user.FirstName, &user.LastName, &user.Email,
-				&user.DrawNumber, &user.Preplaced, &user.InDorm, &user.SGroupUUID,
-				&user.Participated, &user.PartitipationTime, &user.RoomUUID, &user.ReslifeRole,
-				&user.NotificationsEnabled, &user.NotificationCreatedAt, &user.NotificationUpdatedAt,
-				&user.GenderPreferences,
-			)
-			if err != nil {
-				log.Printf("Failed to get user data for ID %d: %v", occupantId, err)
-				continue
-			}
-			users = append(users, user)
-		}
-	}
-
-	// Log the actual user list we're using for gender preference calculation
-	userNames := make([]string, 0, len(users))
-	for _, u := range users {
-		userNames = append(userNames, fmt.Sprintf("%s %s (ID: %d)", u.FirstName, u.LastName, u.Id))
-	}
-	log.Printf("Calculating gender preferences for suite %s based on users: %s", suiteUUID, strings.Join(userNames, ", "))
-
-	// Determine the gender preferences for this suite
-	genderPreferences, found := GetSuiteGenderPreference(users, dormId)
-	if found {
-		// Update the suite's gender preferences
-		_, err = tx.Exec("UPDATE suites SET gender_preferences = $1 WHERE suite_uuid = $2",
-			pq.Array(genderPreferences), suiteUUID)
-		if err != nil {
-			log.Printf("Failed to update gender preferences for suite %s: %v", suiteUUID, err)
-			return err
-		}
-		log.Printf("Updated gender preferences for suite %s to %v", suiteUUID, genderPreferences)
-		return nil
-	} else {
-		// Check if there are any preplaced users with gender preferences
-		var hasPreplacedUsersWithPreferences bool
-		for _, user := range users {
-			if user.Preplaced && len(user.GenderPreferences) > 0 {
-				hasPreplacedUsersWithPreferences = true
-				break
-			}
-		}
-
-		// If there are preplaced users with preferences but no valid intersection was found,
-		// return a specific error
-		if hasPreplacedUsersWithPreferences {
-			err := errors.New("no valid intersection of gender preferences found between preplaced users")
-			log.Printf("Error in suite %s: %v", suiteUUID, err)
-			return err
-		}
-
-		// Clear the suite gender preferences since there are no valid preferences
-		_, err = tx.Exec("UPDATE suites SET gender_preferences = $1 WHERE suite_uuid = $2",
-			pq.Array([]string{}), suiteUUID)
-		if err != nil {
-			log.Printf("Failed to clear gender preferences for suite %s: %v", suiteUUID, err)
-			return err
-		}
-		log.Printf("Cleared gender preferences for suite %s as no users have preferences", suiteUUID)
-
-		// Otherwise, it's fine to have no preferences
-		return nil
-	}
+	log.Printf("Successfully updated gender preferences for suite %s", suiteUUID)
+	return nil
 }

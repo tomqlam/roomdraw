@@ -236,40 +236,56 @@ func findIntersectionOfPreferences(preferencesArray [][]string) []string {
 // GetSuiteGenderPreference determines the gender preference for a suite based on the priority of its occupants
 // Returns the gender preferences array and a boolean indicating if a preference was found
 func GetSuiteGenderPreference(users []models.UserRaw, dormId int) ([]string, bool) {
-	// If there are no users, there's no gender preference
 	if len(users) == 0 {
 		return []string{}, false
 	}
 
-	// First, check if there are any preplaced users
 	var preplacedUsersPreferences [][]string
+	anyPreplacedExist := false // Flag to track if Rule 3 applies at all
+
 	for _, user := range users {
-		if user.Preplaced && len(user.GenderPreferences) > 0 {
-			preplacedUsersPreferences = append(preplacedUsersPreferences, user.GenderPreferences)
+		if user.Preplaced {
+			anyPreplacedExist = true // Found at least one preplaced user
+			if len(user.GenderPreferences) > 0 {
+				preplacedUsersPreferences = append(preplacedUsersPreferences, user.GenderPreferences)
+			}
 		}
 	}
 
-	// If there are preplaced users with preferences, find the intersection of their preferences
-	if len(preplacedUsersPreferences) > 0 {
-		intersection := findIntersectionOfPreferences(preplacedUsersPreferences)
-		if len(intersection) > 0 {
-			return intersection, true
+	// --- Rule 3 Logic ---
+	if anyPreplacedExist {
+		// Subcase 3a: At least one preplaced user HAS preferences
+		if len(preplacedUsersPreferences) > 0 {
+			intersection := findIntersectionOfPreferences(preplacedUsersPreferences)
+			if len(intersection) > 0 {
+				return intersection, true // Found valid intersection
+			} else {
+				// Conflict among preplaced users with preferences
+				log.Printf("Warning: No intersection found between preplaced users' gender preferences in suite (conflict)")
+				return []string{}, false // Error state
+			}
+		} else {
+			// Subcase 3b: Preplaced users exist, but NONE have preferences
+			log.Printf("Info: Preplaced users exist, but none have specified preferences. Suite preference is empty.")
+			return []string{}, false // Suite preference is empty, indicate no specific pref found
+			// Note: Returning 'false' here signifies "no specific preference determined by rule",
+			// which aligns with returning empty prefs due to conflict or lack of input.
+			// The CALLER needs to know that {} + false means "set suite to {}"
 		}
-		// If no intersection found between preplaced users, return an error case
-		log.Printf("Warning: No intersection found between preplaced users' gender preferences")
-		return []string{}, false
 	}
 
-	// If no preplaced users with preferences, use priority-based selection for non-preplaced users
-	sortedUsers := sortUsersByPriority(users, dormId)
+	// --- Rule 2 Logic (Only reached if !anyPreplacedExist) ---
+	log.Printf("Info: No preplaced users found. Determining preference by highest priority.")
+	sortedUsers := sortUsersByPriority(users, dormId) // Sort only non-preplaced users
 
-	// Find the first user with non-empty gender preferences
 	for _, user := range sortedUsers {
+		// Since we already know no preplaced users exist, we just check preferences
 		if len(user.GenderPreferences) > 0 {
-			return user.GenderPreferences, true
+			return user.GenderPreferences, true // Found highest priority user with preferences
 		}
 	}
 
-	// No gender preference found
-	return []string{}, false
+	// No user (in the non-preplaced group) had preferences, or list was empty after filtering
+	log.Printf("Info: No preplaced users, and no non-preplaced users had preferences. Suite preference is empty.")
+	return []string{}, false // No preference found based on Rule 2
 }
