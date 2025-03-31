@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -455,10 +454,66 @@ func UpdateSuiteGenderPreferencesBySuiteUUID(tx *sql.Tx, suiteUUID uuid.UUID) er
 		return err
 	}
 
-	// --- Get all users in the suite (as before, ensuring they are current occupants) ---
+	// Get all rooms in the suite
+	var roomUUIDs models.UUIDArray
+	err = tx.QueryRow("SELECT rooms FROM suites WHERE suite_uuid = $1", suiteUUID).Scan(&roomUUIDs)
+	if err != nil {
+		log.Printf("Failed to get rooms for suite %s: %v", suiteUUID, err)
+		return err
+	}
+
+	// Get all users in the suite - directly join with the rooms table to ensure we only get actual room occupants
 	var users []models.UserRaw
-	// ... (Your existing robust logic to fetch current occupants 'users') ...
-	// Ensure this logic correctly populates the 'users' slice
+	for _, roomUUID := range roomUUIDs {
+		// Get occupants directly from the rooms table for this room
+		var occupantIds models.IntArray
+		err = tx.QueryRow("SELECT occupants FROM rooms WHERE room_uuid = $1", roomUUID).Scan(&occupantIds)
+		if err != nil {
+			log.Printf("Failed to get occupants for room %s: %v", roomUUID, err)
+			continue
+		}
+
+		// Skip rooms with no occupants
+		if len(occupantIds) == 0 {
+			continue
+		}
+
+		// Get user data for each occupant
+		for _, occupantId := range occupantIds {
+			// Verify user is actually in this room
+			var userRoomUUID uuid.UUID
+			err = tx.QueryRow("SELECT room_uuid FROM users WHERE id = $1", occupantId).Scan(&userRoomUUID)
+			if err != nil {
+				log.Printf("Failed to check room for user ID %d: %v", occupantId, err)
+				continue
+			}
+
+			// Skip if user isn't actually in this room anymore
+			if userRoomUUID != roomUUID {
+				log.Printf("User %d is not in room %s (in room %s instead), skipping", occupantId, roomUUID, userRoomUUID)
+				continue
+			}
+
+			var user models.UserRaw
+			err = tx.QueryRow(`
+				SELECT id, year, first_name, last_name, email, draw_number, preplaced, in_dorm, 
+				sgroup_uuid, participated, participation_time, room_uuid, reslife_role, 
+				notifications_enabled, notification_created_at, notification_updated_at, gender_preferences
+				FROM users WHERE id = $1
+			`, occupantId).Scan(
+				&user.Id, &user.Year, &user.FirstName, &user.LastName, &user.Email,
+				&user.DrawNumber, &user.Preplaced, &user.InDorm, &user.SGroupUUID,
+				&user.Participated, &user.PartitipationTime, &user.RoomUUID, &user.ReslifeRole,
+				&user.NotificationsEnabled, &user.NotificationCreatedAt, &user.NotificationUpdatedAt,
+				&user.GenderPreferences,
+			)
+			if err != nil {
+				log.Printf("Failed to get user data for ID %d: %v", occupantId, err)
+				continue
+			}
+			users = append(users, user)
+		}
+	}
 
     // Log who we are considering
 	userNames := make([]string, 0, len(users))

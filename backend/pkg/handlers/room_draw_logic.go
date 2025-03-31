@@ -194,18 +194,6 @@ func comparePullPriority(priority1 models.PullPriority, priority2 models.PullPri
 	}
 }
 
-// hasIntersection checks if two string arrays have any elements in common
-func hasIntersection(arr1, arr2 []string) bool {
-	for _, item1 := range arr1 {
-		for _, item2 := range arr2 {
-			if item1 == item2 {
-				return true
-			}
-		}
-	}
-	return false
-}
-
 // findIntersection returns the intersection of two string arrays
 func findIntersection(arr1, arr2 []string) []string {
 	result := []string{}
