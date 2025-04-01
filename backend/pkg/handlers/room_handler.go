@@ -1072,6 +1072,19 @@ func NormalPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 
 	}() // End of defer func
 
+	drinkwardTripleInDormPullExceptions := []string{
+		"123C",
+		"124C",
+		"221C",
+		"222C",
+		"223C",
+		"224C",
+		"321C",
+		"322C",
+		"323C",
+		"324C",
+	}
+
 	var currentRoomInfo models.RoomRaw
 	err = tx.QueryRow("SELECT room_uuid, dorm, dorm_name, room_id, suite_uuid, max_occupancy, current_occupancy, occupants, pull_priority, has_frosh FROM rooms WHERE room_uuid = $1", roomUUIDParam).Scan(
 		&currentRoomInfo.RoomUUID,
@@ -1194,6 +1207,23 @@ func NormalPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 		occupantsInfo = append(occupantsInfo, u)
 	}
 
+	// check if this is a case of an in dorm pull leader pulling three people into a drinkward triple, this will be used in the future as an exception to the rule
+	// that in dorm pulls can only pull other in dorm users
+	isDrinkwardTripleException := false
+	pullLeaderHasInDorm := false
+	if pullLeaderPriority.Inherited.Valid {
+		pullLeaderHasInDorm = pullLeaderPriority.Inherited.HasInDorm
+	} else {
+		pullLeaderHasInDorm = pullLeaderPriority.HasInDorm
+	}
+	if pullLeaderHasInDorm && currentRoomInfo.Dorm == 8 { // 8 is the dorm code for drinkward
+		for _, roomID := range drinkwardTripleInDormPullExceptions {
+			if currentRoomInfo.RoomID == roomID {
+				isDrinkwardTripleException = true
+			}
+		}
+	}
+
 	// for all users who currently have not participated, set their participated field to true and partitipation time to now
 	_, err = tx.Exec("UPDATE users SET participated = true, participation_time = NOW() WHERE id = ANY($1) AND participated = false", pq.Array(proposedOccupants))
 	if err != nil {
@@ -1231,23 +1261,28 @@ func NormalPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 
 	sortedOccupants := sortUsersByPriority(occupantsInfo, currentRoomInfo.Dorm)
 
-	for _, occupant := range sortedOccupants {
-		var pullLeaderEffectiveInDorm bool
+	var pullLeaderEffectiveInDorm bool
 
-		// accounts for in dorm forfeit
-		if pullLeaderPriority.Inherited.Valid {
-			pullLeaderEffectiveInDorm = pullLeaderPriority.Inherited.HasInDorm
-		} else {
-			pullLeaderEffectiveInDorm = pullLeaderPriority.HasInDorm
-		}
+	// accounts for in dorm forfeit
+	if pullLeaderPriority.Inherited.Valid {
+		pullLeaderEffectiveInDorm = pullLeaderPriority.Inherited.HasInDorm
+	} else {
+		pullLeaderEffectiveInDorm = pullLeaderPriority.HasInDorm
+	}
 
-		// if the pull leader has indorm and the proposed occupants do not, it is invalid
-		if pullLeaderEffectiveInDorm && !(generateUserPriority(occupant, currentRoomInfo.Dorm).HasInDorm) {
-			log.Println("Pull leader has in dorm and proposed occupants do not")
-			err = errors.New("pull leader has in dorm and proposed occupants do not")
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Pull leader has in dorm and proposed occupants do not"})
-			return err
+	// if the pull leader has indorm and the proposed occupants do not, it is invalid
+	// however, if the drinkward triple exception is true, then the pull leader can pull three people into a drinkward triple
+	if !isDrinkwardTripleException {
+		for _, occupant := range sortedOccupants {
+			if pullLeaderEffectiveInDorm && !(generateUserPriority(occupant, currentRoomInfo.Dorm).HasInDorm) {
+				log.Println("Pull leader has in dorm and proposed occupants do not")
+				err = errors.New("pull leader has in dorm and proposed occupants do not")
+				c.JSON(http.StatusBadRequest, gin.H{"error": "Pull leader has in dorm and proposed occupants do not"})
+				return err
+			}
 		}
+	} else {
+		log.Println("Special case: Drinkward triple exception where pull leader has in dorm and proposed occupants do not")
 	}
 
 	proposedPullPriority = generateUserPriority(sortedOccupants[0], currentRoomInfo.Dorm)
