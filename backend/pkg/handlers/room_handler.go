@@ -380,13 +380,18 @@ func ToggleInDorm(c *gin.Context) {
 			// Re-panic if needed, or handle
 			log.Printf("PANIC during TOGGLE_IN_DORM for %s: %v", roomUUIDParam, r)
 			// Ensure response indicates server error if not already sent
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error due to panic"})
+			if !c.Writer.Written() {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error due to panic"})
+			}
 			return
 		}
 		if err != nil { // Error occurred within the handler logic before commit
 			log.Printf("Rolling back transaction for TOGGLE_IN_DORM %s due to error: %v", roomUUIDParam, err)
 			tx.Rollback()
 			// We won't log if an error caused rollback before commit
+			if !c.Writer.Written() {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Database transaction rollback error"})
+			}
 			return
 		}
 		// No error before commit, attempt commit
@@ -394,7 +399,9 @@ func ToggleInDorm(c *gin.Context) {
 		if commitErr != nil {
 			log.Printf("Failed to commit transaction for TOGGLE_IN_DORM %s: %v", roomUUIDParam, commitErr)
 			// Don't log if commit failed
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Database transaction commit error"})
+			if !c.Writer.Written() {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Database transaction commit error"})
+			}
 			return
 		}
 
@@ -425,7 +432,9 @@ func ToggleInDorm(c *gin.Context) {
 		}
 
 		// Send success response *after* logging attempt
-		c.JSON(http.StatusOK, gin.H{"message": "Successfully toggled in dorm status for room " + roomUUIDParam})
+		if !c.Writer.Written() {
+			c.JSON(http.StatusOK, gin.H{"message": "Successfully toggled in dorm status for room " + roomUUIDParam})
+		}
 
 	}() // End of defer func
 
@@ -965,18 +974,25 @@ func NormalPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 		if r := recover(); r != nil {
 			tx.Rollback()
 			log.Printf("PANIC during NORMAL_PULL for %s by %s: %v", roomUUIDParam, userEmail, r)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error due to panic"})
+			if !c.Writer.Written() {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error due to panic"})
+			}
 			return
 		}
 		if err != nil {
 			log.Printf("Rolling back transaction for NORMAL_PULL %s by %s due to error: %v", roomUUIDParam, userEmail, err)
 			tx.Rollback()
+			if !c.Writer.Written() {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Database transaction rollback error"})
+			}
 			return // Error response should have been sent
 		}
 		commitErr = tx.Commit()
 		if commitErr != nil {
 			log.Printf("Failed to commit transaction for NORMAL_PULL %s by %s: %v", roomUUIDParam, userEmail, commitErr)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Database transaction commit error"})
+			if !c.Writer.Written() {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Database transaction commit error"})
+			}
 			return
 		}
 
@@ -1068,22 +1084,10 @@ func NormalPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 		}
 
 		// Send success response *after* logging attempt
-		c.JSON(http.StatusOK, gin.H{"message": "Successfully updated occupants"})
-
+		if !c.Writer.Written() {
+			c.JSON(http.StatusOK, gin.H{"message": "Successfully updated occupants"})
+		}
 	}() // End of defer func
-
-	drinkwardTripleInDormPullExceptions := []string{
-		"123C",
-		"124C",
-		"221C",
-		"222C",
-		"223C",
-		"224C",
-		"321C",
-		"322C",
-		"323C",
-		"324C",
-	}
 
 	var currentRoomInfo models.RoomRaw
 	err = tx.QueryRow("SELECT room_uuid, dorm, dorm_name, room_id, suite_uuid, max_occupancy, current_occupancy, occupants, pull_priority, has_frosh FROM rooms WHERE room_uuid = $1", roomUUIDParam).Scan(
@@ -1169,13 +1173,34 @@ func NormalPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 		return err
 	}
 
-	if currentRoomInfo.MaxOccupancy > 1 {
+	drinkwardTripleInDormPullExceptions := []string{
+		"123C",
+		"124C",
+		"221C",
+		"222C",
+		"223C",
+		"224C",
+		"321C",
+		"322C",
+		"323C",
+		"324C",
+	}
+
+	isDrinkwardSuiteTriple := false
+	for _, drinkwardRoomID := range drinkwardTripleInDormPullExceptions {
+		if currentRoomInfo.RoomID == drinkwardRoomID && currentRoomInfo.Dorm == 8 {
+			isDrinkwardSuiteTriple = true
+		}
+	}
+
+	if currentRoomInfo.MaxOccupancy > 1 && !isDrinkwardSuiteTriple {
 		// error because normal pull is not allowed for rooms with max occupancy > 1
-		c.JSON(http.StatusBadRequest, gin.H{"error": "You may only initiate a normal pull for singles"})
-		err = errors.New("normal pull is not allowed for rooms with max occupancy > 1")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "You may only initiate a normal pull for singles other than in a Drinkward suite"})
+		err = errors.New("normal pull is not allowed for rooms with max occupancy > 1 other than in a Drinkward suite")
 		tx.Rollback()
 		return err
 	}
+
 	pullLeaderRoomUUID := request.PullLeaderRoom
 
 	var occupantsInfo []models.UserRaw
@@ -1205,23 +1230,6 @@ func NormalPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 		}
 
 		occupantsInfo = append(occupantsInfo, u)
-	}
-
-	// check if this is a case of an in dorm pull leader pulling three people into a drinkward triple, this will be used in the future as an exception to the rule
-	// that in dorm pulls can only pull other in dorm users
-	isDrinkwardTripleException := false
-	pullLeaderHasInDorm := false
-	if pullLeaderPriority.Inherited.Valid {
-		pullLeaderHasInDorm = pullLeaderPriority.Inherited.HasInDorm
-	} else {
-		pullLeaderHasInDorm = pullLeaderPriority.HasInDorm
-	}
-	if pullLeaderHasInDorm && currentRoomInfo.Dorm == 8 { // 8 is the dorm code for drinkward
-		for _, roomID := range drinkwardTripleInDormPullExceptions {
-			if currentRoomInfo.RoomID == roomID {
-				isDrinkwardTripleException = true
-			}
-		}
 	}
 
 	// for all users who currently have not participated, set their participated field to true and partitipation time to now
@@ -1268,6 +1276,35 @@ func NormalPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 		pullLeaderEffectiveInDorm = pullLeaderPriority.Inherited.HasInDorm
 	} else {
 		pullLeaderEffectiveInDorm = pullLeaderPriority.HasInDorm
+	}
+
+	if isDrinkwardSuiteTriple {
+		// check if the pull leader is in dorm
+		if !pullLeaderPriority.HasInDorm {
+			log.Println("pullLeaderPriority", pullLeaderPriority)
+			c.JSON(http.StatusBadRequest, gin.H{"error": "You may only initiate a normal pull for singles in a Drinkward suite if the pull leader has in dorm"})
+			err = errors.New("you may only initiate a normal pull for singles in a Drinkward suite if the pull leader has in dorm")
+			tx.Rollback()
+			return err
+		}
+
+		if len(proposedOccupants) != 3 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "The triple being pulled with in dorm must have 3 occupants"})
+			err = errors.New("the triple being pulled with in dorm must have 3 occupants")
+			tx.Rollback()
+			return err
+		}
+	}
+
+	// check if this is a case of an in dorm pull leader pulling three people into a drinkward triple, this will be used in the future as an exception to the rule
+	// that in dorm pulls can only pull other in dorm users
+	isDrinkwardTripleException := false
+	if pullLeaderEffectiveInDorm && currentRoomInfo.Dorm == 8 { // 8 is the dorm code for drinkward
+		for _, roomID := range drinkwardTripleInDormPullExceptions {
+			if currentRoomInfo.RoomID == roomID {
+				isDrinkwardTripleException = true
+			}
+		}
 	}
 
 	// if the pull leader has indorm and the proposed occupants do not, it is invalid
@@ -1430,7 +1467,7 @@ func NormalPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 	} else {
 		log.Println("Pull leader is in a suite group")
 
-		// first check that the room in in south and that the number of rooms in the suite is 3
+		// first check that the room in in south or drinkward and that the number of rooms in the suite is 3
 		var suiteInfo models.SuiteRaw
 		err = tx.QueryRow("SELECT suite_uuid, dorm, dorm_name, floor, room_count, rooms, alternative_pull FROM suites WHERE suite_uuid = $1", currentRoomInfo.SuiteUUID).Scan(
 			&suiteInfo.SuiteUUID,
@@ -1447,18 +1484,96 @@ func NormalPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 			return err
 		}
 
-		if suiteInfo.Dorm != 3 {
+		if suiteInfo.Dorm != 3 && suiteInfo.Dorm != 8 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "You can only pull two rooms with your number in South or Drinkward suite side"})
+			err = errors.New("you can only pull two rooms with your number in South or Drinkward suite side")
+			tx.Rollback()
+			return err
+		} else if suiteInfo.Dorm == 3 { // the suite is in south
 			if suiteInfo.RoomCount != 3 {
 				c.JSON(http.StatusBadRequest, gin.H{"error": "You can only pull two suitemates in South in a suite with three rooms"})
 				err = errors.New("you can only pull two suitemates in South in a suite with three rooms")
 				tx.Rollback()
 				return err
 			}
+		} else { // the suite is in drinkward
+			// the rule in drinkward is that if pull leader has in dorm they can pull a person with in dorm into a single
+			// along with three people that don't necessarily have in dorm into a triple
 
-			c.JSON(http.StatusBadRequest, gin.H{"error": "You can only pull two suitemates in South"})
-			err = errors.New("you can only pull two suitemates in South")
-			tx.Rollback()
-			return err
+			if pullLeaderPriority.HasInDorm {
+				// now see the other room in the suite group
+				var otherRooms []models.RoomRaw
+				rows, err = tx.Query("SELECT room_uuid, max_occupancy, current_occupancy, occupants FROM rooms WHERE sgroup_uuid = $1 AND room_uuid != $2", pullLeaderSuiteGroupUUID, pullLeaderRoomUUID)
+				if err != nil {
+					c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to query other room in suite group from rooms table"})
+					return err
+				}
+
+				for rows.Next() {
+					var otherRoom models.RoomRaw
+					if err := rows.Scan(&otherRoom.RoomUUID, &otherRoom.MaxOccupancy, &otherRoom.CurrentOccupancy, &otherRoom.Occupants); err != nil {
+						c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to scan other room in suite group from rooms table"})
+						return err
+					}
+					otherRooms = append(otherRooms, otherRoom)
+				}
+
+				if len(otherRooms) > 1 {
+					c.JSON(http.StatusBadRequest, gin.H{"error": "You can only pull two rooms (a single and a triple) in a Drinkward suite"})
+					log.Println("otherRooms", otherRooms)
+					err = errors.New("you can only pull two rooms (a single and a triple) in a Drinkward suite")
+					tx.Rollback()
+					return err
+				}
+
+				otherRoom := otherRooms[0]
+				// two cases:
+				// 1. the other room is a single, in which case the pull leader can pull the triple with people who don't necessarily have in dorm
+				// 2. the other room is a triple, in which case the pull leader can pull a person with in dorm into a single
+
+				if otherRoom.MaxOccupancy == 1 {
+					// the other room is a single
+					// its okay for the proposed occupants to not have in dorm
+					if currentRoomInfo.MaxOccupancy != 3 {
+						c.JSON(http.StatusBadRequest, gin.H{"error": "In Drinkward suite side, someone with in dorm can only pull a triple and a single"})
+						err = errors.New("with Drinkward in dorm, you can only pull a triple and a single in a Drinkward suite")
+						tx.Rollback()
+						return err
+					}
+					log.Println("Pull leader can pull a triple with people who don't necessarily have in dorm, while already having a single with in dorm in the suite")
+				} else if otherRoom.MaxOccupancy == 3 {
+					// the other room is a triple
+					// the proposed occupants must have in dorm and the room being pulled must be a single
+					if currentRoomInfo.MaxOccupancy != 1 {
+						c.JSON(http.StatusBadRequest, gin.H{"error": "In Drinkward suite side, someone with in dorm can only pull a triple and a single"})
+						err = errors.New("with Drinkward in dorm, you can only pull a triple and a single in a Drinkward suite")
+						tx.Rollback()
+						return err
+					}
+
+					if len(proposedOccupants) != 1 {
+						c.JSON(http.StatusBadRequest, gin.H{"error": "A single being pulled with in dorm must have 1 occupant"})
+						err = errors.New("you can only have 1 occupant in a single")
+						tx.Rollback()
+						return err
+					}
+
+					if !proposedPullPriority.HasInDorm {
+						c.JSON(http.StatusBadRequest, gin.H{"error": "The occupant being pulled with in dorm must have in dorm"})
+						err = errors.New("the occupant being pulled with in dorm must have in dorm")
+						tx.Rollback()
+						return err
+					}
+
+					log.Println("Pull leader with in dorm can pull a single with someone who has in dorm while already having a triple in the suite")
+				}
+			} else {
+				// pull leader does not have in dorm and thus cannot pull a third room into the suite
+				c.JSON(http.StatusBadRequest, gin.H{"error": "You can only pull two rooms (a single and a triple) in a Drinkward suite if the pull leader has in dorm"})
+				err = errors.New("you can only pull two rooms (a single and a triple) in a Drinkward suite if the pull leader has in dorm")
+				tx.Rollback()
+				return err
+			}
 		}
 
 		// check if the pull leader is the leader of the suite group by checking if the suite group's pull priority is the same as the pull leader's pull priority
@@ -1584,13 +1699,27 @@ func LockPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 	// Ensure the transaction is either committed or rolled back
 	defer func() {
 		if r := recover(); r != nil { /* ... handle panic rollback ... */
+			tx.Rollback()
+			log.Printf("PANIC during LOCK_PULL for %s: %v", roomUUIDParam, r)
+			if !c.Writer.Written() {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error due to panic"})
+			}
 			return
 		}
 		if err != nil { /* ... handle error rollback ... */
-			return
+			tx.Rollback()
+			log.Printf("Error during LOCK_PULL for %s: %v", roomUUIDParam, err)
+			if !c.Writer.Written() {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Database transaction rollback error"})
+			}
+				return
 		}
 		commitErr = tx.Commit()
 		if commitErr != nil { /* ... handle commit error ... */
+			log.Printf("Error during commit transaction for LOCK_PULL for %s: %v", roomUUIDParam, commitErr)
+			if !c.Writer.Written() {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Database transaction commit error"})
+			}
 			return
 		}
 
@@ -1667,7 +1796,9 @@ func LockPull(c *gin.Context, request models.OccupantUpdateRequest) error {
 		}
 
 		// Send success response *after* logging attempt
-		c.JSON(http.StatusOK, gin.H{"message": "Successfully updated occupants"})
+		if !c.Writer.Written() {
+			c.JSON(http.StatusOK, gin.H{"message": "Successfully updated occupants"})
+		}
 
 	}() // End of defer func
 
@@ -2040,13 +2171,27 @@ func AlternativePull(c *gin.Context, request models.OccupantUpdateRequest) error
 
 	defer func() {
 		if r := recover(); r != nil { /* ... handle panic rollback ... */
+			tx.Rollback()
+			log.Printf("PANIC during ALTERNATIVE_PULL for %s: %v", roomUUIDParam, r)
+			if !c.Writer.Written() {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error due to panic"})
+			}
 			return
 		}
 		if err != nil { /* ... handle error rollback ... */
+			tx.Rollback()
+			log.Printf("Error during ALTERNATIVE_PULL for %s: %v", roomUUIDParam, err)
+			if !c.Writer.Written() {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Database transaction rollback error"})
+			}
 			return
 		}
 		commitErr = tx.Commit()
 		if commitErr != nil { /* ... handle commit error ... */
+			log.Printf("Error during commit transaction for ALTERNATIVE_PULL for %s: %v", roomUUIDParam, commitErr)
+			if !c.Writer.Written() {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Database transaction commit error"})
+			}
 			return
 		}
 
@@ -2126,7 +2271,9 @@ func AlternativePull(c *gin.Context, request models.OccupantUpdateRequest) error
 		}
 
 		// Send success response *after* logging attempt
-		c.JSON(http.StatusOK, gin.H{"message": "Successfully updated occupants"})
+		if !c.Writer.Written() {
+			c.JSON(http.StatusOK, gin.H{"message": "Successfully updated occupants"})
+		}
 
 	}() // End of defer func
 
@@ -2703,8 +2850,9 @@ func PreplaceOccupants(c *gin.Context) {
 					SendBumpNotification(notification.UserID, notification.RoomID, notification.DormName)
 				}
 			}
-
-			c.JSON(http.StatusOK, gin.H{"message": "Successfully preplaced occupants"})
+			if !c.Writer.Written() {
+				c.JSON(http.StatusOK, gin.H{"message": "Successfully preplaced occupants"})
+			}
 		}
 	}()
 
@@ -2942,8 +3090,10 @@ func RemovePreplacedOccupantsHandler(c *gin.Context) {
 					SendBumpNotification(notification.UserID, notification.RoomID, notification.DormName)
 				}
 			}
-
-			c.JSON(http.StatusOK, gin.H{"message": "Successfully removed preplaced occupants"})
+			
+			if !c.Writer.Written() {
+				c.JSON(http.StatusOK, gin.H{"message": "Successfully removed preplaced occupants"})
+			}
 		}
 	}()
 
@@ -3103,7 +3253,9 @@ func ClearRoomHandler(c *gin.Context) {
 	email, exists := c.Get("email")
 	if !exists {
 		log.Print("Error: email not found in context")
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "User email not found"})
+		if !c.Writer.Written() {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "User email not found"})
+		}
 		return
 	}
 	emailStr := email.(string)
@@ -3148,14 +3300,18 @@ func ClearRoomHandler(c *gin.Context) {
 			log.Printf("No existing rate limit record for %s.", emailStr)
 		} else {
 			log.Printf("Error checking initial rate limits for %s: %v", emailStr, errRateLimit)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to check rate limits"})
+			if !c.Writer.Written() {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to check rate limits"})
+			}
 			return
 		}
 	} else {
 		// Record exists, check if blacklisted
 		if initialUserLimit.IsBlacklisted {
 			log.Printf("User %s is already blacklisted. Denying clear room request.", emailStr)
-			c.JSON(http.StatusForbidden, gin.H{"error": "Your account is restricted due to previous activity. Please contact an administrator.", "blacklisted": true})
+			if !c.Writer.Written() {
+				c.JSON(http.StatusForbidden, gin.H{"error": "Your account is restricted due to previous activity. Please contact an administrator.", "blacklisted": true})
+			}
 			return
 		}
 
@@ -3174,10 +3330,12 @@ func ClearRoomHandler(c *gin.Context) {
 		if initialUserLimit.ClearRoomCount >= MAX_DAILY_CLEARS {
 			log.Printf("User %s already met or exceeded clear limit (%d) for today (%s). Denying clear room request.", emailStr, initialUserLimit.ClearRoomCount, today)
 			// Optionally blacklist here, though the logic later will catch it too.
-			c.JSON(http.StatusTooManyRequests, gin.H{
-				"error":       "You have already reached the daily limit for clearing rooms.",
-				"blacklisted": false, // Not necessarily blacklisted yet, just at limit
-			})
+			if !c.Writer.Written() {
+				c.JSON(http.StatusTooManyRequests, gin.H{
+					"error":       "You have already reached the daily limit for clearing rooms.",
+					"blacklisted": false, // Not necessarily blacklisted yet, just at limit
+				})
+			}
 			return
 		}
 	}
@@ -3209,19 +3367,26 @@ func ClearRoomHandler(c *gin.Context) {
 		if r := recover(); r != nil {
 			tx.Rollback()
 			log.Printf("PANIC during CLEAR_ROOM for %s by %s: %v", roomUUIDParam, emailStr, r)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error due to panic"})
+			if !c.Writer.Written() {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error due to panic"})
+			}
 			return
 		}
 		if err != nil {
 			log.Printf("Rolling back transaction for CLEAR_ROOM %s by %s due to error: %v", roomUUIDParam, emailStr, err)
 			tx.Rollback()
+			if !c.Writer.Written() {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Database transaction rollback error"})
+			}
 			return // Error response should have been sent
 		}
 
 		commitErr = tx.Commit()
 		if commitErr != nil {
 			log.Printf("Failed to commit transaction for CLEAR_ROOM %s by %s: %v", emailStr, roomUUIDParam, commitErr)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Database transaction commit error"})
+			if !c.Writer.Written() {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Database transaction commit error"})
+			}
 			return
 		}
 

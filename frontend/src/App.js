@@ -296,7 +296,7 @@ function App()
                 if (data)
                 {
                     setSelectedUserData(data);
-                    if (data.RoomUUID)
+                    if (data && data.RoomUUID && data.RoomUUID !== "00000000-0000-0000-0000-000000000000")
                     {
                         try
                         {
@@ -416,7 +416,7 @@ function App()
                 const updateRoomInfoImmediately = async () =>
                 {
                     const data = await fetchUserData(selectedOption.value);
-                    if (data && data.RoomUUID)
+                    if (data && data.RoomUUID && data.RoomUUID !== "00000000-0000-0000-0000-000000000000")
                     {
                         try
                         {

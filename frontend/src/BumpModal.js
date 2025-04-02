@@ -46,6 +46,13 @@ const simplifyGenderPreferences = (preferences) =>
     return simplifiedPrefs;
 };
 
+// Helper function to check if a room is a Drinkward triple in suite side
+const isDrinkwardSuiteTriple = (roomNumber, dormId) =>
+{
+    const drinkwardTripleInDormPullExceptions = ["123C", "124C", "221C", "222C", "223C", "224C", "321C", "322C", "323C", "324C"];
+    return dormId === 8 || drinkwardTripleInDormPullExceptions.includes(roomNumber);
+};
+
 function BumpModal()
 {
     const {
@@ -102,17 +109,29 @@ function BumpModal()
     useEffect(() =>
     {
         // If the selected suite or room changes, change the people who can pull 
-        // commented console.log (selectedRoomObject.froshRoomType);
-        // commented console.log (rooms);
         if (selectedSuiteObject)
         {
+            console.log("selectedSuiteObject", selectedSuiteObject);
+            console.log("selectedItem", selectedItem);
+            let isDrinkwardTripleException = false;
+            if (selectedSuiteObject.rooms[0])
+            {
+                console.log("selectedSuiteObject.rooms[0]", selectedSuiteObject.rooms[0]);
+                isDrinkwardTripleException = isDrinkwardSuiteTriple(selectedItem, selectedSuiteObject.rooms[0].dorm);
+                if (isDrinkwardTripleException)
+                {
+                    console.log("This is a drinkward triple in suite-side");
+                }
+            }
             const otherRooms = selectedSuiteObject.rooms;
             const otherOccupants = [];
             const otherRoomsWhoCanAlternatePull = [];
+            console.log("otherRooms", otherRooms);
             for (let room of otherRooms)
             {
                 if (room.roomNumber !== selectedItem && room.maxOccupancy === 1 && room.occupant1 !== 0 && room.pullPriority.pullType === 1)
                 {
+                    console.log("room", room);
                     otherOccupants.push([room.occupant1, room.roomUUID]);
                 }
                 if (selectedRoomObject.maxOccupancy === 2 && room.roomNumber !== selectedItem && room.maxOccupancy === 2)
@@ -121,7 +140,7 @@ function BumpModal()
                 }
 
             }
-            //// commented console.log (otherRoomsWhoCanAlternatePull);
+            console.log("otherOccupants", otherOccupants);
             setRoomsWhoCanAlternatePull(otherRoomsWhoCanAlternatePull);
             setPeopleWhoCanPullSingle(otherOccupants);
         }
@@ -334,7 +353,7 @@ function BumpModal()
                             if (data.occupants.length !== 0 && data.occupants.every(occupant => selectedRoomObject.roomUUID === getRoomUUIDFromUserID(occupant)))
                             {
                                 // Clear the room and retry
-                                print("That's the case!");
+                                console.log("That's the case!");
                                 setLoadingSubmit(true);
                                 handleClearRoom(selectedRoomObject.roomUUID, false, -1)
                                     .then(() => performRoomAction(pullType, pullLeaderRoom))
@@ -726,7 +745,7 @@ function BumpModal()
                             <div className="select">
                                 <select value={pullMethod} onChange={handlePullMethodChange}>
                                     <option value="Pulled themselves">Pulled themselves</option>
-                                    {selectedRoomObject.maxOccupancy === 1 && peopleWhoCanPullSingle.map((item, index) => (
+                                    { (selectedRoomObject.maxOccupancy === 1 || isDrinkwardSuiteTriple(selectedItem, selectedRoomObject.dorm)) && peopleWhoCanPullSingle.map((item, index) => (
                                         <option key={index} value={item[0]}>
                                             Pulled by {getNameById(item[0])}
                                         </option>

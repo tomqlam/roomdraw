@@ -6,8 +6,8 @@
                     "rooms": [
                         {
                             "room_number": "103",
-                            "capacity": 3,
-                            "frosh_room_type": 2
+                            "capacity": 2,
+                            "frosh_room_type": 1
                         },
                         {
                             "room_number": "108",
@@ -26,8 +26,8 @@
                         },
                         {
                             "room_number": "101",
-                            "capacity": 2,
-                            "frosh_room_type": 1
+                            "capacity": 3,
+                            "frosh_room_type": 2
                         },
                         {
                             "room_number": "105",
@@ -201,7 +201,7 @@
                     "rooms": [
                         {
                             "room_number": "Q1B",
-                            "capacity": 3,
+                            "capacity": 4,
                             "frosh_room_type": 8
                         }
                     ],
