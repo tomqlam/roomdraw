@@ -7,7 +7,8 @@ This app facilitates the Digital Draw process at Harvey Mudd, encoding all of th
 If you just want to get running quickly using the shared staging database:
 
 ```bash
-# 1. Setup frontend
+# 1. Setup frontend env
+cp frontend/.env.example frontend/.env
 cd frontend && npm install
 
 # 2. Setup backend env (get credentials from team lead)
@@ -80,6 +81,21 @@ See [Homebrew Installation Docs](https://docs.brew.sh/Installation) for details.
 5. Open http://localhost:3000
 
 ## Environment Configuration
+
+### Frontend Environment File
+
+The frontend needs `frontend/.env` to know where the backend API is running:
+
+```bash
+cp frontend/.env.example frontend/.env
+```
+
+For local development (default):
+```bash
+REACT_APP_API_URL=http://localhost:8080
+```
+
+For production, this would point to your deployed backend URL.
 
 ### Backend Environment File
 
