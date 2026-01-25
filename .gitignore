@@ -1,7 +1,8 @@
 .env
-backend/tmp/
+**/tmp/
 .DS_Store
 node_modules
 roomdraw_env
 .env.production
 .env.development
+*build-errors.log
