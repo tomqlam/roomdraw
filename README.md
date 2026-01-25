@@ -11,7 +11,7 @@ If you just want to get running quickly using the shared staging database:
 cp frontend/.env.example frontend/.env
 cd frontend && npm install
 
-# 2. Setup backend env (get credentials from team lead)
+# 2. Setup backend env (get credentials from Tom Lam - tomqlam [at] gmail [dot] com)
 cp backend/.env.example backend/.env
 # Then edit backend/.env and fill in the values
 
@@ -26,7 +26,7 @@ cd frontend && npm start
 # 5. Open http://localhost:3000
 ```
 
-> **Note:** Ask the team lead for staging database and BunnyNet credentials. For local development with your own database, see the full setup below.
+> **Note:** Ask Tom Lam (tomqlam [at] gmail [dot] com) for staging database and BunnyNet credentials. For local development with your own database, see the full setup below.
 
 ---
 
@@ -128,8 +128,8 @@ USE_SSL="disable"                # Use "disable" for local, "require" for cloud/
 REQUIRE_AUTH="False"             # Set to "False" to bypass Google OAuth during development
 
 # BunnyNet CDN (required for suite design images)
-BUNNYNET_WRITE_API_KEY="<get from team lead>"
-BUNNYNET_READ_API_KEY="<get from team lead>"
+BUNNYNET_WRITE_API_KEY="<get from Tom Lam>"
+BUNNYNET_READ_API_KEY="<get from Tom Lam>"
 BUNNYNET_STORAGE_ZONE="digidraw-production"
 CDN_URL="https://digitaldraw.b-cdn.net"
 
