@@ -375,17 +375,6 @@ export const MyContextProvider = ({ children }) => {
         currentUserRoom: "#ff006e",
     };
 
-    const cellColors2 = {
-        name: "Starburst",
-        unbumpableRoom: "white",
-        roomNumber: "#9e0059",
-        pullMethod: "#ff7d00",
-        evenSuite: "#ffbd00",
-        oddSuite: "#ff5400",
-        selectedUserRoom: "#ff0054",
-        currentUserRoom: "#ff5c8a",
-    };
-
     const cellColors3 = {
         name: "High contrast",
         unbumpableRoom: "white",

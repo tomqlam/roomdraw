@@ -6,7 +6,6 @@ function FloorGrid({ gridData }) {
     const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
     const [isLoading, setIsLoading] = useState(!gridData?.suites?.length);
     const divRefs = useRef((gridData?.suites?.length ? gridData.suites : []).map(() => createRef()));
-    const divRef = useRef(null);
 
     useEffect(() => {
         const handleResize = () => {
@@ -21,21 +20,16 @@ function FloorGrid({ gridData }) {
         print,
         setIsModalOpen,
         setSelectedItem,
-        selectedOccupants,
         setSuiteDimensions,
-        isSuiteNoteModalOpen,
         setSelectedOccupants,
         setSelectedSuiteObject,
         getNameById,
         setSelectedRoomObject,
         setPullMethod,
-        cellColors,
         selectedID,
         userID,
         onlyShowBumpableRooms,
         userMap,
-        dormMapping,
-        selectedRoomObject,
         setIsFroshModalOpen,
         setIsSuiteNoteModalOpen,
         selectedPalette,

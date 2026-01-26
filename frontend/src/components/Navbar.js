@@ -17,17 +17,22 @@ function Navbar() {
         refreshKey,
         currPage,
         setCurrPage,
+        setUserID,
+        setSelectedID,
     } = useContext(MyContext);
 
     const [isBurgerActive, setIsBurgerActive] = useState(false);
-    const [currentUserData, setCurrentUserData] = useState(null);
+    const [, setCurrentUserData] = useState(null);
     const [myRoom, setMyRoom] = useState("Unselected"); // to show what room current logged in user is in
     const [isValidUser, setIsValidUser] = useState(false);
 
     const handleLogout = () => {
         setCredentials(null);
+        setUserID(null);
+        setSelectedID(null);
         localStorage.removeItem("jwt");
         localStorage.removeItem("userID");
+        localStorage.removeItem("selectedID");
         googleLogout();
     };
 
@@ -118,8 +123,8 @@ function Navbar() {
                 </div>
             </div>
 
-            <a
-                role="button"
+            <button
+                type="button"
                 className={`navbar-burger ${isBurgerActive ? "is-active" : ""}`}
                 aria-label="menu"
                 aria-expanded={isBurgerActive ? "true" : "false"}
@@ -128,7 +133,7 @@ function Navbar() {
                 <span aria-hidden="true"></span>
                 <span aria-hidden="true"></span>
                 <span aria-hidden="true"></span>
-            </a>
+            </button>
 
             <div
                 className={`navbar-menu-backdrop ${isBurgerActive ? "is-active" : ""}`}
@@ -264,12 +269,17 @@ function Navbar() {
 
                     {/* Logout Section */}
                     <div className="navbar-item logout-wrapper">
-                        <a className="button is-danger mobile-stack-item" onClick={handleLogout} title="Log Out">
+                        <button
+                            type="button"
+                            className="button is-danger mobile-stack-item"
+                            onClick={handleLogout}
+                            title="Log Out"
+                        >
                             <span className="icon">
                                 <i className="fas fa-sign-out-alt"></i>
                             </span>
                             <span>Log Out</span>
-                        </a>
+                        </button>
                     </div>
                 </div>
             </div>

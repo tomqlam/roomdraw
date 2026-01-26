@@ -1,5 +1,5 @@
 import "@fortawesome/fontawesome-free/css/all.min.css";
-import { GoogleLogin, googleLogout } from "@react-oauth/google";
+import { GoogleLogin } from "@react-oauth/google";
 import "bulma/css/bulma.min.css";
 import { jwtDecode } from "jwt-decode";
 import React, { useContext, useEffect, useState } from "react";
@@ -21,36 +21,27 @@ import UserSettingsModal from "./modals/UserSettingsModal";
 function App() {
     const {
         currPage,
-        setCurrPage,
         gridData,
         userMap,
         isModalOpen,
         dormMapping,
-        onlyShowBumpableRooms,
-        setOnlyShowBumpableRooms,
-        getNameById,
         selectedID,
         setSelectedID,
         rooms,
         isSuiteNoteModalOpen,
         credentials,
         setCredentials,
-        lastRefreshedTime,
         activeTab,
         setActiveTab,
         isFroshModalOpen,
         getRoomUUIDFromUserID,
-        roomRefs,
         setRefreshKey,
         handleErrorFromTokenExpiry,
         isSettingsModalOpen,
-        setIsSettingsModalOpen,
         showFloorplans,
-        setShowFloorplans,
         userID,
         setUserID,
         refreshKey,
-        isDarkMode,
         isUserSettingsModalOpen,
         setIsUserSettingsModalOpen,
         handleTakeMeThere,
@@ -58,9 +49,8 @@ function App() {
 
     const [notifications, setNotifications] = useState([]);
     const [isTransitioning, setIsTransitioning] = useState(false);
-    const [selectedUserData, setSelectedUserData] = useState(null);
+    const [, setSelectedUserData] = useState(null);
     const [selectedUserRoom, setSelectedUserRoom] = useState("Unselected"); // to show what room current selected user is in
-    const [isBurgerActive, setIsBurgerActive] = useState(false);
     const [isInDorm, setIsInDorm] = useState(true);
     const [lastSelectedID, setLastSelectedID] = useState(null); // Store last valid selection
     const [isSearchFocused, setIsSearchFocused] = useState(false); // Track if search is focused
@@ -216,16 +206,6 @@ function App() {
     const handleError = () => {
         // commented console.log ('Login Failed');
         // Optionally, handle login failure (e.g., by clearing stored credentials)
-    };
-
-    const handleLogout = () => {
-        setCredentials(null);
-        setUserID(null);
-        setSelectedID(null);
-        localStorage.removeItem("jwt");
-        localStorage.removeItem("userID");
-        localStorage.removeItem("selectedID");
-        googleLogout();
     };
 
     const fetchUserData = async (userId) => {
@@ -388,20 +368,6 @@ function App() {
         setActiveTab(tab);
     };
 
-    function getDrawNumberAndYear(id) {
-        // Find the drawNumber in laymans terms with the given id, including in-dorm status
-        // ex: given 2, returns Sophomore 46
-        if (!userMap) {
-            return "Loading...";
-        } else if (userMap[id].Preplaced) {
-            return "Preplaced";
-        } else if (userMap[id].InDorm && userMap[id].InDorm !== 0) {
-            // has in dorm
-            return `${userMap[id].Year.charAt(0).toUpperCase() + userMap[id].Year.slice(1)} ${userMap[id].DrawNumber} with ${dormMapping[userMap[id].InDorm]} In-Dorm`;
-        }
-        return `${userMap[id].Year.charAt(0).toUpperCase() + userMap[id].Year.slice(1)} ${userMap[id].DrawNumber}`;
-    }
-
     // Component for each floor, to show even and odd floors separately
     const FloorDisplay = ({ gridData, filterCondition }) => {
         return (
@@ -454,7 +420,6 @@ function App() {
                     if (handleErrorFromTokenExpiry(data)) {
                         return;
                     }
-                    const thisRoom = getRoomObjectFromUserID(selectedID);
                     setIsInDorm((prev) => !prev);
                 })
                 .catch((err) => {
@@ -699,7 +664,7 @@ function App() {
                                                 className={activeTab === dorm.dormName ? "is-active" : ""}
                                                 onClick={() => handleTabClick(dorm.dormName)}
                                             >
-                                                <a>{dorm.dormName}</a>
+                                                <button type="button">{dorm.dormName}</button>
                                             </li>
                                         ))}
                             </ul>

@@ -80,11 +80,7 @@ function BumpModal() {
         selectedSuiteObject,
         pullError,
         setPullError,
-        activeTab,
-        rooms,
-        setCredentials,
         handleErrorFromTokenExpiry,
-        dormMapping,
         getRoomUUIDFromUserID,
     } = useContext(MyContext);
 

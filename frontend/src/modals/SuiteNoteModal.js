@@ -5,15 +5,8 @@ import "../App.css";
 import { MyContext } from "../context/MyContext";
 
 function SuiteNoteModal() {
-    const {
-        selectedSuiteObject,
-        print,
-        setIsSuiteNoteModalOpen,
-        credentials,
-        setRefreshKey,
-        suiteDimensions,
-        handleErrorFromTokenExpiry,
-    } = useContext(MyContext);
+    const { selectedSuiteObject, setIsSuiteNoteModalOpen, setRefreshKey, handleErrorFromTokenExpiry } =
+        useContext(MyContext);
 
     const [suiteNotes, setSuiteNotes] = useState("");
     const [loadingSubmit, setLoadingSubmit] = useState(false);
@@ -194,34 +187,7 @@ function SuiteNoteModal() {
             }
         }
     }, []);
-    const [image, setImage] = React.useState(null);
-
-    const handleSave = () => {
-        let imageData = imgObj.current.getImageData();
-        const canvas = document.createElement("canvas");
-        canvas.width = imageData.width;
-        canvas.height = imageData.height;
-        const context = canvas.getContext("2d");
-        context.putImageData(imageData, 0, 0);
-        let base64String = canvas.toDataURL(); // For further usage
-
-        // Convert base64 to raw binary data held in a string
-        let byteString = atob(base64String.split(",")[1]);
-
-        // Separate out the mime component
-        let mimeString = base64String.split(",")[0].split(":")[1].split(";")[0];
-
-        // Write the bytes of the string to a typed array
-        let ia = new Uint8Array(byteString.length);
-        for (let i = 0; i < byteString.length; i++) {
-            ia[i] = byteString.charCodeAt(i);
-        }
-
-        let blob = new Blob([ia], { type: mimeString });
-
-        // Store the blob in state
-        setImage(blob);
-    };
+    const [, setImage] = React.useState(null);
 
     return (
         <div className="modal is-active">

@@ -7,7 +7,6 @@ const SettingsModal = () => {
     const {
         colorPalettes,
         darkColorPalettes,
-        setIsFroshModalOpen,
         selectedPalette,
         setSelectedPalette,
         setIsSettingsModalOpen,

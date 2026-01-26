@@ -3,8 +3,7 @@ import Select from "react-select";
 import { MyContext } from "../../context/MyContext";
 
 function SearchPage() {
-    const { rooms, userMap, handleTakeMeThere, handleErrorFromTokenExpiry, isDarkMode, setCurrPage } =
-        useContext(MyContext);
+    const { rooms, handleTakeMeThere, handleErrorFromTokenExpiry, isDarkMode, setCurrPage } = useContext(MyContext);
 
     const [searchType, setSearchType] = useState("rooms"); // 'rooms' or 'people'
     const [loading, setLoading] = useState(false);
@@ -25,7 +24,7 @@ function SearchPage() {
     // Derived data
     const [dormOptions, setDormOptions] = useState([]);
     const [capacityOptions, setCapacityOptions] = useState([]);
-    const [inDormOptions, setInDormOptions] = useState([]);
+    const [, setInDormOptions] = useState([]);
 
     // Add state for preplaced filter
     const [preplacedFilter, setPreplacedFilter] = useState(null);
