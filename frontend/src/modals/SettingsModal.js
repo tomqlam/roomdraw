@@ -1,6 +1,6 @@
 import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { HexColorInput, HexColorPicker } from 'react-colorful';
-import { MyContext } from './MyContext';
+import { MyContext } from '../context/MyContext';
 import './SettingsModal.css';
 
 const SettingsModal = () =>

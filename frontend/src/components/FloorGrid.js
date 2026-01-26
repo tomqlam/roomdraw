@@ -1,6 +1,6 @@
 import 'bulma/css/bulma.min.css';
 import React, { createRef, useContext, useEffect, useRef, useState } from 'react';
-import { MyContext } from './MyContext';
+import { MyContext } from '../context/MyContext';
 
 function FloorGrid({ gridData })
 {

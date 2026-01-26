@@ -1,4 +1,4 @@
-FROM golang:1.21
+FROM golang:1.25-alpine
 
 WORKDIR /app
 
@@ -8,14 +8,11 @@ COPY go.mod go.sum ./
 # Download dependencies
 RUN go mod download
 
-# Install Air for live reloading
-RUN go install github.com/cosmtrek/air@v1.49.0
+# Install Air for live reloading (moved from cosmtrek to air-verse)
+RUN go install github.com/air-verse/air@latest
 
 # Copy the rest of the code
 COPY . .
 
-# Air configuration file
-COPY .air.toml ./
-
 # Use Air for live reloading
-CMD ["air"]
+CMD ["air", "-c", ".air.toml"]

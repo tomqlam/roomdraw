@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from 'react';
 import Select from 'react-select';
-import { MyContext } from '../MyContext';
+import { MyContext } from '../../context/MyContext';
 
 function SearchPage()
 {

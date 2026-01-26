@@ -1,7 +1,7 @@
 import { googleLogout } from '@react-oauth/google';
 import { jwtDecode } from "jwt-decode";
 import React, { useContext, useEffect, useState } from 'react';
-import { MyContext } from '../MyContext';
+import { MyContext } from '../context/MyContext';
 
 function Navbar()
 {

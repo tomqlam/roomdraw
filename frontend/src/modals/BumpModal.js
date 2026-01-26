@@ -1,8 +1,8 @@
 import { jwtDecode } from "jwt-decode";
 import React, { useContext, useEffect, useState } from 'react';
 import Select from "react-select";
-import AdminBumpModalFunctions from './AdminBumpModalFunctions';
-import { MyContext } from './MyContext';
+import AdminBumpModalFunctions from '../components/AdminBumpModalFunctions';
+import { MyContext } from '../context/MyContext';
 
 // Utility function to simplify gender preferences display
 const simplifyGenderPreferences = (preferences) =>

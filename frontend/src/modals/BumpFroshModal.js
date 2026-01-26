@@ -1,7 +1,7 @@
 // BumpFroshModal.js
 import { jwtDecode } from 'jwt-decode';
 import React, { useContext, useState } from 'react';
-import { MyContext } from './MyContext';
+import { MyContext } from '../context/MyContext';
 
 
 const BumpFroshModal = () =>

@@ -1,12 +1,11 @@
 {
     "git.ignoreLimitWarning": true,
     "python.terminal.activateEnvironment": true,
-    "python.analysis.extraPaths": [
-        "./database"
-    ],
+    "python.analysis.extraPaths": ["./database"],
     "editor.formatOnSave": true,
     "editor.codeActionsOnSave": {
         "source.fixAll": "explicit",
         "source.organizeImports": "explicit"
-    }
+    },
+    "go.goroot": "/opt/homebrew/opt/go/libexec"
 }

@@ -1,6 +1,6 @@
 import { jwtDecode } from 'jwt-decode';
 import { useContext, useState } from 'react';
-import { MyContext } from './MyContext';
+import { MyContext } from '../context/MyContext';
 
 
 const AdminBumpModalFunctions = ({ closeModal }) =>

@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.sql import text
 
-dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
+dotenv_path = os.path.join(os.path.dirname(__file__), "..", ".env")
 print(dotenv_path)
 
 load_dotenv(dotenv_path=dotenv_path, verbose=True)
@@ -71,15 +71,15 @@ def populate_using_json(dorm_id: int, dorm_name: str, json_file: str):
 
 
 def populate_all():
-    populate_using_json(1, "East", "east.json")
-    populate_using_json(2, "North", "north.json")
-    populate_using_json(3, "South", "south.json")
-    populate_using_json(4, "West", "west.json")
-    populate_using_json(5, "Atwood", "atwood.json")
-    populate_using_json(6, "Sontag", "sontag.json")
-    populate_using_json(7, "Case", "case.json")
-    populate_using_json(8, "Drinkward", "drinkward.json")
-    populate_using_json(9, "Linde", "linde.json")
+    populate_using_json(1, "East", "../dorms/east.json")
+    populate_using_json(2, "North", "../dorms/north.json")
+    populate_using_json(3, "South", "../dorms/south.json")
+    populate_using_json(4, "West", "../dorms/west.json")
+    populate_using_json(5, "Atwood", "../dorms/atwood.json")
+    populate_using_json(6, "Sontag", "../dorms/sontag.json")
+    populate_using_json(7, "Case", "../dorms/case.json")
+    populate_using_json(8, "Drinkward", "../dorms/drinkward.json")
+    populate_using_json(9, "Linde", "../dorms/linde.json")
 
 
 populate_all()

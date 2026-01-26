@@ -6,17 +6,17 @@ import React, { useContext, useEffect, useState } from 'react';
 import Select from 'react-select';
 import { CSSTransition, TransitionGroup } from 'react-transition-group';
 import BlocklistManager from './Admin/BlocklistManager';
-import BumpFroshModal from './BumpFroshModal';
-import BumpModal from './BumpModal';
+import BumpFroshModal from './modals/BumpFroshModal';
+import BumpModal from './modals/BumpModal';
 import Navbar from './components/Navbar';
-import FAQModal from './FAQModal';
-import FloorGrid from './FloorGrid';
-import { MyContext } from './MyContext';
-import SearchPage from './Search/SearchPage';
-import SettingsModal from './SettingsModal';
+import FAQModal from './modals/FAQModal';
+import FloorGrid from './components/FloorGrid';
+import { MyContext } from './context/MyContext';
+import SearchPage from './pages/Search/SearchPage';
+import SettingsModal from './modals/SettingsModal';
 import './styles.css';
-import SuiteNoteModal from './SuiteNoteModal';
-import UserSettingsModal from './UserSettingsModal';
+import SuiteNoteModal from './modals/SuiteNoteModal';
+import UserSettingsModal from './modals/UserSettingsModal';
 
 
 function App()

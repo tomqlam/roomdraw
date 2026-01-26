@@ -1,6 +1,6 @@
 import { jwtDecode } from "jwt-decode";
 import React, { useContext, useEffect, useState } from 'react';
-import { MyContext } from './MyContext';
+import { MyContext } from '../context/MyContext';
 
 const UserSettingsModal = ({ isOpen, onClose }) =>
 {

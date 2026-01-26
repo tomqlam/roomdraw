@@ -1,8 +1,8 @@
 import { ImageEditorComponent } from '@syncfusion/ej2-react-image-editor';
 import Compressor from 'compressorjs';
 import React, { useContext, useEffect, useState } from 'react';
-import './App.css';
-import { MyContext } from './MyContext';
+import '../App.css';
+import { MyContext } from '../context/MyContext';
 
 
 function SuiteNoteModal()

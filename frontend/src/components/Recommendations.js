@@ -1,6 +1,6 @@
 import React, { useState, useContext} from 'react';
-import { MyContext } from './MyContext';
-import BumpModal from './BumpModal';
+import { MyContext } from '../context/MyContext';
+import BumpModal from '../modals/BumpModal';
 
 const Recommendations = () => {
     const {isModalOpen, setIsModalOpen} = useContext(MyContext);
