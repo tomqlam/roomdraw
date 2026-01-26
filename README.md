@@ -35,7 +35,7 @@ cd frontend && npm start
 - **Docker** - For running the backend server
 - **Node.js** (v18+) - For the React frontend
 - **Python 3.12+** - For database setup scripts
-- **PostgreSQL 14+** - For local development database
+- **PostgreSQL 16+** - For local development database
 
 ### Installation Guides
 
@@ -73,7 +73,7 @@ cd frontend && npm start
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
 # Then install dependencies
-brew install node python postgresql@14
+brew install node python postgresql@16
 brew install --cask docker
 ```
 
