@@ -63,14 +63,16 @@ body.dark-mode {
 
 body {
     margin: 0;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-        'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-        sans-serif;
+    font-family:
+        -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans",
+        "Droid Sans", "Helvetica Neue", sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     background-color: var(--body-bg);
     color: var(--text-color);
-    transition: background-color 0.2s ease, color 0.2s ease;
+    transition:
+        background-color 0.2s ease,
+        color 0.2s ease;
 }
 
 /* Navbar styles */
@@ -402,7 +404,7 @@ body.dark-mode .react-select__option--is-selected {
     width: 100% !important;
 }
 
-.react-select>div {
+.react-select > div {
     width: 100% !important;
 }
 
@@ -470,7 +472,7 @@ body.dark-mode .react-select__option--is-selected {
     display: none;
 }
 
-.switch[type="checkbox"]+label {
+.switch[type="checkbox"] + label {
     position: relative;
     display: inline-block;
     padding-left: 3.5rem;
@@ -478,8 +480,8 @@ body.dark-mode .react-select__option--is-selected {
     line-height: 24px;
 }
 
-.switch[type="checkbox"]+label::before {
-    content: '';
+.switch[type="checkbox"] + label::before {
+    content: "";
     position: absolute;
     display: block;
     left: 0;
@@ -491,8 +493,8 @@ body.dark-mode .react-select__option--is-selected {
     transition: background var(--transition-speed) ease-out;
 }
 
-.switch[type="checkbox"]+label::after {
-    content: '';
+.switch[type="checkbox"] + label::after {
+    content: "";
     position: absolute;
     display: block;
     left: 0.25rem;
@@ -504,15 +506,15 @@ body.dark-mode .react-select__option--is-selected {
     transition: left var(--transition-speed) ease-out;
 }
 
-.switch[type="checkbox"]:checked+label::before {
+.switch[type="checkbox"]:checked + label::before {
     background: var(--primary-color);
 }
 
-body.dark-mode .switch[type="checkbox"]:checked+label::before {
+body.dark-mode .switch[type="checkbox"]:checked + label::before {
     background: #666666;
 }
 
-.switch[type="checkbox"]:checked+label::after {
+.switch[type="checkbox"]:checked + label::after {
     left: 1.75rem;
 }
 
@@ -539,7 +541,9 @@ input[type="color"]::-webkit-color-swatch {
 .modal-card {
     background-color: var(--card-bg);
     border-radius: 8px;
-    box-shadow: 0 0.5em 1em -0.125em rgba(10, 10, 10, 0.1), 0 0 0 1px rgba(10, 10, 10, 0.02);
+    box-shadow:
+        0 0.5em 1em -0.125em rgba(10, 10, 10, 0.1),
+        0 0 0 1px rgba(10, 10, 10, 0.02);
     overflow: hidden;
     max-width: 550px;
     width: 95%;
@@ -555,7 +559,9 @@ input[type="color"]::-webkit-color-swatch {
 }
 
 body.dark-mode .modal-card {
-    box-shadow: 0 0.5em 1em -0.125em rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(0, 0, 0, 0.1);
+    box-shadow:
+        0 0.5em 1em -0.125em rgba(0, 0, 0, 0.4),
+        0 0 0 1px rgba(0, 0, 0, 0.1);
 }
 
 .modal-card-head {
@@ -866,7 +872,7 @@ body.dark-mode input[type="checkbox"] {
     padding: 1rem;
 }
 
-.floorplan-container>div:first-child {
+.floorplan-container > div:first-child {
     width: 100%;
     min-width: 0;
     /* Prevents flex item from overflowing */
@@ -1011,7 +1017,10 @@ body.dark-mode .theme-toggle:hover {
     background-color: var(--card-bg);
     border: none;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
+    transition:
+        background-color 0.3s ease,
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
 }
 
 /* Light mode active tab */
@@ -1714,7 +1723,6 @@ body.dark-mode .info-display.clickable:hover {
 
 /* Mobile button hover states */
 @media screen and (max-width: 768px) {
-
     .navbar-item .button:hover,
     .info-display.clickable:hover,
     .theme-toggle:hover {
@@ -1773,7 +1781,6 @@ body.dark-mode .react-select__input {
 
 /* Mobile view adjustments */
 @media screen and (max-width: 768px) {
-
     .button,
     .info-display {
         width: auto !important;
@@ -1961,7 +1968,7 @@ body.dark-mode .navbar {
         align-items: center;
     }
 
-    .search-container>div {
+    .search-container > div {
         width: 90% !important;
         max-width: 350px !important;
     }
@@ -1983,7 +1990,6 @@ body.dark-mode .navbar {
 
 /* Extra adjustments for screens where most overlap occurs */
 @media screen and (min-width: 1200px) and (max-width: 1350px) {
-
     /* Increase spacing between sections but keep it reasonable */
     .navbar-mobile-section,
     .navbar-menu-items {

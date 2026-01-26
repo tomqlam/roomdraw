@@ -1,80 +1,67 @@
-import React, { useContext, useEffect, useState } from 'react';
-import { MyContext } from '../context/MyContext';
+import React, { useContext, useEffect, useState } from "react";
+import { MyContext } from "../context/MyContext";
 
-function BlocklistManager()
-{
+function BlocklistManager() {
     const { isDarkMode } = useContext(MyContext);
     const [blocklistedUsers, setBlocklistedUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [removing, setRemoving] = useState({});
 
-    useEffect(() =>
-    {
+    useEffect(() => {
         fetchBlocklistedUsers();
     }, []);
 
-    const fetchBlocklistedUsers = () =>
-    {
+    const fetchBlocklistedUsers = () => {
         setLoading(true);
         fetch(`${process.env.REACT_APP_API_URL}/admin/blocklist`, {
             headers: {
-                'Authorization': `Bearer ${localStorage.getItem('jwt')}`
-            }
+                Authorization: `Bearer ${localStorage.getItem("jwt")}`,
+            },
         })
-            .then(response =>
-            {
-                if (!response.ok)
-                {
-                    throw new Error('Failed to fetch blocklisted users');
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error("Failed to fetch blocklisted users");
                 }
                 return response.json();
             })
-            .then(data =>
-            {
+            .then((data) => {
                 setBlocklistedUsers(data);
                 setLoading(false);
             })
-            .catch(err =>
-            {
+            .catch((err) => {
                 setError(err.message);
                 setLoading(false);
             });
     };
 
-    const removeFromBlocklist = (email) =>
-    {
-        setRemoving(prev => ({ ...prev, [email]: true }));
+    const removeFromBlocklist = (email) => {
+        setRemoving((prev) => ({ ...prev, [email]: true }));
 
         fetch(`${process.env.REACT_APP_API_URL}/admin/blocklist/remove/${email}`, {
-            method: 'POST',
+            method: "POST",
             headers: {
-                'Authorization': `Bearer ${localStorage.getItem('jwt')}`
-            }
+                Authorization: `Bearer ${localStorage.getItem("jwt")}`,
+            },
         })
-            .then(response =>
-            {
-                if (!response.ok)
-                {
-                    throw new Error('Failed to remove user from blocklist');
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error("Failed to remove user from blocklist");
                 }
                 return response.json();
             })
-            .then(() =>
-            {
+            .then(() => {
                 // Remove user from the list
-                setBlocklistedUsers(prev => prev.filter(user => user.email !== email));
-                setRemoving(prev => ({ ...prev, [email]: false }));
+                setBlocklistedUsers((prev) => prev.filter((user) => user.email !== email));
+                setRemoving((prev) => ({ ...prev, [email]: false }));
             })
-            .catch(err =>
-            {
+            .catch((err) => {
                 setError(err.message);
-                setRemoving(prev => ({ ...prev, [email]: false }));
+                setRemoving((prev) => ({ ...prev, [email]: false }));
             });
     };
 
-    if (loading)
-    {
+    if (loading) {
         return (
             <div className="section">
                 <div className="container">
@@ -90,15 +77,16 @@ function BlocklistManager()
         );
     }
 
-    if (error)
-    {
+    if (error) {
         return (
             <div className="section">
                 <div className="container">
                     <h1 className="title has-text-centered">Admin Dashboard</h1>
                     <div className="box blocklist-box">
-                        <div className={`notification is-danger ${isDarkMode ? 'is-dark' : 'is-light'}`}>
-                            <p><strong>Error:</strong> {error}</p>
+                        <div className={`notification is-danger ${isDarkMode ? "is-dark" : "is-light"}`}>
+                            <p>
+                                <strong>Error:</strong> {error}
+                            </p>
                             <button className="button is-small is-light mt-2" onClick={fetchBlocklistedUsers}>
                                 <span className="icon">
                                     <i className="fas fa-sync-alt"></i>
@@ -131,7 +119,7 @@ function BlocklistManager()
                             <div className="level-right">
                                 <div className="level-item">
                                     <button
-                                        className={`button ${isDarkMode ? 'is-dark' : 'is-light'}`}
+                                        className={`button ${isDarkMode ? "is-dark" : "is-light"}`}
                                         onClick={fetchBlocklistedUsers}
                                         title="Refresh data"
                                     >
@@ -144,12 +132,16 @@ function BlocklistManager()
                             </div>
                         </div>
                         <p className="subtitle is-6 mt-2 blocklist-subtitle">
-                            Users who have been blocklisted for excessive room clearing. These users cannot perform any room actions until removed from the blocklist.
+                            Users who have been blocklisted for excessive room clearing. These users cannot perform any
+                            room actions until removed from the blocklist.
                         </p>
                     </div>
 
                     {blocklistedUsers.length === 0 ? (
-                        <div className={`notification is-info ${isDarkMode ? 'is-dark' : 'is-light'}`} style={{ borderRadius: "8px" }}>
+                        <div
+                            className={`notification is-info ${isDarkMode ? "is-dark" : "is-light"}`}
+                            style={{ borderRadius: "8px" }}
+                        >
                             <span className="icon mr-2">
                                 <i className="fas fa-info-circle"></i>
                             </span>
@@ -168,7 +160,7 @@ function BlocklistManager()
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {blocklistedUsers.map(user => (
+                                    {blocklistedUsers.map((user) => (
                                         <tr key={user.email}>
                                             <td>
                                                 <strong>{user.email}</strong>
@@ -180,7 +172,7 @@ function BlocklistManager()
                                             <td>{user.reason}</td>
                                             <td>
                                                 <button
-                                                    className={`button is-danger ${removing[user.email] ? 'is-loading' : ''}`}
+                                                    className={`button is-danger ${removing[user.email] ? "is-loading" : ""}`}
                                                     onClick={() => removeFromBlocklist(user.email)}
                                                     disabled={removing[user.email]}
                                                 >

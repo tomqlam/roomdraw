@@ -1,28 +1,26 @@
 import { jwtDecode } from "jwt-decode";
-import React, { createContext, useEffect, useRef, useState } from 'react';
-
+import React, { createContext, useEffect, useRef, useState } from "react";
 
 export const MyContext = createContext();
 
-export const MyContextProvider = ({ children }) =>
-{
-    const [currPage, setCurrPage] = useState('Home'); //TODO DELETE
+export const MyContextProvider = ({ children }) => {
+    const [currPage, setCurrPage] = useState("Home"); //TODO DELETE
     const [isModalOpen, setIsModalOpen] = useState(false); // If bump modal is open
     const [rooms, setRooms] = useState([]); // json for all rooms
     const [selectedItem, setSelectedItem] = useState(null); // selected room number (integer)
-    const [selectedOccupants, setSelectedOccupants] = useState(['0', '0', '0', '0']); // array of occupants, '0' string for none occupant, number as string for occupant
-    const [pullMethod, setPullMethod] = useState('Pulled themselves'); // pull method currently selected in dropdown
-    const [showModalError, setShowModalError] = useState(false); // if there is an error upon submitting 
+    const [selectedOccupants, setSelectedOccupants] = useState(["0", "0", "0", "0"]); // array of occupants, '0' string for none occupant, number as string for occupant
+    const [pullMethod, setPullMethod] = useState("Pulled themselves"); // pull method currently selected in dropdown
+    const [showModalError, setShowModalError] = useState(false); // if there is an error upon submitting
     const [onlyShowBumpableRooms, setOnlyShowBumpableRooms] = useState(false); // toggle darkening nonbumpable rooms
     const [gridData, setGridData] = useState([]); // all coalesced data for every dorm
-    const [userMap, setUserMap] = useState(null); // information about all users 
+    const [userMap, setUserMap] = useState(null); // information about all users
     const [selectedRoomObject, setSelectedRoomObject] = useState(null); // json object for current room
     const [selectedSuiteObject, setSelectedSuiteObject] = useState(null); // json object for current suite
     const [refreshKey, setRefreshKey] = useState(0); // key, when incremented, refreshes the main page
     const [pullError, setPullError] = useState("There was an unknown error. Please try again."); // text of error showig up when you can't pull
     const [credentials, setCredentials] = useState(null); // jwt token for user
     const [lastRefreshedTime, setLastRefreshedTime] = useState(new Date()); // last time the page was refreshed
-    const [isSuiteNoteModalOpen, setIsSuiteNoteModalOpen] = useState(false); // If suite note modal 
+    const [isSuiteNoteModalOpen, setIsSuiteNoteModalOpen] = useState(false); // If suite note modal
     const [isFroshModalOpen, setIsFroshModalOpen] = useState(false); // If frosh modal is open
     const [suiteDimensions, setSuiteDimensions] = useState({ width: 0, height: 0 }); // dimensions of the suite
     const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false); // If theme modal is open
@@ -36,215 +34,172 @@ export const MyContextProvider = ({ children }) =>
 
     // Initialize active tab state from localStorage or default to 'Atwood'
 
-    const adminList = ["smao@g.hmc.edu", "tlam@g.hmc.edu"]
+    const adminList = ["smao@g.hmc.edu", "tlam@g.hmc.edu"];
 
-    const getRoomUUIDFromUserID = (userID) =>
-    {
+    const getRoomUUIDFromUserID = (userID) => {
         // Return null if userID is null/undefined or not a valid number
         if (!userID) return null;
 
         // Convert to number for comparison
         const userId = Number(userID);
 
-        if (rooms)
-        {
-            for (let room of rooms)
-            {
-                if (room.Occupants && room.Occupants.includes(userId))
-                {
+        if (rooms) {
+            for (let room of rooms) {
+                if (room.Occupants && room.Occupants.includes(userId)) {
                     // they are in this room
                     return room.RoomUUID;
                 }
             }
         }
         return null;
-    }
+    };
 
-    const [activeTab, setActiveTab] = useState(() =>
-    {
-        const savedTab = localStorage.getItem('activeTab');
-        return savedTab !== null ? savedTab : 'Atwood';
+    const [activeTab, setActiveTab] = useState(() => {
+        const savedTab = localStorage.getItem("activeTab");
+        return savedTab !== null ? savedTab : "Atwood";
     });
 
-    const [selectedID, setSelectedID] = useState(() =>
-    {
-        const selectedID = localStorage.getItem('selectedID');
+    const [selectedID, setSelectedID] = useState(() => {
+        const selectedID = localStorage.getItem("selectedID");
         return selectedID !== null ? selectedID : null; // Changed from '8' to null as default
     });
 
-    const [userID, setUserID] = useState(() =>
-    {
-        const userID = localStorage.getItem('userID');
+    const [userID, setUserID] = useState(() => {
+        const userID = localStorage.getItem("userID");
         return userID !== null ? userID : null; // Using null instead of '-1'
     });
 
     // Update userID when both credentials and userMap are available - this is a fallback
     // in case the direct email query didn't work
-    useEffect(() =>
-    {
-        if (credentials && userMap && !userID)
-        {
+    useEffect(() => {
+        if (credentials && userMap && !userID) {
             const decodedToken = jwtDecode(credentials);
             const userId = Object.keys(userMap || {}).find(
-                id => userMap[id].Email === decodedToken.email || id === '701'  // Temporary fix for test data
+                (id) => userMap[id].Email === decodedToken.email || id === "701" // Temporary fix for test data
             );
 
-            if (userId)
-            {
+            if (userId) {
                 setUserID(userId);
-                localStorage.setItem('userID', userId);
-                console.log('Updated userID from credentials and userMap (fallback):', userId);
+                localStorage.setItem("userID", userId);
+                console.log("Updated userID from credentials and userMap (fallback):", userId);
             }
         }
     }, [credentials, userMap, userID]);
 
-    const handleErrorFromTokenExpiry = (data) =>
-    {
-        if (data.error === "Invalid token")
-        {
+    const handleErrorFromTokenExpiry = (data) => {
+        if (data.error === "Invalid token") {
             setCredentials(null);
-            localStorage.removeItem('jwt');
+            localStorage.removeItem("jwt");
             return true;
         }
         return false;
-    }
+    };
 
-    useEffect(() =>
-    {
-        const interval = setInterval(() =>
-        {
-            if (credentials && !document.hidden)
-            {
-                setRefreshKey(prevKey => prevKey + 1);
+    useEffect(() => {
+        const interval = setInterval(() => {
+            if (credentials && !document.hidden) {
+                setRefreshKey((prevKey) => prevKey + 1);
                 setLastRefreshedTime(new Date());
                 // commented console.log ("refreshed ONE DORM");
             }
         }, 60000);
-        return () =>
-        {
+        return () => {
             clearInterval(interval);
         };
     }, [credentials, document.hidden, activeTab]);
 
     // Save state to localStorage whenever it changes
-    useEffect(() =>
-    {
-        localStorage.setItem('selectedID', selectedID);
-        localStorage.setItem('userID', userID);
+    useEffect(() => {
+        localStorage.setItem("selectedID", selectedID);
+        localStorage.setItem("userID", userID);
     }, [selectedID, userID]);
 
     // rest of your component
 
-
-
-    useEffect(() =>
-    {
+    useEffect(() => {
         // Pulls all necessary data if never done before
-        if (gridData.length !== 9 && credentials)
-        {
+        if (gridData.length !== 9 && credentials) {
             fetchUserMap();
             // getting the main page floor grid data
             fetchRoomsForDorms(["Atwood", "East", "Drinkward", "Linde", "North", "South", "Sontag", "West", "Case"]);
             // getting the room data for uuid mapping
             fetchRoomsWithUUIDs();
-        } else if (credentials)
-        {
+        } else if (credentials) {
             print("Refreshing from useEffect," + refreshKey);
             fetchRoomsForOneDorm(activeTab);
             fetchRoomsWithUUIDs();
             fetchUserMap();
         }
-
     }, [credentials, refreshKey, activeTab]);
 
     // debug print function
-    function print(text)
-    {
+    function print(text) {
         // commented console.log (text);
     }
 
-
-    function fetchUserMap()
-    {
-        if (localStorage.getItem('jwt'))
-        {
+    function fetchUserMap() {
+        if (localStorage.getItem("jwt")) {
             fetch(`${process.env.REACT_APP_API_URL}/users/idmap`, {
-                method: 'GET',
+                method: "GET",
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
+                    Authorization: `Bearer ${localStorage.getItem("jwt")}`,
                 },
             })
-                .then(res =>
-                {
+                .then((res) => {
                     return res.json();
                 })
-                .then(data =>
-                {
-                    if (handleErrorFromTokenExpiry(data))
-                    {
+                .then((data) => {
+                    if (handleErrorFromTokenExpiry(data)) {
                         return;
-                    };
+                    }
                     setUserMap(data);
                 })
-                .catch(err =>
-                {
+                .catch((err) => {
                     // commented console.log (err);
-                })
+                });
         }
-
     }
-    function fetchRoomsWithUUIDs()
-    {
-        if (localStorage.getItem('jwt'))
-        {
+    function fetchRoomsWithUUIDs() {
+        if (localStorage.getItem("jwt")) {
             fetch(`${process.env.REACT_APP_API_URL}/rooms`, {
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('jwt')}`
-                }
+                    Authorization: `Bearer ${localStorage.getItem("jwt")}`,
+                },
             })
-                .then(res =>
-                {
-                    return res.json();  // Parse the response data as JSON
+                .then((res) => {
+                    return res.json(); // Parse the response data as JSON
                 })
-                .then(data =>
-                {
-                    if (handleErrorFromTokenExpiry(data))
-                    {
+                .then((data) => {
+                    if (handleErrorFromTokenExpiry(data)) {
                         return;
-                    };
+                    }
                     setRooms(data);
                     // commented console.log (data);
-                    if (data.error)
-                    {
+                    if (data.error) {
                         print("There was an error printing rooms");
                         setCredentials(null); // nullify the credentials if there was an error, they're probably failing
-                        localStorage.removeItem('jwt');
+                        localStorage.removeItem("jwt");
                     }
                 })
-                .catch(err =>
-                {
+                .catch((err) => {
                     // commented console.log (err);
                     // commented console.log (err.error);
-                })
+                });
         }
     }
-    function fetchRoomsForOneDorm(dorm)
-    {
+    function fetchRoomsForOneDorm(dorm) {
         fetch(`${process.env.REACT_APP_API_URL}/rooms/simple/${dorm}`, {
-            method: 'GET',
+            method: "GET",
             headers: {
-                'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
+                Authorization: `Bearer ${localStorage.getItem("jwt")}`,
             },
         })
-            .then(res => res.json())
-            .then(data =>
-            {
-                if (handleErrorFromTokenExpiry(data))
-                {
+            .then((res) => res.json())
+            .then((data) => {
+                if (handleErrorFromTokenExpiry(data)) {
                     return;
                 }
-                if (!data || !data.floors || !Array.isArray(data.floors) || data.floors.length === 0)
-                {
+                if (!data || !data.floors || !Array.isArray(data.floors) || data.floors.length === 0) {
                     console.error(`Invalid data structure received for ${dorm}:`, data);
                     return;
                 }
@@ -252,149 +207,125 @@ export const MyContextProvider = ({ children }) =>
                 data = splitFloorsForCaseDorm(data, roomNumbers, floorNames);
 
                 // Ensure data.floors[0].suites exists and is an array before processing
-                if (data.floors[0] && Array.isArray(data.floors[0].suites))
-                {
-                    data.floors.forEach(floor =>
-                    {
-                        if (floor && Array.isArray(floor.suites))
-                        {
-                            floor.suites.sort((a, b) =>
-                            {
-                                if (!a.rooms || !b.rooms || !Array.isArray(a.rooms) || !Array.isArray(b.rooms))
-                                {
+                if (data.floors[0] && Array.isArray(data.floors[0].suites)) {
+                    data.floors.forEach((floor) => {
+                        if (floor && Array.isArray(floor.suites)) {
+                            floor.suites.sort((a, b) => {
+                                if (!a.rooms || !b.rooms || !Array.isArray(a.rooms) || !Array.isArray(b.rooms)) {
                                     return 0;
                                 }
                                 // Sort rooms within each suite
-                                a.rooms.sort((roomA, roomB) => String(roomA?.roomNumber || '').localeCompare(String(roomB?.roomNumber || '')));
-                                b.rooms.sort((roomA, roomB) => String(roomA?.roomNumber || '').localeCompare(String(roomB?.roomNumber || '')));
+                                a.rooms.sort((roomA, roomB) =>
+                                    String(roomA?.roomNumber || "").localeCompare(String(roomB?.roomNumber || ""))
+                                );
+                                b.rooms.sort((roomA, roomB) =>
+                                    String(roomA?.roomNumber || "").localeCompare(String(roomB?.roomNumber || ""))
+                                );
 
-                                const smallestRoomNumberA = a.rooms[0]?.roomNumber || '';
-                                const smallestRoomNumberB = b.rooms[0]?.roomNumber || '';
+                                const smallestRoomNumberA = a.rooms[0]?.roomNumber || "";
+                                const smallestRoomNumberB = b.rooms[0]?.roomNumber || "";
                                 return String(smallestRoomNumberA).localeCompare(String(smallestRoomNumberB));
                             });
                         }
                     });
                 }
 
-                setGridData(prevGridData => prevGridData.map(item => item.dormName === dorm ? data : item));
+                setGridData((prevGridData) => prevGridData.map((item) => (item.dormName === dorm ? data : item)));
             })
-            .catch(err =>
-            {
+            .catch((err) => {
                 console.error(`Error fetching rooms for ${dorm}:`, err);
             });
     }
 
-
-    function fetchRoomsForDorms(dorms)
-    {
-        const promises = dorms.map(dorm =>
-        {
+    function fetchRoomsForDorms(dorms) {
+        const promises = dorms.map((dorm) => {
             return fetch(`${process.env.REACT_APP_API_URL}/rooms/simple/${dorm}`, {
-                method: 'GET',
+                method: "GET",
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
+                    Authorization: `Bearer ${localStorage.getItem("jwt")}`,
                 },
             })
-                .then(res => res.json())  // Parse the response data as JSON
-                .then(data =>
-                {
-                    if (handleErrorFromTokenExpiry(data))
-                    {
+                .then((res) => res.json()) // Parse the response data as JSON
+                .then((data) => {
+                    if (handleErrorFromTokenExpiry(data)) {
                         return;
-                    };
+                    }
 
                     // commented console.log ("Surely");
                     data = splitFloorsForCaseDorm(data, roomNumbers, floorNames);
 
-
-                    if (Array.isArray(data.floors[0].suites))
-                    {
-                        data.floors.forEach(floor =>
-                        {
-                            if (Array.isArray(floor.suites))
-                            {
-                                floor.suites.sort((a, b) =>
-                                {
+                    if (Array.isArray(data.floors[0].suites)) {
+                        data.floors.forEach((floor) => {
+                            if (Array.isArray(floor.suites)) {
+                                floor.suites.sort((a, b) => {
                                     // Sort rooms within each suite
-                                    a.rooms.sort((roomA, roomB) => String(roomA.roomNumber).localeCompare(String(roomB.roomNumber)));
-                                    b.rooms.sort((roomA, roomB) => String(roomA.roomNumber).localeCompare(String(roomB.roomNumber)));
+                                    a.rooms.sort((roomA, roomB) =>
+                                        String(roomA.roomNumber).localeCompare(String(roomB.roomNumber))
+                                    );
+                                    b.rooms.sort((roomA, roomB) =>
+                                        String(roomA.roomNumber).localeCompare(String(roomB.roomNumber))
+                                    );
 
                                     const smallestRoomNumberA = String(a.rooms[0].roomNumber);
                                     const smallestRoomNumberB = String(b.rooms[0].roomNumber);
                                     return smallestRoomNumberA.localeCompare(smallestRoomNumberB);
                                 });
-                            } else
-                            {
+                            } else {
                                 console.error("floor.suites is not an array:", floor.suites);
                             }
                         });
-                    } else
-                    {
+                    } else {
                         console.error("data.floors[0].suites is not an array:", data.floors[0].suites);
                     }
 
                     return data;
                 })
-                .catch(err =>
-                {
+                .catch((err) => {
                     console.error(`Error fetching rooms for ${dorm}:`, err);
                 });
         });
 
         Promise.all(promises)
-            .then(dataArray =>
-            {
-                if (dataArray[0] && dataArray.length === 9)
-                {
+            .then((dataArray) => {
+                if (dataArray[0] && dataArray.length === 9) {
                     print(dataArray);
                     print("fetching roosm for dorms");
                     setGridData(dataArray);
                     // commented console.log (gridData);
                 }
-
             })
-            .catch(err =>
-            {
+            .catch((err) => {
                 console.error("Error in Promise.all:", err);
             });
     }
-    function splitFloorsForCaseDorm(dormData, roomNumbers, floorNames)
-    {
-        if (!dormData || dormData.dormName !== 'Case')
-        {
+    function splitFloorsForCaseDorm(dormData, roomNumbers, floorNames) {
+        if (!dormData || dormData.dormName !== "Case") {
             return dormData;
         }
 
         const newFloors = [];
-        if (!dormData.floors || !Array.isArray(dormData.floors))
-        {
-            console.error('Invalid floors data in Case dorm:', dormData);
+        if (!dormData.floors || !Array.isArray(dormData.floors)) {
+            console.error("Invalid floors data in Case dorm:", dormData);
             return dormData;
         }
 
-        dormData.floors.forEach((floor, index) =>
-        {
-            if (!floor || !Array.isArray(floor.suites))
-            {
-                console.error('Invalid floor data:', floor);
+        dormData.floors.forEach((floor, index) => {
+            if (!floor || !Array.isArray(floor.suites)) {
+                console.error("Invalid floor data:", floor);
                 return;
             }
 
             const firstHalfSuites = [];
             const secondHalfSuites = [];
 
-            floor.suites.forEach(suite =>
-            {
-                if (!suite || !Array.isArray(suite.rooms))
-                {
+            floor.suites.forEach((suite) => {
+                if (!suite || !Array.isArray(suite.rooms)) {
                     return;
                 }
-                const suiteHasMatchingRoom = suite.rooms.some(room => room && roomNumbers.includes(room.roomNumber));
-                if (suiteHasMatchingRoom)
-                {
+                const suiteHasMatchingRoom = suite.rooms.some((room) => room && roomNumbers.includes(room.roomNumber));
+                if (suiteHasMatchingRoom) {
                     firstHalfSuites.push(suite);
-                } else
-                {
+                } else {
                     secondHalfSuites.push(suite);
                 }
             });
@@ -422,17 +353,16 @@ export const MyContextProvider = ({ children }) =>
     // fixed mapping from dorms to numbers
 
     const dormMapping = {
-        "1": "East",
-        "2": "North",
-        "3": "South",
-        "4": "West",
-        "5": "Atwood",
-        "6": "Sontag",
-        "7": "Case",
-        "8": "Drinkward",
-        "9": "Linde"
+        1: "East",
+        2: "North",
+        3: "South",
+        4: "West",
+        5: "Atwood",
+        6: "Sontag",
+        7: "Case",
+        8: "Drinkward",
+        9: "Linde",
     };
-
 
     const cellColors = {
         name: "Default",
@@ -707,55 +637,45 @@ export const MyContextProvider = ({ children }) =>
     ];
 
     // Theme preference setup
-    const getInitialThemeMode = () =>
-    {
-        const savedThemeMode = localStorage.getItem('themeMode') || 'system';
+    const getInitialThemeMode = () => {
+        const savedThemeMode = localStorage.getItem("themeMode") || "system";
 
         // If 'system' is selected, use the system preference
-        if (savedThemeMode === 'system')
-        {
-            return window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (savedThemeMode === "system") {
+            return window.matchMedia("(prefers-color-scheme: dark)").matches;
         }
 
         // Otherwise use the explicit choice
-        return savedThemeMode === 'dark';
+        return savedThemeMode === "dark";
     };
 
     // Initialize dark mode from preferences
     const [isDarkMode, setIsDarkMode] = useState(getInitialThemeMode());
 
     // Add listener for system preference changes if using 'system' mode
-    useEffect(() =>
-    {
-        const themeMode = localStorage.getItem('themeMode') || 'system';
+    useEffect(() => {
+        const themeMode = localStorage.getItem("themeMode") || "system";
 
-        if (themeMode === 'system')
-        {
-            const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        if (themeMode === "system") {
+            const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
 
-            const handleChange = (e) =>
-            {
+            const handleChange = (e) => {
                 setIsDarkMode(e.matches);
             };
 
             // Modern way to add listener
-            if (mediaQuery.addEventListener)
-            {
-                mediaQuery.addEventListener('change', handleChange);
-            } else
-            {
+            if (mediaQuery.addEventListener) {
+                mediaQuery.addEventListener("change", handleChange);
+            } else {
                 // For older browsers
                 mediaQuery.addListener(handleChange);
             }
 
             // Clean up
-            return () =>
-            {
-                if (mediaQuery.removeEventListener)
-                {
-                    mediaQuery.removeEventListener('change', handleChange);
-                } else
-                {
+            return () => {
+                if (mediaQuery.removeEventListener) {
+                    mediaQuery.removeEventListener("change", handleChange);
+                } else {
                     mediaQuery.removeListener(handleChange);
                 }
             };
@@ -763,36 +683,29 @@ export const MyContextProvider = ({ children }) =>
     }, []);
 
     // Apply dark mode class to body
-    useEffect(() =>
-    {
-        if (isDarkMode)
-        {
-            document.body.classList.add('dark-mode');
-        } else
-        {
-            document.body.classList.remove('dark-mode');
+    useEffect(() => {
+        if (isDarkMode) {
+            document.body.classList.add("dark-mode");
+        } else {
+            document.body.classList.remove("dark-mode");
         }
     }, [isDarkMode]);
 
-    const [selectedPalette, setSelectedPalette] = useState(() =>
-    {
-        const savedMode = localStorage.getItem('darkMode');
+    const [selectedPalette, setSelectedPalette] = useState(() => {
+        const savedMode = localStorage.getItem("darkMode");
         const isDark = savedMode ? JSON.parse(savedMode) : false;
 
-        const storedPalette = localStorage.getItem('selectedPalette');
-        if (storedPalette)
-        {
+        const storedPalette = localStorage.getItem("selectedPalette");
+        if (storedPalette) {
             const palette = JSON.parse(storedPalette);
             // Check if the stored palette matches the current mode
-            if (isDark)
-            {
+            if (isDark) {
                 // If dark mode, make sure we use a dark palette
-                const darkPaletteIndex = darkColorPalettes.findIndex(p => p.name === palette.name);
+                const darkPaletteIndex = darkColorPalettes.findIndex((p) => p.name === palette.name);
                 return darkPaletteIndex !== -1 ? darkColorPalettes[darkPaletteIndex] : darkColorPalettes[0];
-            } else
-            {
+            } else {
                 // If light mode, make sure we use a light palette
-                const lightPaletteIndex = colorPalettes.findIndex(p => p.name === palette.name);
+                const lightPaletteIndex = colorPalettes.findIndex((p) => p.name === palette.name);
                 return lightPaletteIndex !== -1 ? colorPalettes[lightPaletteIndex] : colorPalettes[0];
             }
         }
@@ -802,63 +715,49 @@ export const MyContextProvider = ({ children }) =>
     });
 
     // Switch palette based on dark mode changes
-    useEffect(() =>
-    {
+    useEffect(() => {
         // Get current palette name
         const currentPaletteName = selectedPalette.name;
 
-        if (isDarkMode)
-        {
+        if (isDarkMode) {
             // Switch to dark equivalent
-            const darkPaletteIndex = darkColorPalettes.findIndex(palette => palette.name === currentPaletteName);
-            if (darkPaletteIndex !== -1)
-            {
+            const darkPaletteIndex = darkColorPalettes.findIndex((palette) => palette.name === currentPaletteName);
+            if (darkPaletteIndex !== -1) {
                 setSelectedPalette(darkColorPalettes[darkPaletteIndex]);
-            } else
-            {
+            } else {
                 // Fallback to first dark palette
                 setSelectedPalette(darkColorPalettes[0]);
             }
-        } else
-        {
+        } else {
             // Switch to light equivalent
-            const lightPaletteIndex = colorPalettes.findIndex(palette => palette.name === currentPaletteName);
-            if (lightPaletteIndex !== -1)
-            {
+            const lightPaletteIndex = colorPalettes.findIndex((palette) => palette.name === currentPaletteName);
+            if (lightPaletteIndex !== -1) {
                 setSelectedPalette(colorPalettes[lightPaletteIndex]);
-            } else
-            {
+            } else {
                 // Fallback to first light palette
                 setSelectedPalette(colorPalettes[0]);
             }
         }
     }, [isDarkMode]);
 
-    const getNameById = (id) =>
-    {
-        if (id === null || id === -1)
-        {
+    const getNameById = (id) => {
+        if (id === null || id === -1) {
             return "";
         }
         // given an ID, return the First and Last name of the user
-        if (id && userMap)
-        {
+        if (id && userMap) {
             id = id.toString();
-            if (userMap[id] === undefined)
-            {
-                return '';
+            if (userMap[id] === undefined) {
+                return "";
             }
             return `${userMap[id].FirstName} ${userMap[id].LastName}`;
         }
         return "";
-
     };
 
-    const handleTakeMeThere = (myLocationString, isCurrentUser = false) =>
-    {
-        const words = myLocationString.split(' ');
-        if (words.length === 2)
-        {
+    const handleTakeMeThere = (myLocationString, isCurrentUser = false) => {
+        const words = myLocationString.split(" ");
+        if (words.length === 2) {
             setActiveTab(words[0]);
         }
 
@@ -867,23 +766,21 @@ export const MyContextProvider = ({ children }) =>
         const roomUUID = getRoomUUIDFromUserID(targetUserID);
 
         // Delay the scrolling until after the tab has finished switching
-        setTimeout(() =>
-        {
+        setTimeout(() => {
             const roomRef = roomRefs.current[roomUUID];
-            if (roomRef)
-            {
+            if (roomRef) {
                 // Calculate position to scroll to (element's top position - half viewport height)
                 const elementRect = roomRef.getBoundingClientRect();
                 const absoluteElementTop = elementRect.top + window.pageYOffset;
-                const middle = absoluteElementTop - (window.innerHeight / 2);
+                const middle = absoluteElementTop - window.innerHeight / 2;
 
                 window.scrollTo({
                     top: middle,
-                    behavior: 'smooth'
+                    behavior: "smooth",
                 });
             }
         }, 0);
-    }
+    };
 
     const sharedData = {
         currPage,
@@ -950,12 +847,8 @@ export const MyContextProvider = ({ children }) =>
         setIsUserSettingsModalOpen,
         myRoom,
         setMyRoom,
-        handleTakeMeThere
+        handleTakeMeThere,
     };
 
-    return (
-        <MyContext.Provider value={sharedData}>
-            {children}
-        </MyContext.Provider>
-    );
+    return <MyContext.Provider value={sharedData}>{children}</MyContext.Provider>;
 };

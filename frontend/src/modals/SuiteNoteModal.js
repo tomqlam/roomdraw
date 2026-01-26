@@ -1,13 +1,10 @@
-import { ImageEditorComponent } from '@syncfusion/ej2-react-image-editor';
-import Compressor from 'compressorjs';
-import React, { useContext, useEffect, useState } from 'react';
-import '../App.css';
-import { MyContext } from '../context/MyContext';
+import { ImageEditorComponent } from "@syncfusion/ej2-react-image-editor";
+import Compressor from "compressorjs";
+import React, { useContext, useEffect, useState } from "react";
+import "../App.css";
+import { MyContext } from "../context/MyContext";
 
-
-function SuiteNoteModal()
-{
-
+function SuiteNoteModal() {
     const {
         selectedSuiteObject,
         print,
@@ -16,35 +13,30 @@ function SuiteNoteModal()
         setRefreshKey,
         suiteDimensions,
         handleErrorFromTokenExpiry,
-
-
     } = useContext(MyContext);
 
-    const [suiteNotes, setSuiteNotes] = useState('');
+    const [suiteNotes, setSuiteNotes] = useState("");
     const [loadingSubmit, setLoadingSubmit] = useState(false);
     const [loadingClearNotes, setLoadingClearNotes] = useState(false);
     const [isBlocklisted, setIsBlocklisted] = useState(false);
-    const [blocklistMessage, setBlocklistMessage] = useState('');
+    const [blocklistMessage, setBlocklistMessage] = useState("");
 
-    useEffect(() =>
-    {
-        if (selectedSuiteObject)
-        {
+    useEffect(() => {
+        if (selectedSuiteObject) {
             setSuiteNotes(selectedSuiteObject.suiteDesign);
         }
     }, []);
 
     // Function to check for 403 blocklist responses
-    const handleBlocklistCheck = (response) =>
-    {
-        if (response.status === 403)
-        {
-            return response.json().then(data =>
-            {
-                if (data.blocklisted)
-                {
+    const handleBlocklistCheck = (response) => {
+        if (response.status === 403) {
+            return response.json().then((data) => {
+                if (data.blocklisted) {
                     setIsBlocklisted(true);
-                    setBlocklistMessage(data.error || 'Your account has been temporarily restricted due to excessive room clearing. Please contact an administrator.');
+                    setBlocklistMessage(
+                        data.error ||
+                            "Your account has been temporarily restricted due to excessive room clearing. Please contact an administrator."
+                    );
                     return true;
                 }
                 return false;
@@ -53,126 +45,105 @@ function SuiteNoteModal()
         return Promise.resolve(false);
     };
 
-    const updateSuiteNotes = (notes) =>
-    {
+    const updateSuiteNotes = (notes) => {
         let imageData = imgObj.current.getImageData();
-        const canvas = document.createElement('canvas');
+        const canvas = document.createElement("canvas");
         canvas.width = imageData.width;
         canvas.height = imageData.height;
-        const context = canvas.getContext('2d');
+        const context = canvas.getContext("2d");
         context.putImageData(imageData, 0, 0);
 
         // Convert canvas to blob
-        canvas.toBlob((blob) =>
-        {
+        canvas.toBlob((blob) => {
             // Compress the blob
             new Compressor(blob, {
                 quality: 0.5,
-                success: (compressedResult) =>
-                {
+                success: (compressedResult) => {
                     // Store the compressed blob in state
                     setImage(compressedResult);
 
                     const url = `${process.env.REACT_APP_API_URL}/suites/design/${selectedSuiteObject.suiteUUID}`;
                     const formData = new FormData();
-                    formData.append('suite_design', compressedResult, 'suite_design.jpg');
+                    formData.append("suite_design", compressedResult, "suite_design.jpg");
 
                     fetch(url, {
-                        method: 'POST',
+                        method: "POST",
                         headers: {
-                            'Authorization': `Bearer ${localStorage.getItem('jwt')}`
+                            Authorization: `Bearer ${localStorage.getItem("jwt")}`,
                         },
                         body: formData,
                     })
-                        .then(response =>
-                        {
+                        .then((response) => {
                             // Check for blocklist first
-                            return handleBlocklistCheck(response).then(isBlocklisted =>
-                            {
-                                if (isBlocklisted)
-                                {
+                            return handleBlocklistCheck(response).then((isBlocklisted) => {
+                                if (isBlocklisted) {
                                     setLoadingSubmit(false);
                                     return null;
                                 }
                                 return response.json();
                             });
                         })
-                        .then(data =>
-                        {
+                        .then((data) => {
                             if (!data) return; // If blocklisted, skip this part
 
-                            if (data.error)
-                            {
-                                if (handleErrorFromTokenExpiry(data))
-                                {
+                            if (data.error) {
+                                if (handleErrorFromTokenExpiry(data)) {
                                     return;
-                                };
+                                }
                                 setLoadingSubmit(false);
-                            } else
-                            {
-                                // updated suite successfully 
+                            } else {
+                                // updated suite successfully
                                 setLoadingSubmit(false);
                                 setIsSuiteNoteModalOpen(false);
-                                setRefreshKey(prevKey => prevKey + 1);
+                                setRefreshKey((prevKey) => prevKey + 1);
                                 // commented console.log ("refreshing");
                             }
                         })
-                        .catch((error) =>
-                        {
-                            console.error('Error:', error);
+                        .catch((error) => {
+                            console.error("Error:", error);
                             setLoadingSubmit(false);
                         });
                 },
             });
-        }, 'image/jpeg');
-    }
+        }, "image/jpeg");
+    };
 
-
-    const deleteSuiteNotes = (notes) =>
-    {
+    const deleteSuiteNotes = (notes) => {
         fetch(`${process.env.REACT_APP_API_URL}/suites/design/remove/${selectedSuiteObject.suiteUUID}`, {
-            method: 'POST',
+            method: "POST",
             headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('jwt')}`
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${localStorage.getItem("jwt")}`,
             },
         })
-            .then(response =>
-            {
+            .then((response) => {
                 // Check for blocklist first
-                return handleBlocklistCheck(response).then(isBlocklisted =>
-                {
-                    if (isBlocklisted)
-                    {
+                return handleBlocklistCheck(response).then((isBlocklisted) => {
+                    if (isBlocklisted) {
                         setLoadingClearNotes(false);
                         return null;
                     }
                     return response.json();
                 });
             })
-            .then(data =>
-            {
+            .then((data) => {
                 if (!data) return; // If blocklisted, skip this part
 
-                if (data.error)
-                {
+                if (data.error) {
                     // commented console.log (data.error);
                     setLoadingClearNotes(false);
-                } else
-                {
-                    // updated suite successfully 
+                } else {
+                    // updated suite successfully
                     setLoadingClearNotes(false);
                     setIsSuiteNoteModalOpen(false);
-                    setRefreshKey(prevKey => prevKey + 1);
+                    setRefreshKey((prevKey) => prevKey + 1);
                 }
             })
-            .catch((error) =>
-            {
-                console.error('Error:', error);
+            .catch((error) => {
+                console.error("Error:", error);
                 setLoadingClearNotes(false);
             });
-    }
-
+    };
 
     const imgObj = React.useRef(null);
 
@@ -184,10 +155,8 @@ function SuiteNoteModal()
     //     }
     //   }
 
-    useEffect(() =>
-    {
-        if (imgObj.current)
-        {
+    useEffect(() => {
+        if (imgObj.current) {
             // const width = suiteDimensions.width * 3; // replace with your desired width
             // const height = suiteDimensions.height * 3; // replace with your desired height
 
@@ -216,39 +185,35 @@ function SuiteNoteModal()
 
             // // Convert the canvas to a data URL
             // const url = canvas.toDataURL('image/png');
-            if (selectedSuiteObject.suiteDesign)
-            {
+            if (selectedSuiteObject.suiteDesign) {
                 const url = selectedSuiteObject.suiteDesign;
                 // commented console.log (selectedSuiteObject);
 
                 // Open the image in the ImageEditorComponent
                 imgObj.current.open(url);
             }
-
         }
     }, []);
     const [image, setImage] = React.useState(null);
 
-    const handleSave = () =>
-    {
+    const handleSave = () => {
         let imageData = imgObj.current.getImageData();
-        const canvas = document.createElement('canvas');
+        const canvas = document.createElement("canvas");
         canvas.width = imageData.width;
         canvas.height = imageData.height;
-        const context = canvas.getContext('2d');
+        const context = canvas.getContext("2d");
         context.putImageData(imageData, 0, 0);
         let base64String = canvas.toDataURL(); // For further usage
 
         // Convert base64 to raw binary data held in a string
-        let byteString = atob(base64String.split(',')[1]);
+        let byteString = atob(base64String.split(",")[1]);
 
         // Separate out the mime component
-        let mimeString = base64String.split(',')[0].split(':')[1].split(';')[0];
+        let mimeString = base64String.split(",")[0].split(":")[1].split(";")[0];
 
         // Write the bytes of the string to a typed array
         let ia = new Uint8Array(byteString.length);
-        for (let i = 0; i < byteString.length; i++)
-        {
+        for (let i = 0; i < byteString.length; i++) {
             ia[i] = byteString.charCodeAt(i);
         }
 
@@ -258,15 +223,17 @@ function SuiteNoteModal()
         setImage(blob);
     };
 
-
-
     return (
         <div className="modal is-active">
             <div className="modal-background" onClick={() => setIsSuiteNoteModalOpen(false)}></div>
             <div className="modal-card">
                 <header className="modal-card-head">
                     <p className="modal-card-title">Update suite design</p>
-                    <button className="delete" aria-label="close" onClick={() => setIsSuiteNoteModalOpen(false)}></button>
+                    <button
+                        className="delete"
+                        aria-label="close"
+                        onClick={() => setIsSuiteNoteModalOpen(false)}
+                    ></button>
                 </header>
                 <section className="modal-card-body">
                     {isBlocklisted ? (
@@ -281,8 +248,11 @@ function SuiteNoteModal()
                             <p>First you must upload any picture, then crop & overlay text on top!</p>
                             <p>Please do not submit inappropriate pictures, or pictures too thin/tall.</p> <br />
                             {/* <input type="file" id="fileUpload" /> */}
-                            <div id="container" style={{ width: '100%', height: '50vh' }}>
-                                <ImageEditorComponent toolbar={['Crop', 'Transform', 'Annotate', 'Image', 'ZoomIn', 'ZoomOut',]} ref={imgObj} />
+                            <div id="container" style={{ width: "100%", height: "50vh" }}>
+                                <ImageEditorComponent
+                                    toolbar={["Crop", "Transform", "Annotate", "Image", "ZoomIn", "ZoomOut"]}
+                                    ref={imgObj}
+                                />
                             </div>
                         </>
                     )}
@@ -294,11 +264,10 @@ function SuiteNoteModal()
                         onChange={event => setSuiteNotes(event.target.value)}
                     /> */}
                 </section>
-                <footer className="modal-card-foot" style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <footer className="modal-card-foot" style={{ display: "flex", justifyContent: "space-between" }}>
                     <button
                         className={`button is-primary ${loadingSubmit && "is-loading"}`}
-                        onClick={() =>
-                        {
+                        onClick={() => {
                             setLoadingSubmit(true);
                             updateSuiteNotes(suiteNotes);
                         }}
@@ -308,8 +277,7 @@ function SuiteNoteModal()
                     </button>
                     <button
                         className={`button is-danger ${loadingClearNotes && "is-loading"}`}
-                        onClick={() =>
-                        {
+                        onClick={() => {
                             setLoadingClearNotes(true);
                             deleteSuiteNotes();
                         }}

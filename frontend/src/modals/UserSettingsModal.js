@@ -1,42 +1,36 @@
 import { jwtDecode } from "jwt-decode";
-import React, { useContext, useEffect, useState } from 'react';
-import { MyContext } from '../context/MyContext';
+import React, { useContext, useEffect, useState } from "react";
+import { MyContext } from "../context/MyContext";
 
-const UserSettingsModal = ({ isOpen, onClose }) =>
-{
+const UserSettingsModal = ({ isOpen, onClose }) => {
     const { credentials } = useContext(MyContext);
     const [notificationsEnabled, setNotificationsEnabled] = useState(false);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() =>
-    {
-        if (credentials && isOpen)
-        {
+    useEffect(() => {
+        if (credentials && isOpen) {
             const decodedToken = jwtDecode(credentials);
             const userEmail = decodedToken.email;
 
             // Fetch current notification preferences
             fetch(`${process.env.REACT_APP_API_URL}/users/notifications?email=${encodeURIComponent(userEmail)}`, {
                 headers: {
-                    'Authorization': `Bearer ${credentials}`,
-                }
+                    Authorization: `Bearer ${credentials}`,
+                },
             })
-                .then(res => res.json())
-                .then(data =>
-                {
+                .then((res) => res.json())
+                .then((data) => {
                     setNotificationsEnabled(data.enabled);
                     setLoading(false);
                 })
-                .catch(err =>
-                {
-                    console.error('Failed to fetch notification preferences:', err);
+                .catch((err) => {
+                    console.error("Failed to fetch notification preferences:", err);
                     setLoading(false);
                 });
         }
     }, [credentials, isOpen]);
 
-    const handleToggleNotifications = () =>
-    {
+    const handleToggleNotifications = () => {
         if (!credentials) return;
 
         const decodedToken = jwtDecode(credentials);
@@ -44,33 +38,31 @@ const UserSettingsModal = ({ isOpen, onClose }) =>
 
         setLoading(true);
         fetch(`${process.env.REACT_APP_API_URL}/users/notifications`, {
-            method: 'POST',
+            method: "POST",
             headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${credentials}`,
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${credentials}`,
             },
             body: JSON.stringify({
                 email: userEmail,
-                enabled: !notificationsEnabled
-            })
+                enabled: !notificationsEnabled,
+            }),
         })
-            .then(res => res.json())
-            .then(data =>
-            {
+            .then((res) => res.json())
+            .then((data) => {
                 setNotificationsEnabled(!notificationsEnabled);
                 setLoading(false);
             })
-            .catch(err =>
-            {
-                console.error('Failed to update notification preferences:', err);
+            .catch((err) => {
+                console.error("Failed to update notification preferences:", err);
                 setLoading(false);
             });
     };
 
     return (
-        <div className={`modal ${isOpen ? 'is-active' : ''}`}>
+        <div className={`modal ${isOpen ? "is-active" : ""}`}>
             <div className="modal-background" onClick={onClose}></div>
-            <div className="modal-card" style={{ maxWidth: '500px' }}>
+            <div className="modal-card" style={{ maxWidth: "500px" }}>
                 <header className="modal-card-head">
                     <p className="modal-card-title">
                         <span className="icon-text">
@@ -80,11 +72,7 @@ const UserSettingsModal = ({ isOpen, onClose }) =>
                             <span>User Settings</span>
                         </span>
                     </p>
-                    <button
-                        className="delete"
-                        aria-label="close"
-                        onClick={onClose}
-                    ></button>
+                    <button className="delete" aria-label="close" onClick={onClose}></button>
                 </header>
 
                 <section className="modal-card-body">
@@ -100,17 +88,16 @@ const UserSettingsModal = ({ isOpen, onClose }) =>
                                     className="mr-2"
                                 />
                                 Receive email notifications when you are bumped from a room
-                                <p className="help">You will receive an email when someone bumps you from your current room</p>
+                                <p className="help">
+                                    You will receive an email when someone bumps you from your current room
+                                </p>
                             </label>
                         </div>
                     </div>
                 </section>
 
-                <footer className="modal-card-foot" style={{ justifyContent: 'flex-end' }}>
-                    <button
-                        className="button is-primary"
-                        onClick={onClose}
-                    >
+                <footer className="modal-card-foot" style={{ justifyContent: "flex-end" }}>
+                    <button className="button is-primary" onClick={onClose}>
                         <span className="icon">
                             <i className="fas fa-check"></i>
                         </span>
@@ -122,4 +109,4 @@ const UserSettingsModal = ({ isOpen, onClose }) =>
     );
 };
 
-export default UserSettingsModal; 
+export default UserSettingsModal;
