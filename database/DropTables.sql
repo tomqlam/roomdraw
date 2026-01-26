@@ -3,3 +3,4 @@ DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS suitegroups;
 DROP TABLE IF EXISTS suites;
 DROP TABLE IF EXISTS user_rate_limits;
+DROP TABLE IF EXISTS transaction_logs;

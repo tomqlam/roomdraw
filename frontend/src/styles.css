@@ -2026,25 +2026,25 @@ body.dark-mode .navbar {
     }
 }
 
-/* BlacklistManager styles */
-.blacklist-box {
+/* BlocklistManager styles */
+.blocklist-box {
     background-color: var(--card-bg);
     box-shadow: var(--box-shadow);
     color: var(--text-color);
     border-radius: 8px;
 }
 
-.blacklist-loading-box {
+.blocklist-loading-box {
     background-color: var(--card-bg);
     box-shadow: var(--box-shadow);
     padding: 3rem;
 }
 
-.blacklist-loading-icon {
+.blocklist-loading-icon {
     color: var(--text-color);
 }
 
-.blacklist-subtitle {
+.blocklist-subtitle {
     color: var(--text-muted);
 }
 
@@ -2244,23 +2244,23 @@ body.dark-mode .dark-mode-table td strong {
     font-weight: 500;
 }
 
-/* Blacklist table specific styles */
-.blacklist-table td {
+/* Blocklist table specific styles */
+.blocklist-table td {
     vertical-align: middle !important;
 }
 
-.blacklist-table .tag.is-danger {
+.blocklist-table .tag.is-danger {
     font-weight: 500;
 }
 
-body.dark-mode .blacklist-table .button.is-primary {
+body.dark-mode .blocklist-table .button.is-primary {
     background-color: rgba(0, 209, 178, 0.2) !important;
     color: #9fefde !important;
     border: 1px solid rgba(0, 209, 178, 0.3) !important;
     transition: all 0.3s ease;
 }
 
-body.dark-mode .blacklist-table .button.is-primary:hover {
+body.dark-mode .blocklist-table .button.is-primary:hover {
     background-color: rgba(0, 209, 178, 0.3) !important;
     color: #b8f4e6 !important;
     border-color: rgba(0, 209, 178, 0.4) !important;

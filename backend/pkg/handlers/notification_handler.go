@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"database/sql"
 	"log"
 	"net/http"
 	"roomdraw/backend/pkg/database"
@@ -85,15 +86,23 @@ func GetNotificationPreference(c *gin.Context) {
 
 func SendBumpNotification(userID int, roomID string, dormName string) {
 	var user models.UserRaw
+	var email sql.NullString
 	err := database.DB.QueryRow(
 		"SELECT id, first_name, last_name, email, notifications_enabled FROM users WHERE id = $1",
 		userID,
-	).Scan(&user.Id, &user.FirstName, &user.LastName, &user.Email, &user.NotificationsEnabled)
+	).Scan(&user.Id, &user.FirstName, &user.LastName, &email, &user.NotificationsEnabled)
 
 	if err != nil {
 		log.Printf("Failed to fetch user: %v", err)
 		return // User not found
 	}
+
+	// Handle NULL email
+	if !email.Valid || email.String == "" {
+		log.Printf("User %d has no email, skipping notification", userID)
+		return
+	}
+	user.Email = email.String
 
 	log.Println("User: ", user)
 

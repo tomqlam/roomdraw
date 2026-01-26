@@ -97,7 +97,7 @@ function BumpModal()
         clearRoomCount: 0,
         maxDailyClears: 10,
         remainingClears: 10,
-        isBlacklisted: false
+        isBlocklisted: false
     });
     // Add state for room clearing confirmation
     const [showClearConfirmation, setShowClearConfirmation] = useState(false);
@@ -174,17 +174,17 @@ function BumpModal()
             });
     };
 
-    // Function to check for 403 blacklist responses
-    const handleBlacklistCheck = (response) =>
+    // Function to check for 403 blocklist responses
+    const handleBlocklistCheck = (response) =>
     {
         if (response.status === 403)
         {
             return response.json().then(data =>
             {
-                if (data.blacklisted)
+                if (data.blocklisted)
                 {
-                    // Update the user's blacklist status
-                    setClearRoomStats(prev => ({ ...prev, isBlacklisted: true }));
+                    // Update the user's blocklist status
+                    setClearRoomStats(prev => ({ ...prev, isBlocklisted: true }));
                     setPullError(data.error || 'Your account has been temporarily restricted due to excessive room clearing. Please contact an administrator.');
                     setShowModalError(true);
                     return true;
@@ -317,10 +317,10 @@ function BumpModal()
             })
                 .then(response =>
                 {
-                    // Check for blacklist first
-                    return handleBlacklistCheck(response).then(isBlacklisted =>
+                    // Check for blocklist first
+                    return handleBlocklistCheck(response).then(isBlocklisted =>
                     {
-                        if (isBlacklisted)
+                        if (isBlocklisted)
                         {
                             setLoadingSubmit(false);
                             resolve(false);
@@ -335,7 +335,7 @@ function BumpModal()
                 })
                 .then(data =>
                 {
-                    if (!data) return; // If blacklisted, skip this part
+                    if (!data) return; // If blocklisted, skip this part
 
                     if (data.error)
                     {
@@ -448,10 +448,10 @@ function BumpModal()
             })
                 .then(response =>
                 {
-                    // Check for blacklist first
-                    return handleBlacklistCheck(response).then(isBlacklisted =>
+                    // Check for blocklist first
+                    return handleBlocklistCheck(response).then(isBlocklisted =>
                     {
-                        if (isBlacklisted)
+                        if (isBlocklisted)
                         {
                             setLoadingClearRoom(false);
                             if (personIndex !== -1)
@@ -466,7 +466,7 @@ function BumpModal()
                 })
                 .then(data =>
                 {
-                    if (!data) return; // If blacklisted, skip this part
+                    if (!data) return; // If blocklisted, skip this part
 
                     if (data.error)
                     {
@@ -479,10 +479,10 @@ function BumpModal()
                         setShowModalError(true);
                         resolve(false);
 
-                        if (data.blacklisted)
+                        if (data.blocklisted)
                         {
-                            // Update the user's blacklist status
-                            setClearRoomStats(prev => ({ ...prev, isBlacklisted: true }));
+                            // Update the user's blocklist status
+                            setClearRoomStats(prev => ({ ...prev, isBlocklisted: true }));
                         }
                     } else
                     {
@@ -493,7 +493,7 @@ function BumpModal()
                                 clearRoomCount: data.clearRoomCount,
                                 maxDailyClears: data.maxDailyClears,
                                 remainingClears: data.remainingClears,
-                                isBlacklisted: data.isBlacklisted || false
+                                isBlocklisted: data.isBlocklisted || false
                             });
                         }
 
@@ -830,13 +830,13 @@ function BumpModal()
                             {
                                 initiateRoomClear(selectedRoomObject.roomUUID, true, -1);
                             }}
-                            disabled={clearRoomStats.remainingClears <= 0 || clearRoomStats.isBlacklisted || selectedRoomObject.pullPriority.isPreplaced}
+                            disabled={clearRoomStats.remainingClears <= 0 || clearRoomStats.isBlocklisted || selectedRoomObject.pullPriority.isPreplaced}
                             title={selectedRoomObject.pullPriority.isPreplaced ? "Cannot clear a preplaced room" : ""}
                         >
                             Clear room
                         </button>
                     </div>
-                    {clearRoomStats.isBlacklisted ? (
+                    {clearRoomStats.isBlocklisted ? (
                         <div className="notification is-danger" style={{ marginTop: '10px', padding: '10px', fontSize: '0.85rem' }}>
                             Your account has been temporarily restricted due to excessive room clearing. Please contact an administrator.
                         </div>
@@ -854,7 +854,7 @@ function BumpModal()
                             Clearing rooms should be done sparingly. Excessive usage will result in account restriction.
                             {clearRoomStats.resetsInMinutes && (
                                 <div style={{ marginTop: '5px' }}>
-                                    Limits reset at midnight Pacific Time which ({formatTimeUntilReset(clearRoomStats.resetsInMinutes)})
+                                    Limits reset at midnight Pacific Time which is ({formatTimeUntilReset(clearRoomStats.resetsInMinutes)})
                                 </div>
                             )}
                         </div>

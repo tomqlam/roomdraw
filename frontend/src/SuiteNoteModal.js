@@ -23,8 +23,8 @@ function SuiteNoteModal()
     const [suiteNotes, setSuiteNotes] = useState('');
     const [loadingSubmit, setLoadingSubmit] = useState(false);
     const [loadingClearNotes, setLoadingClearNotes] = useState(false);
-    const [isBlacklisted, setIsBlacklisted] = useState(false);
-    const [blacklistMessage, setBlacklistMessage] = useState('');
+    const [isBlocklisted, setIsBlocklisted] = useState(false);
+    const [blocklistMessage, setBlocklistMessage] = useState('');
 
     useEffect(() =>
     {
@@ -34,17 +34,17 @@ function SuiteNoteModal()
         }
     }, []);
 
-    // Function to check for 403 blacklist responses
-    const handleBlacklistCheck = (response) =>
+    // Function to check for 403 blocklist responses
+    const handleBlocklistCheck = (response) =>
     {
         if (response.status === 403)
         {
             return response.json().then(data =>
             {
-                if (data.blacklisted)
+                if (data.blocklisted)
                 {
-                    setIsBlacklisted(true);
-                    setBlacklistMessage(data.error || 'Your account has been temporarily restricted due to excessive room clearing. Please contact an administrator.');
+                    setIsBlocklisted(true);
+                    setBlocklistMessage(data.error || 'Your account has been temporarily restricted due to excessive room clearing. Please contact an administrator.');
                     return true;
                 }
                 return false;
@@ -86,10 +86,10 @@ function SuiteNoteModal()
                     })
                         .then(response =>
                         {
-                            // Check for blacklist first
-                            return handleBlacklistCheck(response).then(isBlacklisted =>
+                            // Check for blocklist first
+                            return handleBlocklistCheck(response).then(isBlocklisted =>
                             {
-                                if (isBlacklisted)
+                                if (isBlocklisted)
                                 {
                                     setLoadingSubmit(false);
                                     return null;
@@ -99,7 +99,7 @@ function SuiteNoteModal()
                         })
                         .then(data =>
                         {
-                            if (!data) return; // If blacklisted, skip this part
+                            if (!data) return; // If blocklisted, skip this part
 
                             if (data.error)
                             {
@@ -139,10 +139,10 @@ function SuiteNoteModal()
         })
             .then(response =>
             {
-                // Check for blacklist first
-                return handleBlacklistCheck(response).then(isBlacklisted =>
+                // Check for blocklist first
+                return handleBlocklistCheck(response).then(isBlocklisted =>
                 {
-                    if (isBlacklisted)
+                    if (isBlocklisted)
                     {
                         setLoadingClearNotes(false);
                         return null;
@@ -152,7 +152,7 @@ function SuiteNoteModal()
             })
             .then(data =>
             {
-                if (!data) return; // If blacklisted, skip this part
+                if (!data) return; // If blocklisted, skip this part
 
                 if (data.error)
                 {
@@ -269,12 +269,12 @@ function SuiteNoteModal()
                     <button className="delete" aria-label="close" onClick={() => setIsSuiteNoteModalOpen(false)}></button>
                 </header>
                 <section className="modal-card-body">
-                    {isBlacklisted ? (
+                    {isBlocklisted ? (
                         <div className="notification is-danger">
                             <span className="icon mr-2">
                                 <i className="fas fa-exclamation-triangle"></i>
                             </span>
-                            {blacklistMessage}
+                            {blocklistMessage}
                         </div>
                     ) : (
                         <>
@@ -302,7 +302,7 @@ function SuiteNoteModal()
                             setLoadingSubmit(true);
                             updateSuiteNotes(suiteNotes);
                         }}
-                        disabled={isBlacklisted}
+                        disabled={isBlocklisted}
                     >
                         Submit
                     </button>
@@ -313,7 +313,7 @@ function SuiteNoteModal()
                             setLoadingClearNotes(true);
                             deleteSuiteNotes();
                         }}
-                        disabled={isBlacklisted}
+                        disabled={isBlocklisted}
                     >
                         Delete all notes
                     </button>

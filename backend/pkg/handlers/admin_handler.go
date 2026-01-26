@@ -12,50 +12,50 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// BlacklistedUser represents a user who has been blacklisted
-type BlacklistedUser struct {
+// BlocklistedUser represents a user who has been blocklisted
+type BlocklistedUser struct {
 	Email             string    `json:"email"`
 	ClearRoomCount    int       `json:"clearRoomCount"`
 	ClearRoomDate     string    `json:"clearRoomDate"`
-	BlacklistedAt     time.Time `json:"blacklistedAt"`
-	BlacklistedReason string    `json:"reason"`
+	BlocklistedAt     time.Time `json:"blocklistedAt"`
+	BlocklistedReason string    `json:"reason"`
 }
 
-// GetBlacklistedUsers returns a list of all blacklisted users
-func GetBlacklistedUsers(c *gin.Context) {
+// GetBlocklistedUsers returns a list of all blocklisted users
+func GetBlocklistedUsers(c *gin.Context) {
 	rows, err := database.DB.Query(`
-		SELECT email, clear_room_count, clear_room_date, blacklisted_at, blacklisted_reason 
-		FROM user_rate_limits 
-		WHERE is_blacklisted = true
-		ORDER BY blacklisted_at DESC
+		SELECT email, clear_room_count, clear_room_date, blocklisted_at, blocklisted_reason
+		FROM user_rate_limits
+		WHERE is_blocklisted = true
+		ORDER BY blocklisted_at DESC
 	`)
 	if err != nil {
-		log.Printf("Error querying blacklisted users: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve blacklisted users"})
+		log.Printf("Error querying blocklisted users: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve blocklisted users"})
 		return
 	}
 	defer rows.Close()
 
-	users := []BlacklistedUser{} // Initialize with empty array instead of nil
+	users := []BlocklistedUser{} // Initialize with empty array instead of nil
 	for rows.Next() {
-		var user BlacklistedUser
-		var blacklistedAt sql.NullTime
+		var user BlocklistedUser
+		var blocklistedAt sql.NullTime
 		if err := rows.Scan(
 			&user.Email,
 			&user.ClearRoomCount,
 			&user.ClearRoomDate,
-			&blacklistedAt,
-			&user.BlacklistedReason,
+			&blocklistedAt,
+			&user.BlocklistedReason,
 		); err != nil {
-			log.Printf("Error scanning blacklisted user: %v", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to scan blacklisted users"})
+			log.Printf("Error scanning blocklisted user: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to scan blocklisted users"})
 			return
 		}
 		// Convert NullTime to Time if it's valid
-		if blacklistedAt.Valid {
-			user.BlacklistedAt = blacklistedAt.Time
+		if blocklistedAt.Valid {
+			user.BlocklistedAt = blocklistedAt.Time
 		} else {
-			user.BlacklistedAt = time.Time{} // Zero value for time
+			user.BlocklistedAt = time.Time{} // Zero value for time
 		}
 		users = append(users, user)
 	}
@@ -63,8 +63,8 @@ func GetBlacklistedUsers(c *gin.Context) {
 	c.JSON(http.StatusOK, users)
 }
 
-// RemoveUserBlacklist removes a user from the blacklist
-func RemoveUserBlacklist(c *gin.Context) {
+// RemoveUserBlocklist removes a user from the blocklist
+func RemoveUserBlocklist(c *gin.Context) {
 	email := c.Param("email")
 
 	// Start a transaction
@@ -85,16 +85,16 @@ func RemoveUserBlacklist(c *gin.Context) {
 
 	_, err = tx.Exec(`
 		UPDATE user_rate_limits
-		SET is_blacklisted = false, 
-		    clear_room_count = 0, 
+		SET is_blocklisted = false,
+		    clear_room_count = 0,
 		    clear_room_date = CURRENT_TIMESTAMP
 		WHERE email = $1
 	`, email)
 
 	if err != nil {
-		log.Printf("Error removing user from blacklist: %v", err)
+		log.Printf("Error removing user from blocklist: %v", err)
 		tx.Rollback()
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to remove user from blacklist"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to remove user from blocklist"})
 		return
 	}
 
@@ -106,7 +106,7 @@ func RemoveUserBlacklist(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "User removed from blacklist", "email": email})
+	c.JSON(http.StatusOK, gin.H{"message": "User removed from blocklist", "email": email})
 }
 
 // GetUserClearRoomStats gets a user's clear room usage stats
@@ -136,16 +136,16 @@ func GetUserClearRoomStats(c *gin.Context) {
 
 	// Get the user's clear room stats
 	err = database.DB.QueryRow(`
-		SELECT email, clear_room_count, clear_room_date, is_blacklisted, blacklisted_at, blacklisted_reason
+		SELECT email, clear_room_count, clear_room_date, is_blocklisted, blocklisted_at, blocklisted_reason
 		FROM user_rate_limits
 		WHERE email = $1
 	`, emailStr).Scan(
 		&userLimit.Email,
 		&userLimit.ClearRoomCount,
 		&userLimit.ClearRoomDate,
-		&userLimit.IsBlacklisted,
-		&userLimit.BlacklistedAt,
-		&userLimit.BlacklistedReason,
+		&userLimit.IsBlocklisted,
+		&userLimit.BlocklistedAt,
+		&userLimit.BlocklistedReason,
 	)
 
 	if err != nil {
@@ -155,7 +155,7 @@ func GetUserClearRoomStats(c *gin.Context) {
 			userLimit.ClearRoomCount = 0
 			userLimit.ClearRoomDate.Valid = true
 			userLimit.ClearRoomDate.Time = todayDate
-			userLimit.IsBlacklisted = false
+			userLimit.IsBlocklisted = false
 		} else {
 			log.Printf("Error retrieving clear room stats: %v", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve rate limit information"})
@@ -170,8 +170,8 @@ func GetUserClearRoomStats(c *gin.Context) {
 	}
 
 	// Log the values for debugging
-	log.Printf("For user %s: clearCount=%d, recordDate=%s, isBlacklisted=%v",
-		emailStr, userLimit.ClearRoomCount, recordDateStr, userLimit.IsBlacklisted)
+	log.Printf("For user %s: clearCount=%d, recordDate=%s, isBlocklisted=%v",
+		emailStr, userLimit.ClearRoomCount, recordDateStr, userLimit.IsBlocklisted)
 
 	// Check if we need to reset based on date
 	if recordDateStr != today {
@@ -192,6 +192,6 @@ func GetUserClearRoomStats(c *gin.Context) {
 		"remainingClears": MAX_DAILY_CLEARS - userLimit.ClearRoomCount,
 		"resetsInMinutes": minutesUntilReset,
 		"pacificDate":     today,
-		"isBlacklisted":   userLimit.IsBlacklisted,
+		"isBlocklisted":   userLimit.IsBlocklisted,
 	})
 }

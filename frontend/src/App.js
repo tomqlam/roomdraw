@@ -5,7 +5,7 @@ import { jwtDecode } from "jwt-decode";
 import React, { useContext, useEffect, useState } from 'react';
 import Select from 'react-select';
 import { CSSTransition, TransitionGroup } from 'react-transition-group';
-import BlacklistManager from './Admin/BlacklistManager';
+import BlocklistManager from './Admin/BlocklistManager';
 import BumpFroshModal from './BumpFroshModal';
 import BumpModal from './BumpModal';
 import Navbar from './components/Navbar';
@@ -852,7 +852,7 @@ function App()
                     <section className="section">
                         <div className="container">
                             <h1 className="title has-text-centered">Admin Dashboard</h1>
-                            <BlacklistManager />
+                            <BlocklistManager />
                         </div>
                     </section>
                 )}

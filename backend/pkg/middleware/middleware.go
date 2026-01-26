@@ -252,8 +252,8 @@ func JWTAuthMiddleware(requiresAdmin bool) gin.HandlerFunc {
 	}
 }
 
-// BlacklistCheckMiddleware checks if the user is blacklisted and blocks write operations if they are
-func BlacklistCheckMiddleware() gin.HandlerFunc {
+// BlocklistCheckMiddleware checks if the user is blocklisted and blocks write operations if they are
+func BlocklistCheckMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Skip this middleware for non-write operations or if not authenticated
 		if c.Request.Method == "GET" || c.Request.Method == "OPTIONS" {
@@ -268,26 +268,26 @@ func BlacklistCheckMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		// Check if the user is blacklisted
-		var isBlacklisted bool
-		err := database.DB.QueryRow("SELECT is_blacklisted FROM user_rate_limits WHERE email = $1", email).Scan(&isBlacklisted)
+		// Check if the user is blocklisted
+		var isBlocklisted bool
+		err := database.DB.QueryRow("SELECT is_blocklisted FROM user_rate_limits WHERE email = $1", email).Scan(&isBlocklisted)
 		if err != nil {
 			if err == sql.ErrNoRows {
-				// User not in the rate limits table yet, so not blacklisted
-				isBlacklisted = false
+				// User not in the rate limits table yet, so not blocklisted
+				isBlocklisted = false
 			} else {
-				log.Printf("Error checking blacklist status for %s: %v", email, err)
+				log.Printf("Error checking blocklist status for %s: %v", email, err)
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
 				c.Abort()
 				return
 			}
 		}
 
-		if isBlacklisted {
-			log.Printf("Blocked request from blacklisted user: %s", email)
+		if isBlocklisted {
+			log.Printf("Blocked request from blocklisted user: %s", email)
 			c.JSON(http.StatusForbidden, gin.H{
 				"error":       "Your account has been temporarily restricted due to unusual activity. Please contact an administrator.",
-				"blacklisted": true,
+				"blocklisted": true,
 			})
 			c.Abort()
 			return

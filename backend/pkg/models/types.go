@@ -272,9 +272,9 @@ type UserRateLimit struct {
 	Email             string         `db:"email"`
 	ClearRoomCount    int            `db:"clear_room_count"`
 	ClearRoomDate     sql.NullTime   `db:"clear_room_date"`
-	IsBlacklisted     bool           `db:"is_blacklisted"`
-	BlacklistedAt     sql.NullTime   `db:"blacklisted_at"`
-	BlacklistedReason sql.NullString `db:"blacklisted_reason"`
+	IsBlocklisted     bool           `db:"is_blocklisted"`
+	BlocklistedAt     sql.NullTime   `db:"blocklisted_at"`
+	BlocklistedReason sql.NullString `db:"blocklisted_reason"`
 }
 
 const (

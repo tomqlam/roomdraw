@@ -59,13 +59,13 @@ func main() {
 		readGroup.Use(middleware.JWTAuthMiddleware(false)) // Check token if present, but don't *require* it? Or require for all?
 	}
 
-	// Write group - applies Queue, Logging, JWT (required), Blacklist
+	// Write group - applies Queue, Logging, JWT (required), Blocklist
 	writeGroup := router.Group("/")
 	writeGroup.Use(middleware.QueueMiddleware(requestQueue))       // 1. Serialize
-	if config.RequireAuth {                                        // Only add Auth/Blacklist if required
+	if config.RequireAuth {                                        // Only add Auth/Blocklist if required
 		writeGroup.Use(logging.TransactionLogMiddleware())         // 2. Add Request ID
 		writeGroup.Use(middleware.JWTAuthMiddleware(false))    // 3. Authenticate (non-admin) & add user info to context
-		writeGroup.Use(middleware.BlacklistCheckMiddleware())  // 4. Check blacklist
+		writeGroup.Use(middleware.BlocklistCheckMiddleware())  // 4. Check blocklist
 	}
 
 	// Admin Write group - applies Queue, Logging, JWT (admin required)
@@ -74,7 +74,7 @@ func main() {
 	if config.RequireAuth {                                       // Only add Auth if required
 		writeGroupAdmin.Use(logging.TransactionLogMiddleware())    // 2. Add Request ID
 		writeGroupAdmin.Use(middleware.JWTAuthMiddleware(true)) // 3. Authenticate (admin required) & add user info
-		// No BlacklistCheck needed for admins? Add if needed.
+		// No BlocklistCheck needed for admins? Add if needed.
 	}
 
 	// Define read-only routes
@@ -107,8 +107,8 @@ func main() {
 	writeGroupAdmin.POST("/frosh/remove/:roomuuid", handlers.RemoveFroshHandler)
 	writeGroupAdmin.POST("/rooms/preplace/:roomuuid", handlers.PreplaceOccupants)
 	writeGroupAdmin.POST("/rooms/preplace/remove/:roomuuid", handlers.RemovePreplacedOccupantsHandler)
-	writeGroupAdmin.GET("/admin/blacklisted-users", handlers.GetBlacklistedUsers)
-	writeGroupAdmin.POST("/admin/blacklist/remove/:email", handlers.RemoveUserBlacklist)
+	writeGroupAdmin.GET("/admin/blocklist", handlers.GetBlocklistedUsers)
+	writeGroupAdmin.POST("/admin/blocklist/remove/:email", handlers.RemoveUserBlocklist)
 	writeGroupAdmin.POST("/admin/suites/update-gender-preferences", handlers.UpdateSuiteGenderPreference)
 
 	log.Println("RequireAuth:", config.RequireAuth)

@@ -3283,18 +3283,18 @@ func ClearRoomHandler(c *gin.Context) {
 	// Check initial rate limit status before starting the main transaction
 	var initialUserLimit models.UserRateLimit
 	errRateLimit := database.DB.QueryRow(`
-        SELECT email, clear_room_count, clear_room_date, is_blacklisted, blacklisted_at, blacklisted_reason
+        SELECT email, clear_room_count, clear_room_date, is_blocklisted, blocklisted_at, blocklisted_reason
         FROM user_rate_limits WHERE email = $1`, emailStr).Scan(
 		&initialUserLimit.Email, &initialUserLimit.ClearRoomCount, &initialUserLimit.ClearRoomDate,
-		&initialUserLimit.IsBlacklisted, &initialUserLimit.BlacklistedAt, &initialUserLimit.BlacklistedReason,
+		&initialUserLimit.IsBlocklisted, &initialUserLimit.BlocklistedAt, &initialUserLimit.BlocklistedReason,
 	)
 
 	if errRateLimit != nil {
 		if errors.Is(errRateLimit, sql.ErrNoRows) {
-			// No record yet, user is not blacklisted and count is 0. Will insert later if needed.
+			// No record yet, user is not blocklisted and count is 0. Will insert later if needed.
 			initialUserLimit.Email = emailStr
 			initialUserLimit.ClearRoomCount = 0
-			initialUserLimit.IsBlacklisted = false
+			initialUserLimit.IsBlocklisted = false
 			initialUserLimit.ClearRoomDate.Valid = true // Assume we'll set today if record is created
 			initialUserLimit.ClearRoomDate.Time = todayDate
 			log.Printf("No existing rate limit record for %s.", emailStr)
@@ -3306,11 +3306,11 @@ func ClearRoomHandler(c *gin.Context) {
 			return
 		}
 	} else {
-		// Record exists, check if blacklisted
-		if initialUserLimit.IsBlacklisted {
-			log.Printf("User %s is already blacklisted. Denying clear room request.", emailStr)
+		// Record exists, check if blocklisted
+		if initialUserLimit.IsBlocklisted {
+			log.Printf("User %s is already blocklisted. Denying clear room request.", emailStr)
 			if !c.Writer.Written() {
-				c.JSON(http.StatusForbidden, gin.H{"error": "Your account is restricted due to previous activity. Please contact an administrator.", "blacklisted": true})
+				c.JSON(http.StatusForbidden, gin.H{"error": "Your account is restricted due to previous activity. Please contact an administrator.", "blocklisted": true})
 			}
 			return
 		}
@@ -3329,11 +3329,11 @@ func ClearRoomHandler(c *gin.Context) {
 		// Pre-check if already over limit (e.g., if MAX_DAILY_CLEARS was lowered)
 		if initialUserLimit.ClearRoomCount >= MAX_DAILY_CLEARS {
 			log.Printf("User %s already met or exceeded clear limit (%d) for today (%s). Denying clear room request.", emailStr, initialUserLimit.ClearRoomCount, today)
-			// Optionally blacklist here, though the logic later will catch it too.
+			// Optionally blocklist here, though the logic later will catch it too.
 			if !c.Writer.Written() {
 				c.JSON(http.StatusTooManyRequests, gin.H{
 					"error":       "You have already reached the daily limit for clearing rooms.",
-					"blacklisted": false, // Not necessarily blacklisted yet, just at limit
+					"blocklisted": false, // Not necessarily blocklisted yet, just at limit
 				})
 			}
 			return
@@ -3412,53 +3412,53 @@ func ClearRoomHandler(c *gin.Context) {
 			log.Printf("WARNING: Failed to log CLEAR_ROOM operation for %s: %v", roomUUIDParam, loggingErr)
 		}
 
-		// --- Rate Limiting Post-Commit Fetch & Blacklist Logic ---
+		// --- Rate Limiting Post-Commit Fetch & Blocklist Logic ---
 		var updatedUserLimit models.UserRateLimit
 		// This fetch happens *after* the main transaction committed the count increment (if any)
 		rateLimitFetchErr := database.DB.QueryRow(`
-            SELECT email, clear_room_count, clear_room_date, is_blacklisted, blacklisted_at, blacklisted_reason
+            SELECT email, clear_room_count, clear_room_date, is_blocklisted, blocklisted_at, blocklisted_reason
             FROM user_rate_limits WHERE email = $1`, emailStr).Scan(
 			&updatedUserLimit.Email, &updatedUserLimit.ClearRoomCount, &updatedUserLimit.ClearRoomDate,
-			&updatedUserLimit.IsBlacklisted, &updatedUserLimit.BlacklistedAt, &updatedUserLimit.BlacklistedReason,
+			&updatedUserLimit.IsBlocklisted, &updatedUserLimit.BlocklistedAt, &updatedUserLimit.BlocklistedReason,
 		)
 
 		if rateLimitFetchErr != nil {
-			// This is problematic - the count was likely updated, but we can't confirm or check blacklist easily.
-			log.Printf("CRITICAL: Error fetching updated rate limit for %s after successful clear: %v. Blacklist check skipped.", emailStr, rateLimitFetchErr)
+			// This is problematic - the count was likely updated, but we can't confirm or check blocklist easily.
+			log.Printf("CRITICAL: Error fetching updated rate limit for %s after successful clear: %v. Blocklist check skipped.", emailStr, rateLimitFetchErr)
 			// Fallback: Use the initial count + 1 if the room wasn't empty? Less accurate.
 			updatedUserLimit = initialUserLimit // Start with initial state
 			if !roomAlreadyEmpty {
 				updatedUserLimit.ClearRoomCount++ // Increment conceptually
 			}
-			// Cannot reliably check IsBlacklisted status here.
+			// Cannot reliably check IsBlocklisted status here.
 		} else {
 			// Log the fetched updated count
 			log.Printf("Fetched updated clear count for user %s: %d", emailStr, updatedUserLimit.ClearRoomCount)
 
-			// Check if this operation pushed the user over the limit and blacklist them if so
-			if updatedUserLimit.ClearRoomCount >= MAX_DAILY_CLEARS && !updatedUserLimit.IsBlacklisted {
-				log.Printf("User %s reached clear limit (%d). Attempting to blacklist.", emailStr, updatedUserLimit.ClearRoomCount)
-				// Start a new transaction specifically for blacklisting
-				blacklistTx, btErr := database.DB.Begin()
+			// Check if this operation pushed the user over the limit and blocklist them if so
+			if updatedUserLimit.ClearRoomCount >= MAX_DAILY_CLEARS && !updatedUserLimit.IsBlocklisted {
+				log.Printf("User %s reached clear limit (%d). Attempting to blocklist.", emailStr, updatedUserLimit.ClearRoomCount)
+				// Start a new transaction specifically for blocklisting
+				blocklistTx, btErr := database.DB.Begin()
 				if btErr != nil {
-					log.Printf("Error starting blacklist transaction for %s: %v", emailStr, btErr)
+					log.Printf("Error starting blocklist transaction for %s: %v", emailStr, btErr)
 				} else {
-					now := time.Now() // Use current time for blacklist timestamp
+					now := time.Now() // Use current time for blocklist timestamp
 					reason := fmt.Sprintf("Exceeded daily clear room limit (%d) on %s", MAX_DAILY_CLEARS, today)
-					_, execBlErr := blacklistTx.Exec(
-						"UPDATE user_rate_limits SET is_blacklisted = true, blacklisted_at = $1, blacklisted_reason = $2 WHERE email = $3",
+					_, execBlErr := blocklistTx.Exec(
+						"UPDATE user_rate_limits SET is_blocklisted = true, blocklisted_at = $1, blocklisted_reason = $2 WHERE email = $3",
 						now, reason, emailStr)
 					if execBlErr != nil {
-						log.Printf("Error executing blacklist update for %s: %v", emailStr, execBlErr)
-						blacklistTx.Rollback()
+						log.Printf("Error executing blocklist update for %s: %v", emailStr, execBlErr)
+						blocklistTx.Rollback()
 					} else {
-						blCommitErr := blacklistTx.Commit()
+						blCommitErr := blocklistTx.Commit()
 						if blCommitErr != nil {
-							log.Printf("Error committing blacklist transaction for %s: %v", emailStr, blCommitErr)
+							log.Printf("Error committing blocklist transaction for %s: %v", emailStr, blCommitErr)
 						} else {
-							updatedUserLimit.IsBlacklisted = true // Update local struct reflect change
-							log.Printf("User %s successfully blacklisted.", emailStr)
-							// TODO: Consider sending a blacklist notification email here?
+							updatedUserLimit.IsBlocklisted = true // Update local struct reflect change
+							log.Printf("User %s successfully blocklisted.", emailStr)
+							// TODO: Consider sending a blocklist notification email here?
 						}
 					}
 				}
@@ -3477,7 +3477,7 @@ func ClearRoomHandler(c *gin.Context) {
 			"remainingClears": max(0, MAX_DAILY_CLEARS-updatedUserLimit.ClearRoomCount), // Ensure non-negative
 			"resetsInMinutes": minutesUntilReset,
 			"pacificDate":     today,
-			"isBlacklisted":   updatedUserLimit.IsBlacklisted, // Use fetched/updated status
+			"isBlocklisted":   updatedUserLimit.IsBlocklisted, // Use fetched/updated status
 		})
 
 	}() // End of defer func
@@ -3531,8 +3531,14 @@ func ClearRoomHandler(c *gin.Context) {
 	if !roomAlreadyEmpty {
 		log.Printf("Incrementing clear count for user %s (room was not empty)", emailStr)
 
-		// Increment the clear count within the same transaction
-		_, err = tx.Exec("UPDATE user_rate_limits SET clear_room_count = clear_room_count + 1 WHERE email = $1", emailStr)
+		// Upsert the clear count within the same transaction (insert if not exists, update if exists)
+		_, err = tx.Exec(`
+			INSERT INTO user_rate_limits (email, clear_room_count, clear_room_date)
+			VALUES ($1, 1, CURRENT_DATE)
+			ON CONFLICT (email) DO UPDATE
+			SET clear_room_count = user_rate_limits.clear_room_count + 1,
+			    clear_room_date = CURRENT_DATE
+		`, emailStr)
 		if err != nil {
 			log.Printf("Error updating clear count: %v", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update clear count"})

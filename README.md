@@ -228,7 +228,7 @@ The setup scripts create the following tables in order:
 2. **SuiteGroups** - Groups of users pulling together
 3. **Users** - Student information and draw numbers
 4. **Rooms** - Individual rooms within suites
-5. **user_rate_limits** - Rate limiting and blacklist tracking
+5. **user_rate_limits** - Rate limiting and blocklist tracking
 6. **transaction_logs** - Audit log for room changes
 
 ## External Services Setup

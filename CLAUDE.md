@@ -48,7 +48,7 @@ python createDorms.py       # Populates dorm/room data from JSON files
   - `room_draw_logic.go` - Priority comparison and sorting algorithms
   - `frosh_handler.go` - Freshman room management
   - `admin_handler.go` - Admin-only operations
-- `pkg/middleware/` - JWT auth, request queue, blacklist checking
+- `pkg/middleware/` - JWT auth, request queue, blocklist checking
 - `pkg/models/types.go` - All domain types and database models
 - `pkg/config/config.go` - Environment configuration
 
@@ -89,7 +89,7 @@ Priority determines who can claim or bump rooms. Hierarchy (highest to lowest):
 ### API Route Groups
 Routes are split by authorization requirements:
 - **Read routes**: GET endpoints, optional JWT
-- **Write routes**: POST endpoints with request queue (serializes writes), JWT required, blacklist check
+- **Write routes**: POST endpoints with request queue (serializes writes), JWT required, blocklist check
 - **Admin routes**: POST endpoints requiring admin JWT (checked via `adminList` in MyContext.js)
 
 ### Environment Variables
