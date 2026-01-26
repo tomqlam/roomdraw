@@ -31,8 +31,8 @@ podman run -it -p 8080:8080 -v $(pwd):/app roomdraw-backend
 
 ### Database Setup
 ```bash
-cd database
-# Requires .env with SQL_PASS, SQL_IP, SQL_DB_NAME, SQL_USER
+cd database/scripts
+# Requires ../.env with SQL_PASS, SQL_IP, SQL_DB_NAME, SQL_USER
 python createAllTables.py   # Creates all tables (drops existing first)
 python createDorms.py       # Populates dorm/room data from JSON files
 ```
@@ -54,14 +54,21 @@ python createDorms.py       # Populates dorm/room data from JSON files
 
 ### Frontend Structure (React)
 - `src/App.js` - Main component with dorm selection, user search
-- `src/MyContext.js` - Global state (rooms, users, credentials, settings)
-- `src/FloorGrid.js` - Room grid visualization
-- `src/BumpModal.js` - Room pull/bump interaction modal
-- `src/Search/` - Search functionality
-- `src/Admin/` - Admin-only components
+- `src/context/MyContext.js` - Global state (rooms, users, credentials, settings)
+- `src/components/` - Reusable components (FloorGrid, Navbar, Recommendations)
+- `src/modals/` - Modal dialogs (BumpModal, SettingsModal, FAQModal, etc.)
+- `src/pages/Search/` - Search functionality
+- `src/Admin/` - Admin-only components (BlocklistManager)
 
 ### Database (PostgreSQL)
 Tables: Users, Rooms, Suites, SuiteGroups, user_rate_limits, transaction_logs
+
+Folder structure:
+- `scripts/` - Python scripts (createAllTables.py, createDorms.py, insertUserData.py)
+- `sql/` - SQL table creation scripts
+- `dorms/` - JSON configuration files for each dorm
+- `data/` - CSV data files (numbers, preplacements)
+- `notebooks/` - Jupyter notebooks for data import and testing
 
 Key relationships:
 - Rooms belong to Suites (suite_uuid foreign key)
