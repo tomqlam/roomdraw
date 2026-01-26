@@ -1,10 +1,9 @@
 import "bulma/css/bulma.min.css";
-import React, { createRef, useContext, useEffect, useRef, useState } from "react";
+import React, { createRef, useContext, useEffect, useRef, useState, useMemo } from "react";
 import { MyContext } from "../context/MyContext";
 
 function FloorGrid({ gridData }) {
     const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
-    const [isLoading, setIsLoading] = useState(!gridData?.suites?.length);
     const divRefs = useRef((gridData?.suites?.length ? gridData.suites : []).map(() => createRef()));
 
     useEffect(() => {
@@ -38,10 +37,7 @@ function FloorGrid({ gridData }) {
         isDarkMode,
     } = useContext(MyContext);
 
-    useEffect(() => {
-        // Update loading state when gridData or userMap changes
-        setIsLoading(!gridData?.suites?.length || !userMap);
-    }, [gridData?.suites, userMap]);
+    const isLoading = !gridData?.suites?.length || !userMap;
 
     function capitalizeFirstLetterOfEachWord(str) {
         return str
@@ -104,8 +100,8 @@ function FloorGrid({ gridData }) {
         });
     }
 
-    // each cell in floorgrid
-    const gridItemStyle = {
+    // each cell in floorgrid - memoized to prevent recreation on every render
+    const gridItemStyle = useMemo(() => ({
         borderRadius: "4px",
         padding: "8px 12px",
         textAlign: "center",
@@ -118,32 +114,27 @@ function FloorGrid({ gridData }) {
         transition: "all 0.2s ease",
         cursor: "pointer",
         userSelect: "none",
-    };
+    }), [isDarkMode]);
 
-    // entire collection of cells
-    const gridContainerStyle = {
-        display: "grid",
-        gridTemplateColumns: isMobile
-            ? `45px 65px ${getOccupantColumns()}`
-            : `70px 150px 1fr 1fr 1fr ${activeTab === "Atwood" || activeTab === "Drinkward" || activeTab === "Case" ? "1fr" : ""} ${activeTab === "Case" ? "1fr" : ""}`,
-        gap: "4px",
-        maxWidth: "900px",
-        margin: "0 auto",
-        background: "var(--grid-container-bg)",
-        padding: "4px",
-        borderRadius: "8px",
-    };
+    const gridContainerStyle = useMemo(() => {
+        const occupantColumns =
+            activeTab === "Case" ? "1fr 1fr 1fr 1fr" :
+            activeTab === "Atwood" || activeTab === "Drinkward" ? "1fr 1fr 1fr" :
+            "1fr 1fr";
 
-    // Helper function to determine occupant columns based on dorm type
-    function getOccupantColumns() {
-        if (activeTab === "Case") {
-            return "1fr 1fr 1fr 1fr"; // 4 occupants
-        } else if (activeTab === "Atwood" || activeTab === "Drinkward") {
-            return "1fr 1fr 1fr"; // 3 occupants
-        } else {
-            return "1fr 1fr"; // 2 occupants
-        }
-    }
+        return {
+            display: "grid",
+            gridTemplateColumns: isMobile
+                ? `45px 65px ${occupantColumns}`
+                : `70px 150px 1fr 1fr 1fr ${activeTab === "Atwood" || activeTab === "Drinkward" || activeTab === "Case" ? "1fr" : ""} ${activeTab === "Case" ? "1fr" : ""}`,
+            gap: "4px",
+            maxWidth: "900px",
+            margin: "0 auto",
+            background: "var(--grid-container-bg)",
+            padding: "4px",
+            borderRadius: "8px",
+        };
+    }, [isMobile, activeTab]);
 
     // darkens given color by a factor, using match
     function darken(color, factor) {
@@ -222,7 +213,7 @@ function FloorGrid({ gridData }) {
         };
     };
 
-    const roomNumberStyle = {
+    const roomNumberStyle = useMemo(() => ({
         ...gridItemStyle,
         backgroundColor: selectedPalette.roomNumber,
         fontWeight: "600",
@@ -230,14 +221,14 @@ function FloorGrid({ gridData }) {
         letterSpacing: "0.02em",
         cursor: "default",
         color: isDarkMode ? "#ffffff" : "#2a2a2a",
-    };
+    }), [gridItemStyle, selectedPalette.roomNumber, isDarkMode]);
 
-    const pullMethodStyle = {
+    const pullMethodStyle = useMemo(() => ({
         ...gridItemStyle,
         backgroundColor: selectedPalette.pullMethod,
         cursor: "default",
         color: isDarkMode ? "#ffffff" : "#2a2a2a",
-    };
+    }), [gridItemStyle, selectedPalette.pullMethod, isDarkMode]);
 
     const handleCellClick = async (roomNumber) => {
         setSelectedItem(roomNumber);

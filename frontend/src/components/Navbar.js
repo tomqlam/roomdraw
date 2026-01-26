@@ -1,6 +1,6 @@
 import { googleLogout } from "@react-oauth/google";
 import { jwtDecode } from "jwt-decode";
-import React, { useContext, useEffect, useState } from "react";
+import React, { useCallback, useContext, useEffect, useState, useMemo } from "react";
 import { MyContext } from "../context/MyContext";
 
 function Navbar() {
@@ -26,6 +26,16 @@ function Navbar() {
     const [myRoom, setMyRoom] = useState("Unselected"); // to show what room current logged in user is in
     const [isValidUser, setIsValidUser] = useState(false);
 
+    // Cache decoded credentials to avoid calling jwtDecode multiple times per render
+    const decodedCredentials = useMemo(() => {
+        if (!credentials) return null;
+        try {
+            return jwtDecode(credentials);
+        } catch (error) {
+            return null;
+        }
+    }, [credentials]);
+
     const handleLogout = () => {
         setCredentials(null);
         setUserID(null);
@@ -36,27 +46,30 @@ function Navbar() {
         googleLogout();
     };
 
-    const fetchUserData = async (userId) => {
-        if (!userId || !localStorage.getItem("jwt")) return null;
-        try {
-            const response = await fetch(`${process.env.REACT_APP_API_URL}/users/${userId}`, {
-                headers: {
-                    Authorization: `Bearer ${localStorage.getItem("jwt")}`,
-                },
-            });
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            const data = await response.json();
-            if (handleErrorFromTokenExpiry(data)) {
+    const fetchUserData = useCallback(
+        async (userId) => {
+            if (!userId || !localStorage.getItem("jwt")) return null;
+            try {
+                const response = await fetch(`${process.env.REACT_APP_API_URL}/users/${userId}`, {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem("jwt")}`,
+                    },
+                });
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                if (handleErrorFromTokenExpiry(data)) {
+                    return null;
+                }
+                return data;
+            } catch (err) {
+                console.error("Error fetching user data:", err);
                 return null;
             }
-            return data;
-        } catch (err) {
-            console.error("Error fetching user data:", err);
-            return null;
-        }
-    };
+        },
+        [handleErrorFromTokenExpiry]
+    );
 
     useEffect(() => {
         const updateCurrentUserData = async () => {
@@ -101,17 +114,12 @@ function Navbar() {
             }
         };
         updateCurrentUserData();
-    }, [userID, refreshKey, handleErrorFromTokenExpiry, userMap]);
+    }, [userID, refreshKey, handleErrorFromTokenExpiry, userMap, fetchUserData]);
 
     // Check if current user is an admin
     const isAdmin = () => {
-        if (!credentials) return false;
-        try {
-            const decoded = jwtDecode(credentials);
-            return decoded.email === "tlam@g.hmc.edu" || decoded.email === "smao@g.hmc.edu";
-        } catch (error) {
-            return false;
-        }
+        if (!decodedCredentials) return false;
+        return decodedCredentials.email === "tlam@g.hmc.edu" || decodedCredentials.email === "smao@g.hmc.edu";
     };
 
     return (
@@ -155,19 +163,18 @@ function Navbar() {
                             <span>
                                 Welcome,{" "}
                                 {(() => {
-                                    if (!credentials) return "";
-                                    const decodedToken = jwtDecode(credentials);
+                                    if (!decodedCredentials) return "";
 
                                     // Check if user exists in userMap
                                     const userId = Object.keys(userMap || {}).find(
-                                        (id) => userMap[id].Email === decodedToken.email
+                                        (id) => userMap[id].Email === decodedCredentials.email
                                     );
 
                                     if (userId && userMap[userId]) {
                                         return userMap[userId].FirstName;
                                     } else {
                                         // User not in the userMap, show as Guest
-                                        return decodedToken.given_name || "Guest";
+                                        return decodedCredentials.given_name || "Guest";
                                     }
                                 })()}
                             </span>
@@ -177,9 +184,8 @@ function Navbar() {
                     <div className="navbar-item user-info-wrapper">
                         {userMap && isValidUser
                             ? (() => {
-                                  const decodedToken = jwtDecode(credentials);
                                   const userId = Object.keys(userMap || {}).find(
-                                      (id) => userMap[id].Email === decodedToken.email
+                                      (id) => userMap[id].Email === decodedCredentials?.email
                                   );
                                   if (userId && userMap[userId]) {
                                       return (

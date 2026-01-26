@@ -174,7 +174,7 @@ const SettingsModal = () => {
         }
     };
 
-    const ColorPickerPopover = ({ colorKey, color }) => {
+    const ColorPickerPopover = ({ colorKey, color, activeColorPicker }) => {
         const [position, setPosition] = useState({ top: 0, left: 0 });
         const buttonRef = useRef(null);
 
@@ -349,7 +349,11 @@ const SettingsModal = () => {
                                 <div className="field">
                                     <label className="label is-small">Header Row</label>
                                     <div className="control">
-                                        <ColorPickerPopover colorKey="roomNumber" color={draftColors.roomNumber} />
+                                        <ColorPickerPopover
+                                            colorKey="roomNumber"
+                                            color={draftColors.roomNumber}
+                                            activeColorPicker={activeColorPicker}
+                                        />
                                     </div>
                                 </div>
                             </div>
@@ -358,7 +362,11 @@ const SettingsModal = () => {
                                 <div className="field">
                                     <label className="label is-small">Odd Suites</label>
                                     <div className="control">
-                                        <ColorPickerPopover colorKey="oddSuite" color={draftColors.oddSuite} />
+                                        <ColorPickerPopover
+                                            colorKey="oddSuite"
+                                            color={draftColors.oddSuite}
+                                            activeColorPicker={activeColorPicker}
+                                        />
                                     </div>
                                 </div>
                             </div>
@@ -367,7 +375,11 @@ const SettingsModal = () => {
                                 <div className="field">
                                     <label className="label is-small">Even Suites</label>
                                     <div className="control">
-                                        <ColorPickerPopover colorKey="evenSuite" color={draftColors.evenSuite} />
+                                        <ColorPickerPopover
+                                            colorKey="evenSuite"
+                                            color={draftColors.evenSuite}
+                                            activeColorPicker={activeColorPicker}
+                                        />
                                     </div>
                                 </div>
                             </div>
@@ -376,7 +388,11 @@ const SettingsModal = () => {
                                 <div className="field">
                                     <label className="label is-small">Pull Method</label>
                                     <div className="control">
-                                        <ColorPickerPopover colorKey="pullMethod" color={draftColors.pullMethod} />
+                                        <ColorPickerPopover
+                                            colorKey="pullMethod"
+                                            color={draftColors.pullMethod}
+                                            activeColorPicker={activeColorPicker}
+                                        />
                                     </div>
                                 </div>
                             </div>
@@ -388,6 +404,7 @@ const SettingsModal = () => {
                                         <ColorPickerPopover
                                             colorKey="currentUserRoom"
                                             color={draftColors.currentUserRoom}
+                                            activeColorPicker={activeColorPicker}
                                         />
                                     </div>
                                 </div>
@@ -400,6 +417,7 @@ const SettingsModal = () => {
                                         <ColorPickerPopover
                                             colorKey="selectedUserRoom"
                                             color={draftColors.selectedUserRoom}
+                                            activeColorPicker={activeColorPicker}
                                         />
                                     </div>
                                 </div>

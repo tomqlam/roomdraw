@@ -1,6 +1,34 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useCallback, useContext, useEffect, useState, useMemo } from "react";
 import Select from "react-select";
 import { MyContext } from "../../context/MyContext";
+
+const simplifyGenderPreferences = (preferences) => {
+    if (!preferences || !preferences.length) return [];
+
+    const simplifiedPrefs = [...preferences];
+    const hasCisWoman = simplifiedPrefs.includes("Cis Woman");
+    const hasTransWoman = simplifiedPrefs.includes("Trans Woman");
+    const hasCisMan = simplifiedPrefs.includes("Cis Man");
+    const hasTransMan = simplifiedPrefs.includes("Trans Man");
+
+    if (hasCisWoman && hasTransWoman) {
+        const indexCisWoman = simplifiedPrefs.indexOf("Cis Woman");
+        simplifiedPrefs.splice(indexCisWoman, 1);
+        const indexTransWoman = simplifiedPrefs.indexOf("Trans Woman");
+        simplifiedPrefs.splice(indexTransWoman, 1);
+        simplifiedPrefs.push("Woman");
+    }
+
+    if (hasCisMan && hasTransMan) {
+        const indexCisMan = simplifiedPrefs.indexOf("Cis Man");
+        simplifiedPrefs.splice(indexCisMan, 1);
+        const indexTransMan = simplifiedPrefs.indexOf("Trans Man");
+        simplifiedPrefs.splice(indexTransMan, 1);
+        simplifiedPrefs.push("Man");
+    }
+
+    return simplifiedPrefs;
+};
 
 function SearchPage() {
     const { rooms, handleTakeMeThere, handleErrorFromTokenExpiry, isDarkMode, setCurrPage } = useContext(MyContext);
@@ -21,10 +49,17 @@ function SearchPage() {
     const [totalPages, setTotalPages] = useState(1);
     const [totalRecords, setTotalRecords] = useState(0);
 
-    // Derived data
-    const [dormOptions, setDormOptions] = useState([]);
-    const [capacityOptions, setCapacityOptions] = useState([]);
-    const [, setInDormOptions] = useState([]);
+    const dormOptions = useMemo(() => {
+        if (!rooms?.length) return [];
+        const uniqueDorms = [...new Set(rooms.map((room) => room.DormName))];
+        return uniqueDorms.map((dorm) => ({ value: dorm, label: dorm }));
+    }, [rooms]);
+
+    const capacityOptions = useMemo(() => {
+        if (!rooms?.length) return [];
+        const uniqueCapacities = [...new Set(rooms.map((room) => room.MaxOccupancy))].sort((a, b) => a - b);
+        return uniqueCapacities.map((cap) => ({ value: cap, label: `${cap} person${cap !== 1 ? "s" : ""}` }));
+    }, [rooms]);
 
     // Add state for preplaced filter
     const [preplacedFilter, setPreplacedFilter] = useState(null);
@@ -132,45 +167,6 @@ function SearchPage() {
         return dormMapping[dormId] || `Unknown (${dormId})`;
     };
 
-    // Utility function to simplify gender preferences display
-    const simplifyGenderPreferences = (preferences) => {
-        if (!preferences || !preferences.length) return [];
-
-        const simplifiedPrefs = [...preferences];
-        const hasCisWoman = simplifiedPrefs.includes("Cis Woman");
-        const hasTransWoman = simplifiedPrefs.includes("Trans Woman");
-        const hasCisMan = simplifiedPrefs.includes("Cis Man");
-        const hasTransMan = simplifiedPrefs.includes("Trans Man");
-
-        // Replace Cis Woman and Trans Woman with Woman if both exist
-        if (hasCisWoman && hasTransWoman) {
-            // Remove both individual preferences
-            const indexCisWoman = simplifiedPrefs.indexOf("Cis Woman");
-            simplifiedPrefs.splice(indexCisWoman, 1);
-
-            const indexTransWoman = simplifiedPrefs.indexOf("Trans Woman");
-            simplifiedPrefs.splice(indexTransWoman, 1);
-
-            // Add combined preference
-            simplifiedPrefs.push("Woman");
-        }
-
-        // Replace Cis Man and Trans Man with Man if both exist
-        if (hasCisMan && hasTransMan) {
-            // Remove both individual preferences
-            const indexCisMan = simplifiedPrefs.indexOf("Cis Man");
-            simplifiedPrefs.splice(indexCisMan, 1);
-
-            const indexTransMan = simplifiedPrefs.indexOf("Trans Man");
-            simplifiedPrefs.splice(indexTransMan, 1);
-
-            // Add combined preference
-            simplifiedPrefs.push("Man");
-        }
-
-        return simplifiedPrefs;
-    };
-
     // Handle delayed loading indicator
     useEffect(() => {
         let timer;
@@ -189,27 +185,6 @@ function SearchPage() {
         };
     }, [loading]);
 
-    // Get unique dorms and capacities from room data
-    useEffect(() => {
-        if (rooms && rooms.length > 0) {
-            // Extract unique dorm names
-            const uniqueDorms = [...new Set(rooms.map((room) => room.DormName))];
-            setDormOptions(uniqueDorms.map((dorm) => ({ value: dorm, label: dorm })));
-
-            // Extract unique capacities
-            const uniqueCapacities = [...new Set(rooms.map((room) => room.MaxOccupancy))].sort((a, b) => a - b);
-            setCapacityOptions(
-                uniqueCapacities.map((cap) => ({ value: cap, label: `${cap} person${cap !== 1 ? "s" : ""}` }))
-            );
-        }
-
-        // Create in-dorm options from rooms
-        if (rooms && rooms.length > 0) {
-            const uniqueDorms = [...new Set(rooms.map((room) => room.DormName))];
-            setInDormOptions(uniqueDorms.map((dorm) => ({ value: dorm, label: dorm })));
-        }
-    }, [rooms]);
-
     // Year options corrected - no "freshman" in the database
     const yearOptions = [
         { value: "sophomore", label: "Sophomore" },
@@ -217,14 +192,7 @@ function SearchPage() {
         { value: "senior", label: "Senior" },
     ];
 
-    useEffect(() => {
-        if (results.length > 0) {
-            // Fetch data when page, itemsPerPage, or sorting changes
-            handleSearch();
-        }
-    }, [page, itemsPerPage, sortConfig]);
-
-    const handleSearch = () => {
+    const handleSearch = useCallback(() => {
         setLoading(true);
         // showLoading will be set to true after 1 second by the useEffect
 
@@ -396,7 +364,29 @@ function SearchPage() {
                     setResults([]);
                 });
         }
-    };
+    }, [
+        searchType,
+        page,
+        itemsPerPage,
+        dormFilter,
+        capacityFilter,
+        sortConfig,
+        yearFilter,
+        drawNumberFilter,
+        hasGenderPrefFilter,
+        preplacedFilter,
+        inDormFilter,
+        genderPrefFilter,
+        rooms,
+        handleErrorFromTokenExpiry,
+    ]);
+
+    useEffect(() => {
+        if (results.length > 0) {
+            // Fetch data when page, itemsPerPage, or sorting changes
+            handleSearch();
+        }
+    }, [page, itemsPerPage, sortConfig, handleSearch, results.length]);
 
     const requestSort = (key) => {
         // Set loading state before changing sort to prevent flicker

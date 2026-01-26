@@ -1,24 +1,24 @@
-import { ImageEditorComponent } from "@syncfusion/ej2-react-image-editor";
 import Compressor from "compressorjs";
-import React, { useContext, useEffect, useState } from "react";
+import React, { lazy, Suspense, useContext, useEffect, useState } from "react";
 import "../App.css";
 import { MyContext } from "../context/MyContext";
+
+// Lazy load the heavy ImageEditor component
+const ImageEditorComponent = lazy(() =>
+    import("@syncfusion/ej2-react-image-editor").then((module) => ({
+        default: module.ImageEditorComponent,
+    }))
+);
 
 function SuiteNoteModal() {
     const { selectedSuiteObject, setIsSuiteNoteModalOpen, setRefreshKey, handleErrorFromTokenExpiry } =
         useContext(MyContext);
 
-    const [suiteNotes, setSuiteNotes] = useState("");
+    const suiteNotes = selectedSuiteObject?.suiteDesign ?? "";
     const [loadingSubmit, setLoadingSubmit] = useState(false);
     const [loadingClearNotes, setLoadingClearNotes] = useState(false);
     const [isBlocklisted, setIsBlocklisted] = useState(false);
     const [blocklistMessage, setBlocklistMessage] = useState("");
-
-    useEffect(() => {
-        if (selectedSuiteObject) {
-            setSuiteNotes(selectedSuiteObject.suiteDesign);
-        }
-    }, []);
 
     // Function to check for 403 blocklist responses
     const handleBlocklistCheck = (response) => {
@@ -186,7 +186,7 @@ function SuiteNoteModal() {
                 imgObj.current.open(url);
             }
         }
-    }, []);
+    }, [selectedSuiteObject.suiteDesign]);
     const [, setImage] = React.useState(null);
 
     return (
@@ -215,20 +215,15 @@ function SuiteNoteModal() {
                             <p>Please do not submit inappropriate pictures, or pictures too thin/tall.</p> <br />
                             {/* <input type="file" id="fileUpload" /> */}
                             <div id="container" style={{ width: "100%", height: "50vh" }}>
-                                <ImageEditorComponent
-                                    toolbar={["Crop", "Transform", "Annotate", "Image", "ZoomIn", "ZoomOut"]}
-                                    ref={imgObj}
-                                />
+                                <Suspense fallback={<div className="has-text-centered p-4">Loading editor...</div>}>
+                                    <ImageEditorComponent
+                                        toolbar={["Crop", "Transform", "Annotate", "Image", "ZoomIn", "ZoomOut"]}
+                                        ref={imgObj}
+                                    />
+                                </Suspense>
                             </div>
                         </>
                     )}
-                    {/* <button onClick={handleSave}>Save</button> */}
-                    {/* <textarea
-                        className="textarea"
-                        placeholder="Enter information about genderlocking, suite culture, etc. here."
-                        value={suiteNotes}
-                        onChange={event => setSuiteNotes(event.target.value)}
-                    /> */}
                 </section>
                 <footer className="modal-card-foot" style={{ display: "flex", justifyContent: "space-between" }}>
                     <button

@@ -1,5 +1,5 @@
 import { jwtDecode } from "jwt-decode";
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useState, useMemo } from "react";
 import Select from "react-select";
 import AdminBumpModalFunctions from "../components/AdminBumpModalFunctions";
 import { MyContext } from "../context/MyContext";
@@ -109,6 +109,27 @@ function BumpModal() {
     const [roomToClearCloseModal, setRoomToClearCloseModal] = useState(false);
     const [roomToClearPersonIndex, setRoomToClearPersonIndex] = useState(-1);
 
+    const decodedCredentials = useMemo(() => {
+        return credentials ? jwtDecode(credentials) : null;
+    }, [credentials]);
+
+    const userOptions = useMemo(() => {
+        if (!userMap) return [];
+        const isAdmin = decodedCredentials?.email === "tlam@g.hmc.edu" ||
+                        decodedCredentials?.email === "smao@g.hmc.edu";
+        return Object.keys(userMap)
+            .sort((a, b) => {
+                const nameA = `${userMap[a].FirstName} ${userMap[a].LastName}`;
+                const nameB = `${userMap[b].FirstName} ${userMap[b].LastName}`;
+                return nameA.localeCompare(nameB);
+            })
+            .filter((key) => isAdmin || Number(userMap[key].Year) !== 0)
+            .map((key) => ({
+                value: key,
+                label: `${userMap[key].FirstName} ${userMap[key].LastName}`,
+            }));
+    }, [userMap, decodedCredentials]);
+
     useEffect(() => {
         // If the selected suite or room changes, change the people who can pull
         if (selectedSuiteObject) {
@@ -148,7 +169,7 @@ function BumpModal() {
             setRoomsWhoCanAlternatePull(otherRoomsWhoCanAlternatePull);
             setPeopleWhoCanPullSingle(otherOccupants);
         }
-    }, [selectedSuiteObject, selectedItem]);
+    }, [selectedSuiteObject, selectedItem, selectedRoomObject.maxOccupancy]);
 
     // Load clear room stats when component mounts
     useEffect(() => {
@@ -685,25 +706,7 @@ function BumpModal() {
                                                     onChange={(selectedOption) =>
                                                         handleDropdownChange(index, selectedOption)
                                                     }
-                                                    options={
-                                                        userMap &&
-                                                        Object.keys(userMap)
-                                                            .sort((a, b) => {
-                                                                const nameA = `${userMap[a].FirstName} ${userMap[a].LastName}`;
-                                                                const nameB = `${userMap[b].FirstName} ${userMap[b].LastName}`;
-                                                                return nameA.localeCompare(nameB);
-                                                            })
-                                                            .filter(
-                                                                (key) =>
-                                                                    jwtDecode(credentials).email === "tlam@g.hmc.edu" ||
-                                                                    jwtDecode(credentials).email === "smao@g.hmc.edu" ||
-                                                                    Number(userMap[key].Year) !== 0
-                                                            ) // Replace 'YourCondition' with the condition you want to check
-                                                            .map((key) => ({
-                                                                value: key,
-                                                                label: `${userMap[key].FirstName} ${userMap[key].LastName}`,
-                                                            }))
-                                                    }
+                                                    options={userOptions}
                                                 />
                                             </div>
                                         </div>

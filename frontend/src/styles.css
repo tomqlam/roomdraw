@@ -972,18 +972,21 @@ body.dark-mode .theme-toggle:hover {
 }
 
 /* Tab styles for dorm names */
-.tabs a {
+.tabs a,
+.tabs button {
     color: var(--tab-color);
     border-bottom-color: var(--border-color);
     transition: color 0.3s ease;
 }
 
-.tabs li.is-active a {
+.tabs li.is-active a,
+.tabs li.is-active button {
     color: var(--tab-active-color);
     border-bottom-color: var(--primary-color);
 }
 
-.tabs a:hover {
+.tabs a:hover,
+.tabs button:hover {
     color: var(--tab-hover-color);
     border-bottom-color: var(--tab-hover-color);
 }
@@ -1009,7 +1012,8 @@ body.dark-mode .theme-toggle:hover {
     margin: 0 0.25rem;
 }
 
-.tabs a {
+.tabs a,
+.tabs button {
     padding: 0.5rem 1.25rem;
     min-width: 80px;
     text-align: center;
@@ -1021,10 +1025,14 @@ body.dark-mode .theme-toggle:hover {
         background-color 0.3s ease,
         transform 0.2s ease,
         box-shadow 0.2s ease;
+    cursor: pointer;
+    font-size: 1rem;
+    font-family: inherit;
 }
 
 /* Light mode active tab */
-.tabs li.is-active a {
+.tabs li.is-active a,
+.tabs li.is-active button {
     color: var(--tab-active-color);
     border-bottom: none;
     background-color: var(--primary-color);
@@ -1033,13 +1041,15 @@ body.dark-mode .theme-toggle:hover {
 }
 
 /* Dark mode active tab */
-body.dark-mode .tabs li.is-active a {
+body.dark-mode .tabs li.is-active a,
+body.dark-mode .tabs li.is-active button {
     background-color: #404040;
     color: #ffffff;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
 }
 
-.tabs a:hover {
+.tabs a:hover,
+.tabs button:hover {
     color: var(--tab-hover-color);
     border-bottom: none;
     background-color: var(--card-bg-hover);
@@ -1047,11 +1057,13 @@ body.dark-mode .tabs li.is-active a {
     box-shadow: 0 3px 6px rgba(0, 0, 0, 0.08);
 }
 
-body.dark-mode .tabs a {
+body.dark-mode .tabs a,
+body.dark-mode .tabs button {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
 }
 
-body.dark-mode .tabs a:hover {
+body.dark-mode .tabs a:hover,
+body.dark-mode .tabs button:hover {
     box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
 }
 

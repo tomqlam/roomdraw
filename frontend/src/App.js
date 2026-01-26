@@ -2,21 +2,49 @@ import "@fortawesome/fontawesome-free/css/all.min.css";
 import { GoogleLogin } from "@react-oauth/google";
 import "bulma/css/bulma.min.css";
 import { jwtDecode } from "jwt-decode";
-import React, { useContext, useEffect, useState } from "react";
+import React, { useCallback, useContext, useEffect, useState, lazy, Suspense, useMemo } from "react";
 import Select from "react-select";
 import { CSSTransition, TransitionGroup } from "react-transition-group";
 import BlocklistManager from "./Admin/BlocklistManager";
-import BumpFroshModal from "./modals/BumpFroshModal";
-import BumpModal from "./modals/BumpModal";
 import Navbar from "./components/Navbar";
-import FAQModal from "./modals/FAQModal";
 import FloorGrid from "./components/FloorGrid";
 import { MyContext } from "./context/MyContext";
 import SearchPage from "./pages/Search/SearchPage";
-import SettingsModal from "./modals/SettingsModal";
 import "./styles.css";
-import SuiteNoteModal from "./modals/SuiteNoteModal";
-import UserSettingsModal from "./modals/UserSettingsModal";
+
+// Lazy load modals for better bundle splitting
+const BumpFroshModal = lazy(() => import("./modals/BumpFroshModal"));
+const BumpModal = lazy(() => import("./modals/BumpModal"));
+const FAQModal = lazy(() => import("./modals/FAQModal"));
+const SettingsModal = lazy(() => import("./modals/SettingsModal"));
+const SuiteNoteModal = lazy(() => import("./modals/SuiteNoteModal"));
+const UserSettingsModal = lazy(() => import("./modals/UserSettingsModal"));
+
+// Extracted component to prevent recreation on every render
+const FloorDisplay = ({ gridData, filterCondition, showFloorplans, activeTab }) => {
+    return (
+        <div className="column">
+            <div style={showFloorplans ? { width: "100%" } : {}}>
+                {gridData.map((dorm) => (
+                    <div key={dorm.dormName} className={activeTab === dorm.dormName ? "" : "is-hidden"}>
+                        {dorm.floors
+                            .filter((floor) => filterCondition(floor.floorNumber))
+                            .sort((a, b) => Number(a.floorNumber) - Number(b.floorNumber))
+                            .map((floor, floorIndex) => (
+                                <div key={floorIndex} className="floor-section">
+                                    <div className="floor-header">
+                                        <h2 className="subtitle mb-2">Floor {floor.floorNumber + 1}</h2>
+                                        {floor.floorName && <p className="subtitle mb-4">{floor.floorName}</p>}
+                                    </div>
+                                    <FloorGrid gridData={floor} />
+                                </div>
+                            ))}
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
 
 function App() {
     const {
@@ -55,6 +83,21 @@ function App() {
     const [lastSelectedID, setLastSelectedID] = useState(null); // Store last valid selection
     const [isSearchFocused, setIsSearchFocused] = useState(false); // Track if search is focused
     const [showFAQModal, setShowFAQModal] = useState(false);
+
+    const userOptions = useMemo(() => {
+        if (!userMap) return [];
+        return Object.keys(userMap)
+            .sort((a, b) => {
+                const nameA = `${userMap[a].FirstName} ${userMap[a].LastName}`;
+                const nameB = `${userMap[b].FirstName} ${userMap[b].LastName}`;
+                return nameA.localeCompare(nameB);
+            })
+            .filter((key) => Number(userMap[key].Year) !== 0)
+            .map((key) => ({
+                value: key,
+                label: `${userMap[key].FirstName} ${userMap[key].LastName}`,
+            }));
+    }, [userMap]);
 
     // Validate selectedID when userMap loads
     useEffect(() => {
@@ -127,7 +170,7 @@ function App() {
         if (storedCredentials) {
             setCredentials(storedCredentials);
         }
-    }, []);
+    }, [setCredentials]);
 
     const handleSuccess = (credentialResponse) => {
         if (!credentialResponse?.credential) return;
@@ -139,6 +182,11 @@ function App() {
         // Immediately query for user by email
         if (decoded.email) {
             fetchUserByEmail(decoded.email);
+        }
+
+        const hideWelcomeFAQ = localStorage.getItem("hideWelcomeFAQ");
+        if (!hideWelcomeFAQ) {
+            setShowFAQModal(true);
         }
     };
 
@@ -208,27 +256,30 @@ function App() {
         // Optionally, handle login failure (e.g., by clearing stored credentials)
     };
 
-    const fetchUserData = async (userId) => {
-        if (!userId || !localStorage.getItem("jwt")) return null;
-        try {
-            const response = await fetch(`${process.env.REACT_APP_API_URL}/users/${userId}`, {
-                headers: {
-                    Authorization: `Bearer ${localStorage.getItem("jwt")}`,
-                },
-            });
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            const data = await response.json();
-            if (handleErrorFromTokenExpiry(data)) {
+    const fetchUserData = useCallback(
+        async (userId) => {
+            if (!userId || !localStorage.getItem("jwt")) return null;
+            try {
+                const response = await fetch(`${process.env.REACT_APP_API_URL}/users/${userId}`, {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem("jwt")}`,
+                    },
+                });
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                if (handleErrorFromTokenExpiry(data)) {
+                    return null;
+                }
+                return data;
+            } catch (err) {
+                console.error("Error fetching user data:", err);
                 return null;
             }
-            return data;
-        } catch (err) {
-            console.error("Error fetching user data:", err);
-            return null;
-        }
-    };
+        },
+        [handleErrorFromTokenExpiry]
+    );
 
     useEffect(() => {
         const updateSelectedUserData = async () => {
@@ -271,7 +322,7 @@ function App() {
             }
         };
         updateSelectedUserData();
-    }, [selectedID, refreshKey]);
+    }, [selectedID, refreshKey, userMap, fetchUserData, handleErrorFromTokenExpiry]);
 
     const getRoomObjectFromUserID = (userID) => {
         if (rooms) {
@@ -368,32 +419,6 @@ function App() {
         setActiveTab(tab);
     };
 
-    // Component for each floor, to show even and odd floors separately
-    const FloorDisplay = ({ gridData, filterCondition }) => {
-        return (
-            <div className="column">
-                <div style={showFloorplans ? { width: "100%" } : {}}>
-                    {gridData.map((dorm) => (
-                        <div key={dorm.dormName} className={activeTab === dorm.dormName ? "" : "is-hidden"}>
-                            {dorm.floors
-                                .filter((floor) => filterCondition(floor.floorNumber))
-                                .sort((a, b) => Number(a.floorNumber) - Number(b.floorNumber))
-                                .map((floor, floorIndex) => (
-                                    <div key={floorIndex} className="floor-section">
-                                        <div className="floor-header">
-                                            <h2 className="subtitle mb-2">Floor {floor.floorNumber + 1}</h2>
-                                            {floor.floorName && <p className="subtitle mb-4">{floor.floorName}</p>}
-                                        </div>
-                                        <FloorGrid gridData={floor} />
-                                    </div>
-                                ))}
-                        </div>
-                    ))}
-                </div>
-            </div>
-        );
-    };
-
     const handleForfeit = () => {
         // Skip if no selectedID
         if (!selectedID) return;
@@ -446,16 +471,6 @@ function App() {
             return false;
         }
     };
-
-    // Add effect to handle showing FAQ modal on first login
-    useEffect(() => {
-        if (credentials) {
-            const hideWelcomeFAQ = localStorage.getItem("hideWelcomeFAQ");
-            if (!hideWelcomeFAQ) {
-                setShowFAQModal(true);
-            }
-        }
-    }, [credentials]);
 
     return (
         <div className={`main-content ${isTransitioning ? "transition-active" : ""}`}>
@@ -540,21 +555,7 @@ function App() {
                                                 width: "100%",
                                             }),
                                         }}
-                                        options={
-                                            userMap
-                                                ? Object.keys(userMap)
-                                                      .sort((a, b) => {
-                                                          const nameA = `${userMap[a].FirstName} ${userMap[a].LastName}`;
-                                                          const nameB = `${userMap[b].FirstName} ${userMap[b].LastName}`;
-                                                          return nameA.localeCompare(nameB);
-                                                      })
-                                                      .filter((key) => Number(userMap[key].Year) !== 0)
-                                                      .map((key) => ({
-                                                          value: key,
-                                                          label: `${userMap[key].FirstName} ${userMap[key].LastName}`,
-                                                      }))
-                                                : []
-                                        }
+                                        options={userOptions}
                                         value={
                                             isSearchFocused
                                                 ? null // When focused, show empty input
@@ -709,6 +710,8 @@ function App() {
                                                                                 filterCondition={(floorNumber) =>
                                                                                     floorNumber === floorIndex
                                                                                 }
+                                                                                showFloorplans={showFloorplans}
+                                                                                activeTab={activeTab}
                                                                             />
                                                                         </div>
                                                                     )
@@ -726,6 +729,8 @@ function App() {
                                                                             filterCondition={(floorNumber) =>
                                                                                 floorNumber === floorIndex
                                                                             }
+                                                                            showFloorplans={showFloorplans}
+                                                                            activeTab={activeTab}
                                                                         />
                                                                     </div>
                                                                 )
@@ -769,6 +774,8 @@ function App() {
                                                                         filterCondition={(floorNumber) =>
                                                                             floorNumber === floorIndex
                                                                         }
+                                                                        showFloorplans={showFloorplans}
+                                                                        activeTab={activeTab}
                                                                     />
                                                                     <img
                                                                         src={`./Floorplans/floorplans_${activeTab.toLowerCase()}_${floorIndex + 1}.png`}
@@ -833,14 +840,16 @@ function App() {
                 </button>
             )}
 
-            {isModalOpen && <BumpModal />}
-            {isSuiteNoteModalOpen && <SuiteNoteModal />}
-            {isFroshModalOpen && <BumpFroshModal />}
-            {isSettingsModalOpen && <SettingsModal />}
-            {isUserSettingsModalOpen && (
-                <UserSettingsModal isOpen={isUserSettingsModalOpen} onClose={() => setIsUserSettingsModalOpen(false)} />
-            )}
-            <FAQModal isOpen={showFAQModal} onClose={() => setShowFAQModal(false)} />
+            <Suspense fallback={null}>
+                {isModalOpen && <BumpModal />}
+                {isSuiteNoteModalOpen && <SuiteNoteModal />}
+                {isFroshModalOpen && <BumpFroshModal />}
+                {isSettingsModalOpen && <SettingsModal />}
+                {isUserSettingsModalOpen && (
+                    <UserSettingsModal isOpen={isUserSettingsModalOpen} onClose={() => setIsUserSettingsModalOpen(false)} />
+                )}
+                <FAQModal isOpen={showFAQModal} onClose={() => setShowFAQModal(false)} />
+            </Suspense>
         </div>
     );
 }
