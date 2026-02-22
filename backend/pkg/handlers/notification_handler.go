@@ -22,11 +22,22 @@ func InitializeEmailService() {
 
 func SetNotificationPreference(c *gin.Context) {
 	var pref struct {
-		Email   string `json:"email"`
-		Enabled bool   `json:"enabled"`
+		Enabled bool `json:"enabled"`
 	}
 	if err := c.ShouldBindJSON(&pref); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Use the authenticated email from JWT context instead of client-supplied email
+	email, exists := c.Get("email")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Authentication required"})
+		return
+	}
+	userEmail, ok := email.(string)
+	if !ok || userEmail == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid authentication token"})
 		return
 	}
 
@@ -46,11 +57,11 @@ func SetNotificationPreference(c *gin.Context) {
 
 	now := time.Now()
 	_, err = tx.Exec(`
-		UPDATE users 
+		UPDATE users
 		SET notifications_enabled = $1,
-			notification_updated_at = $2 
+			notification_updated_at = $2
 		WHERE email = $3`,
-		pref.Enabled, now, pref.Email)
+		pref.Enabled, now, userEmail)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update notification preferences"})
