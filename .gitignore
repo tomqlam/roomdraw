@@ -6,3 +6,4 @@ roomdraw_env
 .env.production
 .env.development
 *build-errors.log
+.claude/mcp_servers.json
