@@ -33,9 +33,6 @@ const UserSettingsModal = ({ isOpen, onClose }) => {
     const handleToggleNotifications = () => {
         if (!credentials) return;
 
-        const decodedToken = jwtDecode(credentials);
-        const userEmail = decodedToken.email;
-
         setLoading(true);
         fetch(`${process.env.REACT_APP_API_URL}/users/notifications`, {
             method: "POST",
@@ -44,7 +41,6 @@ const UserSettingsModal = ({ isOpen, onClose }) => {
                 Authorization: `Bearer ${credentials}`,
             },
             body: JSON.stringify({
-                email: userEmail,
                 enabled: !notificationsEnabled,
             }),
         })
