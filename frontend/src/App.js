@@ -10,6 +10,7 @@ import Navbar from "./components/Navbar";
 import FloorGrid from "./components/FloorGrid";
 import { MyContext } from "./context/MyContext";
 import SearchPage from "./pages/Search/SearchPage";
+import AboutPage from "./pages/About/AboutPage";
 import "./styles.css";
 
 // Lazy load modals for better bundle splitting
@@ -73,6 +74,7 @@ function App() {
         isUserSettingsModalOpen,
         setIsUserSettingsModalOpen,
         handleTakeMeThere,
+        setCurrPage,
     } = useContext(MyContext);
 
     const [notifications, setNotifications] = useState([]);
@@ -477,7 +479,7 @@ function App() {
             {credentials && <Navbar />}
 
             <div className="content-wrapper">
-                {!credentials && (
+                {!credentials && currPage === "Home" && (
                     <section className="login-section">
                         <div className="login-card">
                             <img src="./digidraw.ico" alt="DigiDraw Logo" className="logo" />
@@ -491,9 +493,23 @@ function App() {
                                     className="google-login"
                                 />
                             </div>
+                            <div className="google-login-wrapper mt-5">
+                                <button
+                                    type="button"
+                                    className="button is-light"
+                                    onClick={() => setCurrPage("About")}
+                                >
+                                    <span className="icon">
+                                        <i className="fas fa-info-circle"></i>
+                                    </span>
+                                    <span>About</span>
+                                </button>
+                            </div>
                         </div>
                     </section>
                 )}
+
+                {currPage === "About" && <AboutPage />}
 
                 {credentials &&
                     notifications.map((notification, index) => (
@@ -507,7 +523,7 @@ function App() {
                         </div>
                     ))}
 
-                {credentials && (
+                {credentials && currPage !== "About" && (
                     <section
                         className="section search-section"
                         style={{

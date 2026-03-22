@@ -162,6 +162,15 @@ body {
     justify-content: center;
 }
 
+.login-card.about-card {
+    max-width: 640px;
+    text-align: left;
+}
+
+.login-card.about-card .content {
+    color: var(--text-color);
+}
+
 @keyframes fadeInUp {
     from {
         opacity: 0;

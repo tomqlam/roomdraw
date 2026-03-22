@@ -243,6 +243,20 @@ function Navbar() {
                         </button>
                     </div>
 
+                    {/* About */}
+                    <div className="navbar-item admin-wrapper">
+                        <button
+                            className={`button is-light mobile-stack-item ${currPage === "About" ? "is-active" : ""}`}
+                            onClick={() => setCurrPage(currPage === "About" ? "Home" : "About")}
+                            title={currPage === "About" ? "Return to Room Draw" : "About DigiDraw"}
+                        >
+                            <span className="icon">
+                                <i className={`fas ${currPage === "About" ? "fa-home" : "fa-info-circle"}`}></i>
+                            </span>
+                            <span>{currPage === "About" ? "Room Draw" : "About"}</span>
+                        </button>
+                    </div>
+
                     {/* Admin link - only visible to admins */}
                     {isAdmin() && (
                         <div className="navbar-item admin-wrapper">
