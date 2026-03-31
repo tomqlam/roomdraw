@@ -377,13 +377,13 @@ cd ~/workspaces/roomdraw
 cd backend && cp .env.example .env && nano .env
 # Make sure to set the relevant environment variables in the .env file
 podman build -t roomdraw-backend .
-podman run -d --name roomdraw-backend -p 8080:8080 -v $(pwd):/app roomdraw-backend
+podman run -d --name roomdraw-backend -p 8000:8000 -v $(pwd):/app roomdraw-backend
 
 # 3. Build and serve frontend with http-server
 cd ../frontend && cp .env.example .env && nano .env
 # Make sure to set REACT_APP_API_URL to the correct value
 npm install && npm run build
-npx http-server build -p 3000 &
+npx http-server build -p 3001 &
 
 # 4. Configure Apache proxy (see .htaccess section below)
 mkdir -p ~/public_html && nano ~/public_html/.htaccess
@@ -580,7 +580,7 @@ cd roomdraw
 
 ### Step 6: Verify Deployment
 
-1. Visit `https://www.cs.hmc.edu/~USERNAME/roomdraw/`
+1. Visit `https://www.cs.hmc.edu/~elli/digitaldraw/`
 2. Check that the page loads and shows dorm data
 3. If errors occur, check logs:
     ```bash

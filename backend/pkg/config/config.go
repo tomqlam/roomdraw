@@ -35,7 +35,7 @@ var (
 
 // Server configuration
 const (
-	ServerAddress = ":8080"
+	ServerAddress = ":8000"
 )
 
 // LoadConfig loads all environment variables once

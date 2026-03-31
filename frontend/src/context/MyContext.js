@@ -295,7 +295,7 @@ export const MyContextProvider = ({ children }) => {
 
     // Initialize active tab state from localStorage or default to 'Atwood'
 
-    const adminList = ["smao@g.hmc.edu", "tlam@g.hmc.edu"];
+    const adminList = ["smao@g.hmc.edu", "tlam@g.hmc.edu", "aniksharma@g.hmc.edu", "elli@g.hmc.edu"];
 
     const getRoomUUIDFromUserID = (userID) => {
         // Return null if userID is null/undefined or not a valid number

@@ -1,11 +1,33 @@
-import React from "react";
+import { useState } from "react";
+
+const AGREEMENTS = [
+    "Digital Draw is a planning tool meant to help students think through potential Room Draw scenarios. It is not binding, and all plans are subject to change.",
+    "Final room assignments are determined during Real Draw and may differ from what is reflected in Digital Draw.",
+    "You agree to use Digital Draw in good faith and alignment with the Honor Code.",
+    "Students who do not participate in Digital Draw by their assigned deadline will be assigned the worst number of their year (participation is based on the Honor Code).",
+];
 
 function FAQModal({ isOpen, onClose }) {
+    const [checked, setChecked] = useState(AGREEMENTS.map(() => false));
+
     if (!isOpen) return null;
+
+    const allChecked = checked.every(Boolean);
+
+    const toggle = (i) => {
+        const next = [...checked];
+        next[i] = !next[i];
+        setChecked(next);
+    };
+
+    const handleAccept = () => {
+        localStorage.setItem("hideWelcomeFAQ", "true");
+        onClose();
+    };
 
     return (
         <div className="modal is-active">
-            <div className="modal-background" onClick={onClose}></div>
+            <div className="modal-background"></div>
             <div className="modal-card" style={{ maxWidth: "600px" }}>
                 <header
                     className="modal-card-head"
@@ -22,9 +44,8 @@ function FAQModal({ isOpen, onClose }) {
                             fontWeight: "600",
                         }}
                     >
-                        Welcome to DigiDraw!
+                        Welcome to Digidraw!
                     </p>
-                    <button className="delete" aria-label="close" onClick={onClose}></button>
                 </header>
                 <section
                     className="modal-card-body"
@@ -34,129 +55,31 @@ function FAQModal({ isOpen, onClose }) {
                         padding: "1.5rem",
                     }}
                 >
+                    <p style={{ marginBottom: "1.25rem" }}>
+                        Please read through the following agreements and check off each box as you read.
+                    </p>
                     <div className="content">
-                        <ol
-                            style={{
-                                listStyleType: "none",
-                                padding: 0,
-                                margin: 0,
-                                counterReset: "item",
-                            }}
-                        >
-                            <li
+                        {AGREEMENTS.map((text, i) => (
+                            <label
+                                key={i}
                                 style={{
+                                    display: "flex",
+                                    alignItems: "flex-start",
+                                    gap: "0.75rem",
                                     marginBottom: "1.25rem",
-                                    paddingLeft: "2rem",
-                                    position: "relative",
-                                    counterIncrement: "item",
+                                    cursor: "pointer",
+                                    color: "var(--text-color)",
                                 }}
                             >
-                                <span
-                                    style={{
-                                        position: "absolute",
-                                        left: 0,
-                                        fontWeight: "600",
-                                    }}
-                                >
-                                    {1}.
-                                </span>
-                                You are able to pull anyone into any room, not just yourself.
-                            </li>
-
-                            <li
-                                style={{
-                                    marginBottom: "1.25rem",
-                                    paddingLeft: "2rem",
-                                    position: "relative",
-                                    counterIncrement: "item",
-                                }}
-                            >
-                                <span
-                                    style={{
-                                        position: "absolute",
-                                        left: 0,
-                                        fontWeight: "600",
-                                    }}
-                                >
-                                    {2}.
-                                </span>
-                                You can only pull into a room if:
-                                <ul
-                                    style={{
-                                        marginTop: "0.75rem",
-                                        marginLeft: "1rem",
-                                        listStyleType: "disc",
-                                    }}
-                                >
-                                    <li style={{ marginBottom: "0.5rem" }}>
-                                        your selected occupants had higher priority than the current occupants
-                                    </li>
-                                    <li>or, you clear the room first.</li>
-                                </ul>
-                            </li>
-
-                            <li
-                                style={{
-                                    marginBottom: "1.25rem",
-                                    paddingLeft: "2rem",
-                                    position: "relative",
-                                    counterIncrement: "item",
-                                }}
-                            >
-                                <span
-                                    style={{
-                                        position: "absolute",
-                                        left: 0,
-                                        fontWeight: "600",
-                                    }}
-                                >
-                                    {3}.
-                                </span>
-                                Excessive clearing of rooms will result in a temporary ban. This is to prevent users
-                                from evading the pull priority system.
-                            </li>
-
-                            <li
-                                style={{
-                                    marginBottom: "1.25rem",
-                                    paddingLeft: "2rem",
-                                    position: "relative",
-                                    counterIncrement: "item",
-                                }}
-                            >
-                                <span
-                                    style={{
-                                        position: "absolute",
-                                        left: 0,
-                                        fontWeight: "600",
-                                    }}
-                                >
-                                    {4}.
-                                </span>
-                                All activity is logged including images uploaded and any abuse of the system will be
-                                investigated and reported to RALs and DSA.
-                            </li>
-
-                            <li
-                                style={{
-                                    marginBottom: "0",
-                                    paddingLeft: "2rem",
-                                    position: "relative",
-                                    counterIncrement: "item",
-                                }}
-                            >
-                                <span
-                                    style={{
-                                        position: "absolute",
-                                        left: 0,
-                                        fontWeight: "600",
-                                    }}
-                                >
-                                    {5}.
-                                </span>
-                                If you have any issues, please message the discord server in the #digi-draw channel.
-                            </li>
-                        </ol>
+                                <input
+                                    type="checkbox"
+                                    checked={checked[i]}
+                                    onChange={() => toggle(i)}
+                                    style={{ marginTop: "0.2rem", flexShrink: 0 }}
+                                />
+                                <span>{text}</span>
+                            </label>
+                        ))}
                     </div>
                 </section>
                 <footer
@@ -165,46 +88,24 @@ function FAQModal({ isOpen, onClose }) {
                         backgroundColor: "var(--card-bg)",
                         borderTop: "1px solid var(--border-color)",
                         padding: "1rem 1.5rem",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "1rem",
+                        flexDirection: "column",
+                        alignItems: "flex-start",
+                        gap: "0.75rem",
                     }}
                 >
+                    <p style={{ color: "var(--text-color)", fontSize: "0.9rem", margin: 0 }}>
+                        By clicking "I accept", you are confirming that you have read and agree to abide by
+                        the instructions listed above. If you have any questions, please email{" "}
+                        <a href="mailto:Ral-l@g.hmc.edu">Ral-l@g.hmc.edu</a>.
+                    </p>
                     <button
                         className="button is-primary"
-                        onClick={onClose}
-                        style={{
-                            minWidth: "100px",
-                            height: "36px",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                        }}
+                        onClick={handleAccept}
+                        disabled={!allChecked}
+                        style={{ minWidth: "100px", height: "36px" }}
                     >
-                        Got it!
+                        I accept
                     </button>
-                    <label
-                        className="checkbox"
-                        style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "0.5rem",
-                            color: "var(--text-color)",
-                        }}
-                    >
-                        <input
-                            type="checkbox"
-                            onChange={(e) => {
-                                if (e.target.checked) {
-                                    localStorage.setItem("hideWelcomeFAQ", "true");
-                                }
-                            }}
-                            style={{
-                                margin: 0,
-                            }}
-                        />
-                        Don't show this again
-                    </label>
                 </footer>
             </div>
         </div>

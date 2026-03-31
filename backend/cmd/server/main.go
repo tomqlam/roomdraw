@@ -32,13 +32,13 @@ func main() {
 
 	// Configure CORS middleware options
 	corsConfig := cors.Config{
-		AllowOrigins:     []string{"http://localhost:3000", "http://localhost:8081", "https://www.cs.hmc.edu"},
+		AllowOrigins:     []string{"http://localhost:3001", "http://localhost:8081", "https://www.cs.hmc.edu"},
 		AllowMethods:     []string{"PUT", "PATCH", "GET", "POST", "DELETE"},
 		AllowHeaders:     []string{"Origin", "Authorization", "Content-Type"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
 		AllowOriginFunc: func(origin string) bool {
-			return origin == "http://localhost:3000" || origin == "http://localhost:8081" || origin == "https://www.cs.hmc.edu"
+			return origin == "http://localhost:3001" || origin == "http://localhost:8081" || origin == "https://www.cs.hmc.edu"
 		},
 		MaxAge: 12 * time.Hour,
 	}
