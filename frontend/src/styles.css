@@ -1375,6 +1375,13 @@ body.dark-mode .info-display.clickable:hover {
         max-width: var(--max-component-width) !important;
     }
 
+    /* Navbar buttons should fit their content, not inherit the 200px form field min-width */
+    .navbar-mobile-section .button {
+        min-width: fit-content !important;
+        max-width: none !important;
+        padding: 0 0.85rem !important;
+    }
+
     .info-display.non-clickable {
         width: auto !important;
         min-width: fit-content !important;
@@ -1392,53 +1399,43 @@ body.dark-mode .info-display.clickable:hover {
 /* Desktop styles with adjusted spacing for medium-large screens */
 @media screen and (min-width: 1200px) and (max-width: 1550px) {
     .navbar-menu-items {
-        gap: 0.75rem;
+        gap: 0.5rem;
     }
 
     .navbar-mobile-section {
-        gap: 0.75rem;
+        gap: 0.5rem;
         flex-wrap: nowrap;
     }
 
-    /* Keep buttons with reasonable dimensions but not too compressed */
-    .button:not(.info-display) {
-        padding: 0 0.75rem !important;
-        font-size: 0.95rem !important;
+    .navbar-item {
+        padding: 0 0.25rem;
     }
 
-    /* Keep room display untouched */
-    .info-display.non-clickable,
+    /* Compact navbar buttons — no min-width constraint */
+    .navbar-mobile-section .button {
+        padding: 0 0.65rem !important;
+        font-size: 0.9rem !important;
+        min-width: fit-content !important;
+    }
+
+    /* Room/user info displays keep a sensible min-width for dynamic content */
     .info-display.clickable {
-        /* Original sizing preserved */
-        min-width: var(--min-component-width) !important;
-        max-width: var(--max-component-width) !important;
+        min-width: 160px !important;
+        max-width: 260px !important;
     }
 
     /* Keep the navbar height consistent */
     .navbar {
-        padding: 0.5rem 1rem;
+        padding: 0.5rem 0.75rem;
         min-height: 3.25rem;
     }
 
-    /* Maintain reasonable gaps between sections */
     .user-info-wrapper,
     .room-info-wrapper,
     .settings-wrapper,
     .admin-wrapper,
     .logout-wrapper {
-        gap: 0.75rem;
-    }
-
-    /* Ensure admin/search/personalization buttons are not too small */
-    .button.is-primary,
-    .button.is-info,
-    .button.is-success {
-        min-width: 150px !important;
-    }
-
-    /* Ensure logout button is not too small */
-    .button.is-danger {
-        min-width: 100px !important;
+        gap: 0.5rem;
     }
 }
 
@@ -1563,13 +1560,7 @@ body.dark-mode .info-display.clickable:hover {
     }
 
     .navbar-last-refresh {
-        display: flex;
-        margin-right: 0;
-        margin-left: 0.75rem;
-    }
-
-    .navbar-last-refresh h2 {
-        font-size: 0.8rem;
+        display: none;
     }
 }
 
