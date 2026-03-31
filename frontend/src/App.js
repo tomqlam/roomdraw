@@ -11,6 +11,7 @@ import FloorGrid from "./components/FloorGrid";
 import { MyContext } from "./context/MyContext";
 import SearchPage from "./pages/Search/SearchPage";
 import AboutPage from "./pages/About/AboutPage";
+import TimelinePage from "./pages/Timeline/TimelinePage";
 import "./styles.css";
 
 // Lazy load modals for better bundle splitting
@@ -505,11 +506,24 @@ function App() {
                                     <span>About</span>
                                 </button>
                             </div>
+                            <div className="google-login-wrapper mt-3">
+                                <button
+                                    type="button"
+                                    className="button is-light"
+                                    onClick={() => setCurrPage("Timeline")}
+                                >
+                                    <span className="icon">
+                                        <i className="fas fa-calendar-alt"></i>
+                                    </span>
+                                    <span>Timeline</span>
+                                </button>
+                            </div>
                         </div>
                     </section>
                 )}
 
                 {currPage === "About" && <AboutPage />}
+                {currPage === "Timeline" && <TimelinePage />}
 
                 {credentials &&
                     notifications.map((notification, index) => (
@@ -523,7 +537,7 @@ function App() {
                         </div>
                     ))}
 
-                {credentials && currPage !== "About" && (
+                {credentials && currPage !== "About" && currPage !== "Timeline" && (
                     <section
                         className="section search-section"
                         style={{

@@ -257,6 +257,20 @@ function Navbar() {
                         </button>
                     </div>
 
+                    {/* DigiDraw timeline */}
+                    <div className="navbar-item admin-wrapper">
+                        <button
+                            className={`button is-light mobile-stack-item ${currPage === "Timeline" ? "is-active" : ""}`}
+                            onClick={() => setCurrPage(currPage === "Timeline" ? "Home" : "Timeline")}
+                            title={currPage === "Timeline" ? "Return to Room Draw" : "DigiDraw timeline"}
+                        >
+                            <span className="icon">
+                                <i className={`fas ${currPage === "Timeline" ? "fa-home" : "fa-calendar-alt"}`}></i>
+                            </span>
+                            <span>{currPage === "Timeline" ? "Room Draw" : "Timeline"}</span>
+                        </button>
+                    </div>
+
                     {/* Admin link - only visible to admins */}
                     {isAdmin() && (
                         <div className="navbar-item admin-wrapper">

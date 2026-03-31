@@ -163,12 +163,24 @@ body {
 }
 
 .login-card.about-card {
-    max-width: 640px;
+    max-width: 960px;
     text-align: left;
 }
 
 .login-card.about-card .content {
     color: var(--text-color);
+}
+
+.about-plot-figure {
+    margin: 0 0 1rem;
+}
+
+.about-plot-img {
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+    box-shadow: var(--box-shadow);
+    display: block;
 }
 
 @keyframes fadeInUp {
