@@ -53,12 +53,12 @@ function AboutPage() {
         );
 
     const body = (
-        <>
+        <div className="about-page">
             <h1 className="is-size-3 has-text-weight-semibold has-text-centered mb-5" style={{ color: "var(--text-color)" }}>
                 Welcome to DigiDraw!
             </h1>
 
-            <div className="content">
+            <div className="content about-page-content">
                 <p className="mb-4">
                     (A big thank you to our great webmasters Elsa L. and Anika S. for organizing this DigiDraw website. Also Tom Lam and Serena Mao for their guidance + initial development{" "}
                     <span aria-hidden="true">&lt;3</span>.)
@@ -136,9 +136,15 @@ function AboutPage() {
 
                 <p className="mb-4">
                     Read the Regs for details of pulling into different dorms and different types of living spaces.{" "}
-                    <a href={REGS_PDF_URL} target="_blank" rel="noopener noreferrer">
+                    <a
+                        href={REGS_PDF_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="about-regs-link"
+                        title="Final_Highlighted_2026_Room_Draw_Regs.pdf"
+                    >
                         <i className="fas fa-file-pdf" aria-hidden="true" style={{ marginRight: "0.35rem" }}></i>
-                        Final_Highlighted_2026_Room_Draw_Regs.pdf
+                        2026 Room Draw Regs (PDF)
                     </a>
                 </p>
 
@@ -167,7 +173,7 @@ function AboutPage() {
                     big overall room draw plot.
                 </p>
 
-                <div className="columns is-multiline is-variable is-2 mb-4">
+                <div className="columns is-multiline is-variable is-1 about-plots-columns mb-4">
                     {PLOTS_2025_STATS.map((name) => (
                         <div key={name} className="column is-half-tablet is-full-mobile">
                             <figure className="image about-plot-figure">
@@ -206,7 +212,7 @@ function AboutPage() {
                 </figure>
             </div>
 
-            <div className="has-text-centered">
+            <div className="about-page-footer">
                 <button type="button" className="button is-primary" onClick={() => setCurrPage("Home")}>
                     <span className="icon">
                         <i className="fas fa-home"></i>
@@ -214,7 +220,7 @@ function AboutPage() {
                     <span>Back to home</span>
                 </button>
             </div>
-        </>
+        </div>
     );
 
     if (!credentials) {
@@ -228,7 +234,7 @@ function AboutPage() {
     return (
         <section className="section">
             <div className="container" style={{ maxWidth: "960px" }}>
-                <div className="box" style={{ backgroundColor: "var(--card-bg)" }}>
+                <div className="box about-page-box" style={{ backgroundColor: "var(--card-bg)" }}>
                     {body}
                 </div>
             </div>

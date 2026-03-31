@@ -171,16 +171,83 @@ body {
     color: var(--text-color);
 }
 
+/* About page: layout, mobile scaling, plot alignment */
+.about-page {
+    text-align: left;
+}
+
+.about-page-content {
+    text-align: left;
+}
+
+/* Override Bulma .content figure (default: centered, side margins) */
+.about-page-content figure.image,
+.about-page-content figure.about-plot-figure {
+    margin-left: 0;
+    margin-right: 0;
+    text-align: left;
+}
+
+.about-page-content figure img {
+    display: block;
+}
+
+.about-page-footer {
+    margin-top: 1.5rem;
+    text-align: left;
+}
+
+.about-regs-link {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
 .about-plot-figure {
     margin: 0 0 1rem;
+    margin-left: 0;
+    text-align: left;
 }
 
 .about-plot-img {
     width: 100%;
     height: auto;
-    border-radius: 8px;
+    border-radius: 6px;
     box-shadow: var(--box-shadow);
     display: block;
+    margin-left: 0;
+}
+
+@media (max-width: 768px) {
+    .login-section {
+        padding: 1rem;
+    }
+
+    .login-card.about-card {
+        padding: 1.25rem 0.75rem;
+    }
+
+    .box.about-page-box {
+        padding: 1rem 0.75rem;
+    }
+
+    .about-plots-columns.columns {
+        margin-left: -0.35rem;
+        margin-right: -0.35rem;
+    }
+
+    .about-plots-columns .column {
+        padding-left: 0.35rem;
+        padding-right: 0.35rem;
+    }
+
+    .about-plot-img {
+        border-radius: 3px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    }
+
+    .about-page-footer {
+        margin-top: 1.25rem;
+    }
 }
 
 @keyframes fadeInUp {
