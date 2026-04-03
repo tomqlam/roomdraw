@@ -113,6 +113,23 @@ function BumpModal() {
         return credentials ? jwtDecode(credentials) : null;
     }, [credentials]);
 
+    // Derive gender preferences from occupants in userMap as fallback for preplaced suites
+    // where UpdateSuiteGenderPreferencesBySuiteUUID was never called
+    const effectiveGenderPreferences = useMemo(() => {
+        const suiteLevel = selectedSuiteObject?.genderPreferences;
+        if (suiteLevel && suiteLevel.length > 0) return suiteLevel;
+        if (!selectedSuiteObject?.rooms || !userMap) return [];
+        const prefs = new Set();
+        for (const room of selectedSuiteObject.rooms) {
+            for (const occupantId of [room.occupant1, room.occupant2, room.occupant3, room.occupant4]) {
+                if (occupantId && occupantId !== 0 && userMap[occupantId]?.GenderPreferences?.length > 0) {
+                    userMap[occupantId].GenderPreferences.forEach((p) => prefs.add(p));
+                }
+            }
+        }
+        return Array.from(prefs);
+    }, [selectedSuiteObject, userMap]);
+
     const userOptions = useMemo(() => {
         if (!userMap) return [];
         const isAdmin = decodedCredentials?.email === "tlam@g.hmc.edu" ||
