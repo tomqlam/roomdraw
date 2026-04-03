@@ -55,6 +55,38 @@ function FAQModal({ isOpen, onClose }) {
                         padding: "1.5rem",
                     }}
                 >
+                    <div
+                        style={{
+                            marginBottom: "1.5rem",
+                            padding: "1rem",
+                            backgroundColor: "var(--hover-bg, rgba(0,0,0,0.04))",
+                            borderRadius: "6px",
+                            fontSize: "0.92rem",
+                            lineHeight: "1.6",
+                        }}
+                    >
+                        <ol style={{ margin: 0, paddingLeft: "1.25rem" }}>
+                            <li style={{ marginBottom: "0.6rem" }}>
+                                You are able to pull anyone into any room, not just yourself.
+                            </li>
+                            <li style={{ marginBottom: "0.6rem" }}>
+                                You can only pull into a room if your selected occupants had higher priority than the
+                                current occupants, or you clear the room first.
+                            </li>
+                            <li style={{ marginBottom: "0.6rem" }}>
+                                Excessive clearing of rooms will result in a temporary ban. This is to prevent users
+                                from evading the pull priority system.
+                            </li>
+                            <li style={{ marginBottom: "0.6rem" }}>
+                                All activity is logged including images uploaded, and any abuse of the system will be
+                                investigated and reported to RALs and DSA.
+                            </li>
+                            <li>
+                                If you have any issues, please message the Discord server in the{" "}
+                                <strong>#digi-draw</strong> channel.
+                            </li>
+                        </ol>
+                    </div>
                     <p style={{ marginBottom: "1.25rem" }}>
                         Please read through the following agreements and check off each box as you read.
                     </p>

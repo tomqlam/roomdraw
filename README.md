@@ -476,7 +476,7 @@ cd roomdraw
 
     ```bash
     podman build -t roomdraw-backend .
-    podman run -d --name roomdraw-backend -p 8080:8080 -v $(pwd):/app roomdraw-backend
+    podman run -d --name roomdraw-backend -p 8000:8000 -v $(pwd):/app roomdraw-backend
     ```
 
 3. **Useful Podman commands:**

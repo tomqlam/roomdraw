@@ -116,6 +116,9 @@ type SuiteRaw struct {
 	ReslifeRoom            uuid.UUID      `db:"reslife_room"`
 	GenderPreferences      pq.StringArray `db:"gender_preferences"`
 	CanBeGenderPreferenced bool           `db:"can_be_gender_preferenced"`
+	AnimalInSuite          bool           `db:"animal_in_suite"`
+	LegacySuite            bool           `db:"legacy_suite"`
+	SuiteNotes             string         `db:"suite_notes"`
 }
 
 type DormSimple struct {
@@ -144,6 +147,9 @@ type SuiteSimple struct {
 	GenderPreferences pq.StringArray `json:"genderPreferences"`
 	AlternativePull   bool           `json:"alternative_pull"`
 	CanLockPull       bool           `json:"can_lock_pull"`
+	AnimalInSuite     bool           `json:"animalInSuite"`
+	LegacySuite       bool           `json:"legacySuite"`
+	SuiteNotes        string         `json:"suiteNotes"`
 }
 
 type SuiteSimpler struct {

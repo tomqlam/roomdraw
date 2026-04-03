@@ -20,10 +20,10 @@ import (
 func getSuiteStateRaw(suiteUUID string) (*models.SuiteRaw, error) {
 	var suite models.SuiteRaw
 	err := database.DB.QueryRow(`
-		SELECT suite_uuid, dorm, dorm_name, floor, room_count, rooms, alternative_pull, suite_design
+		SELECT suite_uuid, dorm, dorm_name, floor, room_count, rooms, alternative_pull, suite_design, animal_in_suite, legacy_suite
 		FROM suites
 		WHERE suite_uuid = $1`, suiteUUID).Scan(
-		&suite.SuiteUUID, &suite.Dorm, &suite.DormName, &suite.Floor, &suite.RoomCount, &suite.Rooms, &suite.AlternativePull, &suite.SuiteDesign,
+		&suite.SuiteUUID, &suite.Dorm, &suite.DormName, &suite.Floor, &suite.RoomCount, &suite.Rooms, &suite.AlternativePull, &suite.SuiteDesign, &suite.AnimalInSuite, &suite.LegacySuite,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query suite state for %s: %w", suiteUUID, err)
@@ -155,6 +155,12 @@ func SetSuiteDesign(c *gin.Context) {
 
 	// extract file name from URL
 	currentSuiteDesign = currentSuiteDesign[strings.LastIndex(currentSuiteDesign, "/")+1:]
+
+	if config.BunnyNetWriteAPIKey == "" || config.BunnyNetStorageZone == "" {
+		log.Printf("DEV MODE: BunnyNet credentials not set, skipping image upload for suite %s", suiteUUID)
+		c.JSON(http.StatusOK, gin.H{"message": "Suite design skipped (dev mode — no CDN credentials)"})
+		return
+	}
 
 	cfg := &bunnystorage.Config{
 		StorageZone: config.BunnyNetStorageZone,
@@ -364,8 +370,8 @@ func DeleteSuiteDesign(c *gin.Context) {
 		return
 	}
 
-	// remove the suite design from the suite default ''
-	_, err = tx.Exec("UPDATE suites SET suite_design = '' WHERE suite_uuid = $1", suiteUUID)
+	// remove the suite design and clear flags
+	_, err = tx.Exec("UPDATE suites SET suite_design = '', animal_in_suite = false, legacy_suite = false, suite_notes = '' WHERE suite_uuid = $1", suiteUUID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to remove suite design"})
 		return
@@ -551,4 +557,30 @@ func UpdateSuiteGenderPreferencesBySuiteUUID(tx *sql.Tx, suiteUUID uuid.UUID) er
 
 	log.Printf("Successfully updated gender preferences for suite %s", suiteUUID)
 	return nil
+}
+
+func SetSuiteFlags(c *gin.Context) {
+	suiteUUID := c.Param("suiteuuid")
+
+	var body struct {
+		AnimalInSuite bool   `json:"animalInSuite"`
+		LegacySuite   bool   `json:"legacySuite"`
+		SuiteNotes    string `json:"suiteNotes"`
+	}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		return
+	}
+
+	_, err := database.DB.Exec(
+		"UPDATE suites SET animal_in_suite = $1, legacy_suite = $2, suite_notes = $3 WHERE suite_uuid = $4",
+		body.AnimalInSuite, body.LegacySuite, body.SuiteNotes, suiteUUID,
+	)
+	if err != nil {
+		log.Printf("Error updating suite flags for %s: %v", suiteUUID, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update suite flags"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Suite flags updated"})
 }

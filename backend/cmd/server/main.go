@@ -99,6 +99,7 @@ func main() {
 	writeGroup.POST("/rooms/clear/:roomuuid", handlers.ClearRoomHandler)
 	writeGroup.POST("/suites/design/:suiteuuid", handlers.SetSuiteDesign)
 	writeGroup.POST("/suites/design/remove/:suiteuuid", handlers.DeleteSuiteDesign)
+	writeGroup.POST("/suites/flags/:suiteuuid", handlers.SetSuiteFlags)
 	writeGroup.POST("/frosh/bump/:roomuuid", handlers.BumpFroshHandler)
 	writeGroup.POST("/users/notifications", handlers.SetNotificationPreference)
 

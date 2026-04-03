@@ -1,5 +1,5 @@
 import "bulma/css/bulma.min.css";
-import React, { createRef, useContext, useEffect, useRef, useState, useMemo } from "react";
+import React, { createRef, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { MyContext } from "../context/MyContext";
 
 function FloorGrid({ gridData }) {
@@ -515,39 +515,56 @@ function FloorGrid({ gridData }) {
                               >
                                   {getPullMethodByRoomNumber(room.roomNumber)}
                               </div>
-                              {!isMobile && roomIndex === 0 && (
-                                  <div
-                                      style={{
-                                          ...gridItemStyle,
-                                          backgroundColor:
-                                              suiteIndex % 2 === 0
-                                                  ? selectedPalette.evenSuite
-                                                  : selectedPalette.oddSuite,
-                                          gridRow: `span ${suite.rooms.length}`,
-                                          display: "flex",
-                                          alignItems: "center",
-                                          justifyContent: "center",
-                                      }}
-                                      ref={divRefs.current[suiteIndex]}
-                                      onClick={() => updateSuiteNotes(room.roomNumber, divRefs.current[suiteIndex])}
-                                      className="grid-cell suite-cell"
-                                  >
-                                      {suite.suiteDesign && (
-                                          <img
-                                              src={suite.suiteDesign}
-                                              alt={suite.suiteDesign}
-                                              style={{
-                                                  maxWidth: "100%",
-                                                  maxHeight: "50vh",
-                                                  objectFit: "contain",
-                                                  width: "auto",
-                                                  height: "auto",
-                                                  borderRadius: "4px",
-                                              }}
-                                          />
-                                      )}
-                                  </div>
-                              )}
+                              {roomIndex === 0 && (() => {
+                                  const hasFooter = suite.animalInSuite || suite.legacySuite || suite.suiteNotes;
+                                  return (
+                                      <div
+                                          style={{
+                                              ...gridItemStyle,
+                                              backgroundColor:
+                                                  suiteIndex % 2 === 0
+                                                      ? selectedPalette.evenSuite
+                                                      : selectedPalette.oddSuite,
+                                              gridRow: `span ${suite.rooms.length}`,
+                                              display: "flex",
+                                              flexDirection: "column",
+                                              alignItems: "stretch",
+                                              overflow: "hidden",
+                                              minWidth: 0,
+                                              padding: 0,
+                                          }}
+                                          ref={divRefs.current[suiteIndex]}
+                                          onClick={() => updateSuiteNotes(room.roomNumber, divRefs.current[suiteIndex])}
+                                          className="grid-cell suite-cell"
+                                      >
+                                          {suite.suiteDesign && (
+                                              <img
+                                                  src={suite.suiteDesign}
+                                                  alt=""
+                                                  onError={(e) => { e.target.style.display = "none"; }}
+                                                  style={{
+                                                      width: "100%",
+                                                      height: hasFooter ? "60%" : "100%",
+                                                      objectFit: "fill",
+                                                      display: "block",
+                                                      flexShrink: 0,
+                                                  }}
+                                              />
+                                          )}
+                                          {hasFooter && (
+                                              <div style={{ flex: "1 1 0", width: "100%", textAlign: "center", fontSize: "0.75rem", padding: "0.15rem 0.25rem", whiteSpace: "normal", wordBreak: "break-word", overflowWrap: "break-word", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+                                                  {suite.animalInSuite && <div>૮ ・ﻌ・ა Animal in Suite</div>}
+                                                  {suite.legacySuite && <div> Legacy Suite</div>}
+                                                  {suite.suiteNotes && (
+                                                      <div style={{ fontStyle: "italic", whiteSpace: "pre-wrap", wordBreak: "break-word", overflowWrap: "break-word", marginTop: "0.15rem" }}>
+                                                          <strong>Notes:</strong> {suite.suiteNotes}
+                                                      </div>
+                                                  )}
+                                              </div>
+                                          )}
+                                      </div>
+                                  );
+                              })()}
                               <div
                                   style={getGridItemStyle(room, room.maxOccupancy, 1, suiteIndex, room.pullPriority)}
                                   onClick={() => handleCellClick(room.roomNumber)}

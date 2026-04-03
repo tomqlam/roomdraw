@@ -234,7 +234,7 @@ func JWTAuthMiddleware(requiresAdmin bool) gin.HandlerFunc {
 			if email, ok := claims["email"].(string); ok && strings.HasSuffix(email, "@g.hmc.edu") {
 				if requiresAdmin { // admins are tlam, smao
 					user := strings.Split(email, "@")[0]
-					if user != "smao" && user != "tlam" && user != "asharma" && user != "elli" {
+					if user != "smao" && user != "tlam" && user != "aniksharma" && user != "elli" {
 						c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized access to admin endpoint"})
 						return
 					}

@@ -15,5 +15,8 @@ CREATE TABLE Suites (
     reslife_room uuid,
     gender_preferences varchar[] NOT NULL DEFAULT '{}',
     can_be_gender_preferenced bool NOT NULL DEFAULT false,
+    animal_in_suite bool NOT NULL DEFAULT false,
+    legacy_suite bool NOT NULL DEFAULT false,
+    suite_notes varchar NOT NULL DEFAULT '',
     PRIMARY KEY (suite_uuid)
 );

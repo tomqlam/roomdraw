@@ -608,6 +608,14 @@ function BumpModal() {
                         </div>
                     )}
 
+                    {/* Suite Notes */}
+                    {selectedSuiteObject?.suiteNotes && (
+                        <div className="notification is-info" style={{ marginBottom: "15px" }}>
+                            <p className="has-text-weight-bold">Suite Notes:</p>
+                            <p style={{ whiteSpace: "pre-wrap" }}>{selectedSuiteObject.suiteNotes}</p>
+                        </div>
+                    )}
+
                     {/* Add Gender Preferences display */}
                     {selectedSuiteObject &&
                         selectedSuiteObject.genderPreferences &&

@@ -14,11 +14,14 @@ function SuiteNoteModal() {
     const { selectedSuiteObject, setIsSuiteNoteModalOpen, setRefreshKey, handleErrorFromTokenExpiry } =
         useContext(MyContext);
 
-    const suiteNotes = selectedSuiteObject?.suiteDesign ?? "";
     const [loadingSubmit, setLoadingSubmit] = useState(false);
     const [loadingClearNotes, setLoadingClearNotes] = useState(false);
     const [isBlocklisted, setIsBlocklisted] = useState(false);
     const [blocklistMessage, setBlocklistMessage] = useState("");
+    const [animalInSuite, setAnimalInSuite] = useState(selectedSuiteObject?.animalInSuite ?? false);
+    const [legacySuite, setLegacySuite] = useState(selectedSuiteObject?.legacySuite ?? false);
+    const [suiteNotes, setSuiteNotes] = useState(selectedSuiteObject?.suiteNotes ?? "");
+    const [imageLoaded, setImageLoaded] = useState(!!selectedSuiteObject?.suiteDesign);
 
     // Function to check for 403 blocklist responses
     const handleBlocklistCheck = (response) => {
@@ -38,8 +41,43 @@ function SuiteNoteModal() {
         return Promise.resolve(false);
     };
 
-    const updateSuiteNotes = (notes) => {
-        let imageData = imgObj.current.getImageData();
+    const updateSuiteFlags = () => {
+        return fetch(`${process.env.REACT_APP_API_URL}/suites/flags/${selectedSuiteObject.suiteUUID}`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${localStorage.getItem("jwt")}`,
+            },
+            body: JSON.stringify({ animalInSuite, legacySuite, suiteNotes }),
+        }).catch((error) => console.error("Error updating suite flags:", error));
+    };
+
+    const updateSuiteNotes = () => {
+        if (!imageLoaded) {
+            updateSuiteFlags().then(() => {
+                setLoadingSubmit(false);
+                setIsSuiteNoteModalOpen(false);
+                setRefreshKey((prevKey) => prevKey + 1);
+            });
+            return;
+        }
+
+        let imageData = null;
+        try {
+            imageData = imgObj.current.getImageData();
+        } catch (e) {
+            // Failed to get image data — just save flags
+        }
+
+        if (!imageData) {
+            updateSuiteFlags().then(() => {
+                setLoadingSubmit(false);
+                setIsSuiteNoteModalOpen(false);
+                setRefreshKey((prevKey) => prevKey + 1);
+            });
+            return;
+        }
+
         const canvas = document.createElement("canvas");
         canvas.width = imageData.width;
         canvas.height = imageData.height;
@@ -85,11 +123,12 @@ function SuiteNoteModal() {
                                 }
                                 setLoadingSubmit(false);
                             } else {
-                                // updated suite successfully
-                                setLoadingSubmit(false);
-                                setIsSuiteNoteModalOpen(false);
-                                setRefreshKey((prevKey) => prevKey + 1);
-                                // commented console.log ("refreshing");
+                                // updated suite successfully — also save flags
+                                updateSuiteFlags().then(() => {
+                                    setLoadingSubmit(false);
+                                    setIsSuiteNoteModalOpen(false);
+                                    setRefreshKey((prevKey) => prevKey + 1);
+                                });
                             }
                         })
                         .catch((error) => {
@@ -211,7 +250,7 @@ function SuiteNoteModal() {
                         </div>
                     ) : (
                         <>
-                            <p>First you must upload any picture, then crop & overlay text on top!</p>
+                            <p>Optionally upload a picture, then crop & overlay text on top.</p>
                             <p>Please do not submit inappropriate pictures, or pictures too thin/tall.</p> <br />
                             {/* <input type="file" id="fileUpload" /> */}
                             <div id="container" style={{ width: "100%", height: "50vh" }}>
@@ -219,8 +258,39 @@ function SuiteNoteModal() {
                                     <ImageEditorComponent
                                         toolbar={["Crop", "Transform", "Annotate", "Image", "ZoomIn", "ZoomOut"]}
                                         ref={imgObj}
+                                        fileOpened={() => setImageLoaded(true)}
                                     />
                                 </Suspense>
+                            </div>
+                            <div style={{ marginTop: "1rem" }}>
+                                <label className="checkbox mr-4">
+                                    <input
+                                        type="checkbox"
+                                        checked={animalInSuite}
+                                        onChange={(e) => setAnimalInSuite(e.target.checked)}
+                                        style={{ marginRight: "0.4rem" }}
+                                    />
+                                    Animal in Suite
+                                </label>
+                                <label className="checkbox">
+                                    <input
+                                        type="checkbox"
+                                        checked={legacySuite}
+                                        onChange={(e) => setLegacySuite(e.target.checked)}
+                                        style={{ marginRight: "0.4rem" }}
+                                    />
+                                    Legacy Suite
+                                </label>
+                            </div>
+                            <div style={{ marginTop: "1rem" }}>
+                                <label className="label">Notes</label>
+                                <textarea
+                                    className="textarea"
+                                    placeholder="Add notes about this suite (optional)..."
+                                    value={suiteNotes}
+                                    onChange={(e) => setSuiteNotes(e.target.value)}
+                                    rows={3}
+                                />
                             </div>
                         </>
                     )}
@@ -230,7 +300,7 @@ function SuiteNoteModal() {
                         className={`button is-primary ${loadingSubmit && "is-loading"}`}
                         onClick={() => {
                             setLoadingSubmit(true);
-                            updateSuiteNotes(suiteNotes);
+                            updateSuiteNotes();
                         }}
                         disabled={isBlocklisted}
                     >
