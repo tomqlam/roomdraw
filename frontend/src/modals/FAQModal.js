@@ -5,6 +5,7 @@ const AGREEMENTS = [
     "Final room assignments are determined during Real Draw and may differ from what is reflected in Digital Draw.",
     "You agree to use Digital Draw in good faith and alignment with the Honor Code.",
     "Students who do not participate in Digital Draw by their assigned deadline will be assigned the worst number of their year (participation is based on the Honor Code).",
+    "If you plan to bring a caged animal (e.g., hamster, lizard, etc.) or have an approved ESA (e.g., dog or cat), please note this in the notes section when selecting your suite.",
 ];
 
 function FAQModal({ isOpen, onClose }) {
