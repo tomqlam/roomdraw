@@ -28,9 +28,9 @@ func NewEmailService() *EmailService {
 func (s *EmailService) SendBumpNotification(user models.UserRaw, roomID string, dormName string) error {
 	auth := smtp.PlainAuth("", s.senderEmail, s.senderPass, s.smtpHost)
 
-	to := []string{user.Email}
+	// to := []string{user.Email}
 	// // for testing, set to tlam@g.hmc.edu
-	// to := []string{"elli@g.hmc.edu"}
+	to := []string{"elli@g.hmc.edu"}
 
 	subject := fmt.Sprintf("(no-reply) Digital Draw Notification - Bumped from %s, %s", dormName, roomID)
 	body := fmt.Sprintf(
@@ -46,6 +46,8 @@ func (s *EmailService) SendBumpNotification(user models.UserRaw, roomID string, 
 		"To: %s\r\n"+
 		"\r\n"+
 		"%s", subject, s.senderEmail, to[0], body)
+
+	log.Printf("Attempting to send email to %s via %s:%s", to[0], s.smtpHost, s.smtpPort)
 
 	err := smtp.SendMail(
 		s.smtpHost+":"+s.smtpPort,

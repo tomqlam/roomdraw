@@ -83,7 +83,7 @@ See [Homebrew Installation Docs](https://docs.brew.sh/Installation) for details.
 
 1. Set up the database (see Database Setup below)
 2. Configure environment files (see Environment Configuration below)
-3. Start the backend: `cd backend && docker build -t roomdraw-backend . && docker run -it -p 8080:8080 -v $(pwd):/app roomdraw-backend`
+3. Start the backend: `cd backend && docker build -t roomdraw-backend . && docker run -it -p 8000:8000 -v $(pwd):/app roomdraw-backend`
 4. Start the frontend: `cd frontend && npm install && npm start`
 5. Open http://localhost:3000
 
@@ -308,7 +308,7 @@ For production, use Podman and the production environment file:
 ```bash
 cd backend
 podman build -t roomdraw-backend --build-arg ENV=production .
-podman run -it -p 8080:8080 -v $(pwd):/app roomdraw-backend
+podman run -it -p 8000:8000 -v $(pwd):/app roomdraw-backend
 ```
 
 ## Project Structure
@@ -509,7 +509,7 @@ cd roomdraw
     ```bash
     npm install
     npm run build
-    npx http-server build -p 3000 &
+    npx http-server build -p 3001 &
     ```
 
 3. **Managing the frontend server:**
@@ -601,14 +601,14 @@ git pull
 cd backend
 podman stop roomdraw-backend && podman rm roomdraw-backend
 podman build -t roomdraw-backend .
-podman run -d --name roomdraw-backend -p 8080:8080 -v $(pwd):/app roomdraw-backend
+podman run -d --name roomdraw-backend -p 8000:8000 -v $(pwd):/app roomdraw-backend
 
 # If frontend code changed:
 cd ../frontend
 npm install  # If dependencies changed
 npm run build
 pkill -f "http-server build"  # Stop old server
-npx http-server build -p 3000 &
+npx http-server build -p 3001 &
 ```
 
 ### HMC Deployment Troubleshooting

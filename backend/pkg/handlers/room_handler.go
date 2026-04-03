@@ -3248,6 +3248,7 @@ func GetRoom(c *gin.Context) {
 func ClearRoomHandler(c *gin.Context) {
 	// Get the room UUID from the URL
 	roomUUIDParam := c.Param("roomuuid")
+	print("roomUUIDParam: ", roomUUIDParam)
 
 	// Get the user's email
 	email, exists := c.Get("email")
